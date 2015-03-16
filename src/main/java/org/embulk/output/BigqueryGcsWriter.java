@@ -87,7 +87,7 @@ public class BigqueryGcsWriter
         }
         String[] pathList = StringUtils.split(remotePath, '/');
         String path = StringUtils.join(pathList) + "/";
-        if(!path.endsWith("/")) {
+        if (!path.endsWith("/")) {
             path = path + "/";
         }
         return path + fileName;
