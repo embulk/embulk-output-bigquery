@@ -78,7 +78,7 @@ public class BigqueryWriter
         try {
             Job job = bigQueryClient.jobs().get(project, jobRef.getJobId()).execute();
             if (job.getStatus().getErrorResult() != null) {
-                throw new JobFailedException(String.format("Job failed. job_id:[%s] reason:%s status:[%]", jobRef.getJobId(), job.getStatus().getErrorResult().getMessage(), "FAILED"));
+                throw new JobFailedException(String.format("Job failed. job id:[%s] reason:[%s] status:[FAILED]", jobRef.getJobId(), job.getStatus().getErrorResult().getMessage()));
             }
             String jobStatus = job.getStatus().getState();
             if (jobStatus.equals("DONE")) {
@@ -93,7 +93,7 @@ public class BigqueryWriter
         }
     }
 
-    private boolean getJobStatusUntilDone(JobReference jobRef) throws IOException, TimeoutException, JobFailedException
+    private void getJobStatusUntilDone(JobReference jobRef) throws TimeoutException, JobFailedException
     {
         long startTime = System.currentTimeMillis();
         long elapsedTime;
@@ -115,7 +115,6 @@ public class BigqueryWriter
         } catch (InterruptedException ex) {
             log.warn(ex.getMessage());
         }
-        return true;
     }
 
     public void executeJob() throws IOException, TimeoutException, JobFailedException
