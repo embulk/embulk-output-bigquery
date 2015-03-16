@@ -76,6 +76,7 @@ public class BigqueryGcsWriter
             stream = new FileInputStream(file);
             InputStreamContent content = new InputStreamContent(getContentType(), stream);
             Storage.Objects.Insert insertObject = storageClient.objects().insert(bucket, objectMetadata, content);
+            insertObject.setDisableGZipContent(true);
 
             StorageObject response = insertObject.execute();
             if (!enableMd5hashCheck) {
