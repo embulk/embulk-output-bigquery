@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.concurrent.TimeoutException;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
-import java.security.NoSuchAlgorithmException;
 import java.security.GeneralSecurityException;
 
 import org.embulk.config.Config;
@@ -104,10 +103,6 @@ public class BigqueryOutputPlugin
         @ConfigDefault("null")
         public Optional<String> getSchemaPath();
 
-        @Config("enable_md5hash_check")
-        @ConfigDefault("true")
-        public boolean getEnableMd5hashCheck();
-
         @Config("job_status_max_polling_time")
         @ConfigDefault("3600")
         public int getJobStatusMaxPollingTime();
@@ -138,7 +133,6 @@ public class BigqueryOutputPlugin
                     .setSourceFormat(task.getSourceFormat())
                     .setIsFileCompressed(task.getIsFileCompressed())
                     .setDeleteFromBucketWhenJobEnd(task.getDeleteFromBucketWhenJobEnd())
-                    .setEnableMd5hashCheck(task.getEnableMd5hashCheck())
                     .build();
 
             bigQueryWriter = new BigqueryWriter.Builder(task.getServiceAccountEmail())
@@ -274,10 +268,7 @@ public class BigqueryOutputPlugin
                         }
 
                         bigQueryWriter.addTask(remotePath, fileName, fileSize);
-                    } catch (NoSuchAlgorithmException ex) {
-                        log.warn("MD5 algorism not found in your machine.");
-                        throw Throwables.propagate(ex);
-                    } catch (IOException | BigqueryGcsWriter.Md5hashUnmatchException ex) {
+                    } catch (IOException ex) {
                         throw Throwables.propagate(ex);
                     }
                 }

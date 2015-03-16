@@ -39,7 +39,6 @@ OAuth flow for installed applications.
 - **application_name**: application name anything you like (string, optional)
 - **delete_from_local_when_upload_end**: (boolean, optional, default is 0)
 - **delete_from_bucket_when_job_end**: (boolean, optional, default is 0)
-- **enable_md5hash_check**: enable md5(base64 encoded) hash check between local file and gcs uploaded file. (boolean, optional, default is 1)
 - **job_status_max_polling_time**: max job status polling time. (int, optional, default is 3600 sec)
 - **job_status_polling_interval**: job status polling interval. (int, optional, default is 10 sec)
 - **is_skip_job_result_check**: (boolean, optional, default is 0)

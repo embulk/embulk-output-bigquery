@@ -19,8 +19,6 @@ import com.google.common.collect.ImmutableList;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.codec.binary.Base64;
 import java.security.GeneralSecurityException;
-import java.security.NoSuchAlgorithmException;
-import java.security.MessageDigest;
 
 import org.embulk.spi.Exec;
 import org.slf4j.Logger;
@@ -41,7 +39,6 @@ public class BigqueryGcsWriter
     private final String sourceFormat;
     private final boolean isFileCompressed;
     private final boolean deleteFromBucketWhenJobEnd;
-    private final boolean enableMd5hashCheck;
     private Storage storageClient;
 
     public BigqueryGcsWriter(Builder builder) throws IOException, GeneralSecurityException
@@ -50,14 +47,12 @@ public class BigqueryGcsWriter
         this.sourceFormat = builder.sourceFormat.toUpperCase();
         this.isFileCompressed = builder.isFileCompressed;
         this.deleteFromBucketWhenJobEnd = builder.deleteFromBucketWhenJobEnd;
-        this.enableMd5hashCheck = builder.enableMd5hashCheck;
 
         BigqueryAuthentication auth = new BigqueryAuthentication(builder.serviceAccountEmail, builder.p12KeyFilePath, builder.applicationName);
         this.storageClient = auth.getGcsClient();
     }
 
-    public boolean uploadFile(String localFilePath, String fileName, Optional<String> remotePath)
-            throws IOException, NoSuchAlgorithmException, Md5hashUnmatchException
+    public void uploadFile(String localFilePath, String fileName, Optional<String> remotePath) throws IOException
     {
         FileInputStream stream = null;
 
@@ -79,22 +74,10 @@ public class BigqueryGcsWriter
             insertObject.setDisableGZipContent(true);
 
             StorageObject response = insertObject.execute();
-            if (!enableMd5hashCheck) {
-                log.info(String.format("Upload completed [%s] to [gs://%s/%s]", localFilePath, bucket, gcsPath));
-                return true;
-            }
-            String gcsHash = getRemoteMd5hash(response);
-            String localHash = getLocalMd5hash(localFilePath);
-            log.info(String.format("Checking MD5 hash(base64 encoded)... local:[%s] remote:[%s]", localHash, gcsHash));
-            if (gcsHash.equals(localHash)) {
-                log.info(String.format("Upload completed [%s] to [gs://%s/%s]", localFilePath, bucket, gcsPath));
-            } else {
-                throw new Md5hashUnmatchException(String.format("Upload failed. MD5 hash(base64 encoded) is not matched local:[%s] remote:[%s]", localHash, gcsHash));
-            }
+            log.info(String.format("Upload completed [%s] to [gs://%s/%s]", localFilePath, bucket, gcsPath));
         } finally {
             stream.close();
         }
-        return true;
     }
 
     private String getRemotePath(String remotePath, String fileName)
@@ -120,35 +103,6 @@ public class BigqueryGcsWriter
     public boolean getDeleteFromBucketWhenJobEnd()
     {
         return this.deleteFromBucketWhenJobEnd;
-    }
-
-    // Notice md5hash of GCS file is encoded by base64
-    private String getRemoteMd5hash(StorageObject storage)
-    {
-        return storage.getMd5Hash();
-    }
-
-    // Notice md5hash of GCS file is encoded by base64
-    private String getLocalMd5hash(String filePath) throws NoSuchAlgorithmException, IOException
-    {
-        FileInputStream stream = null;
-        try {
-            stream = new FileInputStream(filePath);
-            MessageDigest digest = MessageDigest.getInstance("MD5");
-
-            byte[] bytesBuffer = new byte[1024];
-            int bytesRead = -1;
-
-            while ((bytesRead = stream.read(bytesBuffer)) != -1) {
-                digest.update(bytesBuffer, 0, bytesRead);
-            }
-            byte[] hashedBytes = digest.digest();
-
-            byte[] encoded = (hashedBytes);
-            return new String(Base64.encodeBase64(encoded));
-        } finally {
-            stream.close();
-        }
     }
 
     private String getContentType()
@@ -233,12 +187,6 @@ public class BigqueryGcsWriter
             return this;
         }
 
-        public Builder setEnableMd5hashCheck(boolean enableMd5hashCheck)
-        {
-            this.enableMd5hashCheck = enableMd5hashCheck;
-            return this;
-        }
-
         public Builder setDeleteFromBucketWhenJobEnd(boolean deleteFromBucketWhenJobEnd)
         {
             this.deleteFromBucketWhenJobEnd = deleteFromBucketWhenJobEnd;
@@ -248,13 +196,6 @@ public class BigqueryGcsWriter
         public BigqueryGcsWriter build() throws IOException, GeneralSecurityException
         {
             return new BigqueryGcsWriter(this);
-        }
-    }
-
-    public class Md5hashUnmatchException extends Exception
-    {
-        public Md5hashUnmatchException(String message) {
-            super(message);
         }
     }
 }
