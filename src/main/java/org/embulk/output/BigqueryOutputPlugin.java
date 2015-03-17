@@ -218,7 +218,6 @@ public class BigqueryOutputPlugin
                     filePath = pathPrefix + String.format(sequenceFormat, taskIndex, fileIndex) + suffix;
                     file = new File(filePath);
                     fileName = file.getName();
-                    fileSize = file.length();
 
                     String parentPath = file.getParent();
                     File dir = new File(parentPath);
@@ -259,6 +258,7 @@ public class BigqueryOutputPlugin
             {
                 closeFile();
                 if (fileName != null) {
+                    fileSize = file.length();
                     try {
                         bigQueryGcsWriter.uploadFile(filePath, fileName, remotePath);
 
