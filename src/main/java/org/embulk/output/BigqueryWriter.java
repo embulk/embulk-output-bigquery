@@ -103,12 +103,12 @@ public class BigqueryWriter
                 String jobStatus = getJobStatus(jobRef);
                 elapsedTime = System.currentTimeMillis() - startTime;
                 if (jobStatus.equals("DONE")) {
-                    log.info(String.format("Job completed successfully. job_id:[%s] elapsed_time:%dms status:[%s]", jobRef.getJobId(), elapsedTime, "SUCCESS"));
+                    log.info(String.format("Job completed successfully. job id:[%s] elapsed_time:%dms status:[%s]", jobRef.getJobId(), elapsedTime, "SUCCESS"));
                     break;
                 } else if (elapsedTime > jobStatusMaxPollingTime * 1000) {
-                    throw new TimeoutException(String.format("Checking job status...Timeout. job_id:[%s] elapsed_time:%dms status:[%s]", jobRef.getJobId(), elapsedTime, "TIMEOUT"));
+                    throw new TimeoutException(String.format("Checking job status...Timeout. job id:[%s] elapsed_time:%dms status:[%s]", jobRef.getJobId(), elapsedTime, "TIMEOUT"));
                 } else {
-                    log.info(String.format("Checking job status... job_id:[%s] elapsed_time:%dms status:[%s]", jobRef.getJobId(), elapsedTime, jobStatus));
+                    log.info(String.format("Checking job status... job id:[%s] elapsed_time:%dms status:[%s]", jobRef.getJobId(), elapsedTime, jobStatus));
                 }
                 Thread.sleep(jobStatusPollingInterval * 1000);
             }
