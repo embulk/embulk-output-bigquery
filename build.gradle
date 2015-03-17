@@ -48,7 +48,7 @@ Gem::Specification.new do |spec|
   spec.version       = "${project.version}"
   spec.authors       = ["Satoshi Akama"]
   spec.summary       = %[Google BigQuery output plugin for Embulk]
-  spec.description   = %[Embulk plugin that insert records to Google Bigquery.]
+  spec.description   = %[Embulk plugin that insert records to Google BigQuery.]
   spec.email         = ["satoshiakama@gmail.com"]
   spec.licenses      = ["Apache-2.0"]
   spec.homepage      = "https://github.com/sakama/embulk-output-bigquery"
