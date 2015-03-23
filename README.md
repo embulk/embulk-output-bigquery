@@ -11,7 +11,7 @@ https://developers.google.com/bigquery/loading-data-into-bigquery
 * **Plugin type**: output
 * **Resume supported**: no
 * **Cleanup supported**: no
-* **Dynamic table creating**: todo
+* **Dynamic table creating**: yes
 
 ### NOT IMPLEMENTED 
 * insert data over streaming inserts
@@ -33,6 +33,8 @@ OAuth flow for installed applications.
 - **project**: project_id (string, required)
 - **dataset**: dataset (string, required)
 - **table**: table name (string, required)
+- **auto_create_table**: (boolean, optional default is 0)
+- **schema_path**: (string, optional)
 - **application_name**: application name anything you like (string, optional)
 - **delete_from_local_when_upload_end**: (boolean, optional, default is 0)
 - **job_status_max_polling_time**: max job status polling time. (int, optional, default is 3600 sec)
@@ -59,6 +61,18 @@ out:
     header_line: false
   encoders:
   - {type: gzip}
+```
+
+## Dynamic table creating
+
+When **auto_create_table** is set to true, try to create the table using BigQuery API
+
+To describe the schema of the target table, please write schema path.
+
+```
+auto_create_table: true
+table: table_name
+schema_path: /path/to/schema.json
 ```
 
 ## Build

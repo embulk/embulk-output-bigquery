@@ -2,6 +2,7 @@ package org.embulk.output;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.io.FileInputStream;
 import com.google.api.client.http.FileContent;
 import com.google.api.client.http.InputStreamContent;
@@ -17,12 +18,16 @@ import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
 import java.security.GeneralSecurityException;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import org.embulk.spi.Exec;
 import org.slf4j.Logger;
 
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.BigqueryScopes;
 import com.google.api.services.bigquery.Bigquery.Datasets;
+import com.google.api.services.bigquery.Bigquery.Tables;
 import com.google.api.services.bigquery.Bigquery.Jobs.Insert;
 import com.google.api.services.bigquery.Bigquery.Jobs.GetQueryResults;
 import com.google.api.services.bigquery.model.Job;
@@ -32,12 +37,15 @@ import com.google.api.services.bigquery.model.JobStatus;
 import com.google.api.services.bigquery.model.JobStatistics;
 import com.google.api.services.bigquery.model.JobReference;
 import com.google.api.services.bigquery.model.DatasetList;
+import com.google.api.services.bigquery.model.Table;
+import com.google.api.services.bigquery.model.TableList;
 import com.google.api.services.bigquery.model.TableSchema;
 import com.google.api.services.bigquery.model.TableReference;
 import com.google.api.services.bigquery.model.TableFieldSchema;
 import com.google.api.services.bigquery.model.TableCell;
 import com.google.api.services.bigquery.model.TableRow;
 import com.google.api.services.bigquery.model.ErrorProto;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 
 public class BigqueryWriter
 {
@@ -143,13 +151,12 @@ public class BigqueryWriter
         } else {
             loadConfig.setFieldDelimiter(fieldDelimiter);
         }
+        loadConfig.setWriteDisposition("WRITE_APPEND");
         if (autoCreateTable) {
             loadConfig.setSchema(getTableSchema());
-            loadConfig.setWriteDisposition("WRITE_EMPTY");
             loadConfig.setCreateDisposition("CREATE_IF_NEEDED");
-            log.info(String.format("table:[%s] will be create.", table));
+            log.info(String.format("table:[%s] will be create if not exists", table));
         } else {
-            loadConfig.setWriteDisposition("WRITE_APPEND");
             loadConfig.setCreateDisposition("CREATE_NEVER");
         }
         loadConfig.setMaxBadRecords(maxBadrecords);
@@ -180,23 +187,48 @@ public class BigqueryWriter
                 .setTableId(table);
     }
 
-    private TableSchema getTableSchema()
+    private TableSchema getTableSchema() throws FileNotFoundException, IOException
     {
-        TableSchema tableSchema = new TableSchema();
-        List<TableFieldSchema> fields = new ArrayList<TableFieldSchema>();
-        TableFieldSchema tableField;
-        // TODO import from json file
-        /*
-        for () {
-            tableField = new TableFieldSchema()
-                    .setName(name)
-                    .setType(type);
-            fields.add(tableField);
+        String path = schemaPath.orNull();
+        File file = new File(path);
+        FileInputStream stream = null;
+        try {
+            stream = new FileInputStream(file);
+            ObjectMapper mapper = new ObjectMapper();
+            List<TableFieldSchema> fields = mapper.readValue(stream, new TypeReference<List<TableFieldSchema>>() {});
+            TableSchema tableSchema = new TableSchema().setFields(fields);
+            return tableSchema;
+        } finally {
+            if (stream != null) {
+                stream.close();
+            }
         }
-        */
+    }
 
-        tableSchema.setFields(fields);
-        return tableSchema;
+    public boolean isExistTable(String tableName) throws IOException{
+        Tables tableRequest = bigQueryClient.tables();
+        try {
+            Table tableData = tableRequest.get(project, dataset, tableName).execute();
+        } catch (GoogleJsonResponseException ex) {
+            return false;
+        }
+        return true;
+    }
+
+    public void checkConfig() throws FileNotFoundException, IOException
+    {
+        if (autoCreateTable) {
+            if (schemaPath != null) {
+                File file = new File(schemaPath.orNull());
+                if (!file.exists()) {
+                    throw new FileNotFoundException("Can not load schema file.");
+                }
+            }
+        } else {
+            if(!isExistTable(table)) {
+                throw new IOException(String.format("table [%s] is not exists", table));
+            }
+        }
     }
 
     public static class Builder

@@ -125,8 +125,11 @@ public class BigqueryOutputPlugin
                     .setJobStatusPollingInterval(task.getJobStatusPollingInterval())
                     .setIsSkipJobResultCheck(task.getIsSkipJobResultCheck())
                     .build();
+
+            bigQueryWriter.checkConfig();
+        } catch (FileNotFoundException ex) {
+            throw new ConfigException(ex);
         } catch (IOException | GeneralSecurityException ex) {
-            log.warn("Google Authentication was failed. Please Check your configurations.");
             throw new ConfigException(ex);
         }
         // non-retryable (non-idempotent) output:
