@@ -1,6 +1,10 @@
 package org.embulk.output;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.FileInputStream;
+import com.google.api.client.http.FileContent;
+import com.google.api.client.http.InputStreamContent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
@@ -43,7 +47,6 @@ public class BigqueryWriter
     private final String table;
     private final boolean autoCreateTable;
     private final Optional<String> schemaPath;
-    private final String bucket;
     private final String sourceFormat;
     private final String fieldDelimiter;
     private final int maxBadrecords;
@@ -51,7 +54,6 @@ public class BigqueryWriter
     private final long jobStatusPollingInterval;
     private final boolean isSkipJobResultCheck;
     private final Bigquery bigQueryClient;
-    private final EmbulkBigqueryTask writerTask;
 
     public BigqueryWriter(Builder builder) throws IOException, GeneralSecurityException
     {
@@ -60,7 +62,6 @@ public class BigqueryWriter
         this.table = builder.table;
         this.autoCreateTable = builder.autoCreateTable;
         this.schemaPath = builder.schemaPath;
-        this.bucket = builder.bucket;
         this.sourceFormat = builder.sourceFormat.toUpperCase();
         this.fieldDelimiter = builder.fieldDelimiter;
         this.maxBadrecords = builder.maxBadrecords;
@@ -70,7 +71,6 @@ public class BigqueryWriter
 
         BigqueryAuthentication auth = new BigqueryAuthentication(builder.serviceAccountEmail, builder.p12KeyFilePath, builder.applicationName);
         this.bigQueryClient = auth.getBigqueryClient();
-        this.writerTask = new EmbulkBigqueryTask();
     }
 
     private String getJobStatus(JobReference jobRef) throws JobFailedException
@@ -117,18 +117,7 @@ public class BigqueryWriter
         }
     }
 
-    public void executeJob() throws IOException, TimeoutException, JobFailedException
-    {
-        // TODO: refactor
-        ArrayList<ArrayList<HashMap<String, String>>> taskList = writerTask.createJobList();
-        for (ArrayList<HashMap<String, String>> task : taskList) {
-            Job job = createJob(task);
-            // TODO: multi-threading
-            new EmbulkBigqueryJob(job).call();
-        }
-    }
-
-    private Job createJob(ArrayList<HashMap<String, String>> task)
+    public void executeLoad(String localFilePath) throws IOException, TimeoutException, JobFailedException
     {
         log.info(String.format("Job preparing... project:%s dataset:%s table:%s", project, dataset, table));
 
@@ -155,18 +144,22 @@ public class BigqueryWriter
         }
         loadConfig.setMaxBadRecords(maxBadrecords);
 
-        List<String> sources = new ArrayList<String>();
-        for (HashMap<String, String> file : task) {
-            String sourceFile;
-            String remotePath = getRemotePath(file.get("remote_path"), file.get("file_name"));
-            sourceFile = "gs://" + remotePath;
-            log.info(String.format("Add source file to job [%s]", sourceFile));
-            sources.add(sourceFile);
-        }
-        loadConfig.setSourceUris(sources);
         loadConfig.setDestinationTable(getTableReference());
 
-        return job;
+        log.info(String.format("Uploading file [%s]", localFilePath));
+        File file = new File(localFilePath);
+        FileContent mediaContent = new FileContent("application/octet-stream", file);
+
+        Insert insert = bigQueryClient.jobs().insert(project, job, mediaContent);
+        insert.setDisableGZipContent(true);
+        insert.setProjectId(project);
+        JobReference jobRef = insert.execute().getJobReference();
+        log.info(String.format("Job executed. job id:[%s]", jobRef.getJobId()));
+        if (isSkipJobResultCheck) {
+            log.info(String.format("Skip job status check. job id:[%s]", jobRef.getJobId()));
+        } else {
+            getJobStatusUntilDone(jobRef);
+        }
     }
 
     private TableReference getTableReference()
@@ -196,119 +189,6 @@ public class BigqueryWriter
         return tableSchema;
     }
 
-    private String getRemotePath(String remotePath, String fileName)
-    {
-        String[] pathList = StringUtils.split(remotePath, '/');
-        String path;
-        if (remotePath.isEmpty()) {
-            path = bucket + "/" + fileName;
-        } else {
-            path = bucket + "/" + StringUtils.join(pathList) + "/" + fileName;
-        }
-        return path;
-    }
-
-    public void addTask(Optional<String> remotePath, String fileName, long fileSize)
-    {
-        writerTask.addTaskFile(remotePath, fileName, fileSize);
-    }
-
-    public ArrayList<HashMap<String, String>> getFileList()
-    {
-        return writerTask.getFileList();
-    }
-
-    private class EmbulkBigqueryJob implements Callable<Void>
-    {
-        private final Job job;
-
-        public EmbulkBigqueryJob(Job job)
-        {
-            this.job = job;
-        }
-
-        public Void call() throws IOException, TimeoutException, JobFailedException
-        {
-            Insert insert = bigQueryClient.jobs().insert(project, job);
-            insert.setProjectId(project);
-            JobReference jobRef = insert.execute().getJobReference();
-            log.info(String.format("Job executed. job id:[%s]", jobRef.getJobId()));
-            if (isSkipJobResultCheck) {
-                log.info(String.format("Skip job status check. job id:[%s]", jobRef.getJobId()));
-            } else {
-                getJobStatusUntilDone(jobRef);
-            }
-            return null;
-        }
-    }
-
-    private class EmbulkBigqueryTask
-    {
-        // https://cloud.google.com/bigquery/loading-data-into-bigquery#quota
-        private final long MAX_SIZE_PER_LOAD_JOB = 1000 * 1024 * 1024 * 1024L; // 1TB
-        private final int MAX_NUMBER_OF_FILES_PER_LOAD_JOB = 10000;
-
-        private final ArrayList<HashMap<String, String>> taskList = new ArrayList<HashMap<String, String>>();
-        private final ArrayList<ArrayList<HashMap<String, String>>> jobList = new ArrayList<ArrayList<HashMap<String, String>>>();
-
-        public void addTaskFile(Optional<String> remotePath, String fileName, long fileSize)
-        {
-            HashMap<String, String> task = new HashMap<String, String>();
-            if (remotePath.isPresent()) {
-                task.put("remote_path", remotePath.get());
-            } else {
-                task.put("remote_path", "");
-            }
-            task.put("file_name", fileName);
-            task.put("file_size", String.valueOf(fileSize));
-            taskList.add(task);
-        }
-
-        public ArrayList<ArrayList<HashMap<String, String>>> createJobList()
-        {
-            long currentBundleSize = 0;
-            int currentFileCount = 0;
-            ArrayList<HashMap<String, String>> job = new ArrayList<HashMap<String, String>>();
-            for (HashMap<String, String> task : taskList) {
-                boolean isNeedNextJobList = false;
-                long fileSize = Long.valueOf(task.get("file_size")).longValue();
-
-                if (currentBundleSize + fileSize > MAX_SIZE_PER_LOAD_JOB) {
-                    isNeedNextJobList = true;
-                }
-
-                if (currentFileCount >= MAX_NUMBER_OF_FILES_PER_LOAD_JOB) {
-                    isNeedNextJobList = true;
-                }
-
-                if (isNeedNextJobList) {
-                    jobList.add(job);
-                    job = new ArrayList<HashMap<String, String>>();
-                    job.add(task);
-                    currentBundleSize = 0;
-                } else {
-                    job.add(task);
-                }
-                currentBundleSize += fileSize;
-                currentFileCount++;
-
-                log.debug(String.format("currentBundleSize:%s currentFileCount:%s", currentBundleSize, currentFileCount));
-                log.debug(String.format("fileSize:%s, MAX_SIZE_PER_LOAD_JOB:%s MAX_NUMBER_OF_FILES_PER_LOAD_JOB:%s",
-                        fileSize, MAX_SIZE_PER_LOAD_JOB, MAX_NUMBER_OF_FILES_PER_LOAD_JOB));
-
-            }
-            if (job.size() > 0) {
-                jobList.add(job);
-            }
-            return jobList;
-        }
-
-        public ArrayList<HashMap<String, String>> getFileList()
-        {
-            return taskList;
-        }
-    }
-
     public static class Builder
     {
         private final String serviceAccountEmail;
@@ -319,7 +199,6 @@ public class BigqueryWriter
         private String table;
         private boolean autoCreateTable;
         private Optional<String> schemaPath;
-        private String bucket;
         private String sourceFormat;
         private String fieldDelimiter;
         private int maxBadrecords;
@@ -372,12 +251,6 @@ public class BigqueryWriter
         public Builder setSchemaPath(Optional<String> schemaPath)
         {
             this.schemaPath = schemaPath;
-            return this;
-        }
-
-        public Builder setBucket(String bucket)
-        {
-            this.bucket = bucket;
             return this;
         }
 

@@ -59,10 +59,6 @@ public class BigqueryOutputPlugin
         @ConfigDefault("\"CSV\"")
         public String getSourceFormat();
 
-        @Config("is_file_compressed")
-        @ConfigDefault("true")
-        public boolean getIsFileCompressed();
-
         @Config("field_delimiter")
         @ConfigDefault("\",\"")
         public String getFieldDelimiter();
@@ -74,17 +70,6 @@ public class BigqueryOutputPlugin
         @Config("delete_from_local_when_upload_end")
         @ConfigDefault("false")
         public boolean getDeleteFromLocalWhenUploadEnd();
-
-        @Config("delete_from_bucket_when_job_end")
-        @ConfigDefault("false")
-        public boolean getDeleteFromBucketWhenJobEnd();
-
-        @Config("bucket")
-        public String getBucket();
-
-        @Config("remote_path")
-        @ConfigDefault("null")
-        public Optional<String> getRemotePath();
 
         @Config("project")
         public String getProject();
@@ -117,7 +102,6 @@ public class BigqueryOutputPlugin
     }
 
     private final Logger log = Exec.getLogger(BigqueryOutputPlugin.class);
-    private static BigqueryGcsWriter bigQueryGcsWriter;
     private static BigqueryWriter bigQueryWriter;
 
     public ConfigDiff transaction(ConfigSource config, int taskCount,
@@ -126,15 +110,6 @@ public class BigqueryOutputPlugin
         final PluginTask task = config.loadConfig(PluginTask.class);
 
         try {
-            bigQueryGcsWriter = new BigqueryGcsWriter.Builder(task.getServiceAccountEmail())
-                    .setP12KeyFilePath(task.getP12KeyfilePath())
-                    .setApplicationName(task.getApplicationName())
-                    .setBucket(task.getBucket())
-                    .setSourceFormat(task.getSourceFormat())
-                    .setIsFileCompressed(task.getIsFileCompressed())
-                    .setDeleteFromBucketWhenJobEnd(task.getDeleteFromBucketWhenJobEnd())
-                    .build();
-
             bigQueryWriter = new BigqueryWriter.Builder(task.getServiceAccountEmail())
                     .setP12KeyFilePath(task.getP12KeyfilePath())
                     .setApplicationName(task.getApplicationName())
@@ -143,7 +118,6 @@ public class BigqueryOutputPlugin
                     .setTable(task.getTable())
                     .setAutoCreateTable(task.getAutoCreateTable())
                     .setSchemaPath(task.getSchemaPath())
-                    .setBucket(task.getBucket())
                     .setSourceFormat(task.getSourceFormat())
                     .setFieldDelimiter(task.getFieldDelimiter())
                     .setMaxBadrecords(task.getMaxBadrecords())
@@ -165,19 +139,6 @@ public class BigqueryOutputPlugin
     {
         control.run(taskSource);
 
-        try {
-            bigQueryWriter.executeJob();
-            // TODO refactor
-            if (bigQueryGcsWriter.getDeleteFromBucketWhenJobEnd()) {
-                ArrayList<HashMap<String, String>> fileList = bigQueryWriter.getFileList();
-                for (HashMap<String, String> file : fileList) {
-                    bigQueryGcsWriter.deleteFile(file.get("remote_path"), file.get("file_name"));
-                }
-            }
-        } catch (IOException | TimeoutException | BigqueryWriter.JobFailedException ex) {
-            log.warn(ex.getMessage());
-            throw Throwables.propagate(ex);
-        }
         return Exec.newConfigDiff();
     }
 
@@ -196,7 +157,6 @@ public class BigqueryOutputPlugin
         final String pathPrefix = task.getPathPrefix();
         final String sequenceFormat = task.getSequenceFormat();
         final String pathSuffix = task.getFileNameExtension();
-        final Optional<String> remotePath = task.getRemotePath();
 
         return new TransactionalFileOutput() {
             private int fileIndex = 0;
@@ -217,7 +177,6 @@ public class BigqueryOutputPlugin
                     }
                     filePath = pathPrefix + String.format(sequenceFormat, taskIndex, fileIndex) + suffix;
                     file = new File(filePath);
-                    fileName = file.getName();
 
                     String parentPath = file.getParent();
                     File dir = new File(parentPath);
@@ -257,18 +216,15 @@ public class BigqueryOutputPlugin
             public void finish()
             {
                 closeFile();
-                if (fileName != null) {
-                    fileSize = file.length();
+                if (filePath != null) {
                     try {
-                        bigQueryGcsWriter.uploadFile(filePath, fileName, remotePath);
+                        bigQueryWriter.executeLoad(filePath);
 
                         if (task.getDeleteFromLocalWhenUploadEnd()) {
                             log.info(String.format("Delete local file [%s]", filePath));
                             file.delete();
                         }
-
-                        bigQueryWriter.addTask(remotePath, fileName, fileSize);
-                    } catch (IOException ex) {
+                    } catch (IOException | TimeoutException | BigqueryWriter.JobFailedException ex) {
                         throw Throwables.propagate(ex);
                     }
                 }
