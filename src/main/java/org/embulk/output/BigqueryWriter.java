@@ -37,6 +37,7 @@ import com.google.api.services.bigquery.model.TableReference;
 import com.google.api.services.bigquery.model.TableFieldSchema;
 import com.google.api.services.bigquery.model.TableCell;
 import com.google.api.services.bigquery.model.TableRow;
+import com.google.api.services.bigquery.model.ErrorProto;
 
 public class BigqueryWriter
 {
@@ -77,9 +78,18 @@ public class BigqueryWriter
     {
         try {
             Job job = bigQueryClient.jobs().get(project, jobRef.getJobId()).execute();
-            if (job.getStatus().getErrorResult() != null) {
-                throw new JobFailedException(String.format("Job failed. job id:[%s] reason:[%s] status:[FAILED]", jobRef.getJobId(), job.getStatus().getErrorResult().getMessage()));
+
+            ErrorProto fatalError = job.getStatus().getErrorResult();
+            if (fatalError != null) {
+                throw new JobFailedException(String.format("Job failed. job id:[%s] reason:[%s][%s] status:[FAILED]", jobRef.getJobId(), fatalError.getReason(), fatalError.getMessage()));
             }
+            List<ErrorProto> errors = job.getStatus().getErrors();
+            if (errors != null) {
+                for (ErrorProto error : errors) {
+                    log.warn(String.format("Error: job id:[%s] reason[%s][%s] location:[%s]", jobRef.getJobId(), error.getReason(), error.getMessage(), error.getLocation()));
+                }
+            }
+
             String jobStatus = job.getStatus().getState();
             if (jobStatus.equals("DONE")) {
                 JobStatistics statistics = job.getStatistics();
