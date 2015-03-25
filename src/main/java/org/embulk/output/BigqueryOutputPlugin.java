@@ -67,6 +67,10 @@ public class BigqueryOutputPlugin
         @ConfigDefault("0")
         public int getMaxBadrecords();
 
+        @Config("encoding")
+        @ConfigDefault("\"UTF-8\"")
+        public String getEncoding();
+
         @Config("delete_from_local_when_upload_end")
         @ConfigDefault("false")
         public boolean getDeleteFromLocalWhenUploadEnd();
@@ -121,6 +125,7 @@ public class BigqueryOutputPlugin
                     .setSourceFormat(task.getSourceFormat())
                     .setFieldDelimiter(task.getFieldDelimiter())
                     .setMaxBadrecords(task.getMaxBadrecords())
+                    .setEncoding(task.getEncoding())
                     .setJobStatusMaxPollingTime(task.getJobStatusMaxPollingTime())
                     .setJobStatusPollingInterval(task.getJobStatusPollingInterval())
                     .setIsSkipJobResultCheck(task.getIsSkipJobResultCheck())

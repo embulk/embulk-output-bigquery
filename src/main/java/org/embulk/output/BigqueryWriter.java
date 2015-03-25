@@ -63,6 +63,7 @@ public class BigqueryWriter
     private final String sourceFormat;
     private final String fieldDelimiter;
     private final int maxBadrecords;
+    private final String encoding;
     private final long jobStatusMaxPollingTime;
     private final long jobStatusPollingInterval;
     private final boolean isSkipJobResultCheck;
@@ -78,6 +79,7 @@ public class BigqueryWriter
         this.sourceFormat = builder.sourceFormat.toUpperCase();
         this.fieldDelimiter = builder.fieldDelimiter;
         this.maxBadrecords = builder.maxBadrecords;
+        this.encoding = builder.encoding.toUpperCase();
         this.jobStatusMaxPollingTime = builder.jobStatusMaxPollingTime;
         this.jobStatusPollingInterval = builder.jobStatusPollingInterval;
         this.isSkipJobResultCheck = builder.isSkipJobResultCheck;
@@ -150,6 +152,8 @@ public class BigqueryWriter
         job.setConfiguration(jobConfig);
 
         loadConfig.setAllowQuotedNewlines(false);
+        loadConfig.setEncoding(encoding);
+        loadConfig.setMaxBadRecords(maxBadrecords);
         if (sourceFormat.equals("NEWLINE_DELIMITED_JSON")) {
             loadConfig.setSourceFormat("NEWLINE_DELIMITED_JSON");
         } else {
@@ -163,7 +167,6 @@ public class BigqueryWriter
         } else {
             loadConfig.setCreateDisposition("CREATE_NEVER");
         }
-        loadConfig.setMaxBadRecords(maxBadrecords);
 
         loadConfig.setDestinationTable(getTableReference());
 
@@ -286,6 +289,7 @@ public class BigqueryWriter
         private String sourceFormat;
         private String fieldDelimiter;
         private int maxBadrecords;
+        private String encoding;
         private int jobStatusMaxPollingTime;
         private int jobStatusPollingInterval;
         private boolean isSkipJobResultCheck;
@@ -353,6 +357,12 @@ public class BigqueryWriter
         public Builder setMaxBadrecords(int maxBadrecords)
         {
             this.maxBadrecords = maxBadrecords;
+            return this;
+        }
+
+        public Builder setEncoding(String encoding)
+        {
+            this.encoding = encoding;
             return this;
         }
 

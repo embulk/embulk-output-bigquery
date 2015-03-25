@@ -40,8 +40,9 @@ OAuth flow for installed applications.
 - **job_status_max_polling_time**: max job status polling time. (int, optional, default is 3600 sec)
 - **job_status_polling_interval**: job status polling interval. (int, optional, default is 10 sec)
 - **is_skip_job_result_check**: (boolean, optional, default is 0)
-- **max_bad_records**: (int, optional, default is 0)
 - **field_delimiter**: (string, optional, default is ",")
+- **max_bad_records**: (int, optional, default is 0)
+- **encoding**: (UTF-8 or ISO-8859-1) (string, optional, default is "UTF-8")
 
 ## Example
 
