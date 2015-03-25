@@ -16,6 +16,7 @@ import java.util.concurrent.TimeoutException;
 import org.apache.commons.lang3.StringUtils;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.base.Throwables;
 import java.security.GeneralSecurityException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -146,6 +147,7 @@ public class BigqueryWriter
         log.info(String.format("Job preparing... project:%s dataset:%s table:%s", project, dataset, table));
 
         Job job = new Job();
+        JobReference jobRef = null;
         JobConfiguration jobConfig = new JobConfiguration();
         JobConfigurationLoad loadConfig = new JobConfigurationLoad();
         jobConfig.setLoad(loadConfig);
@@ -161,14 +163,14 @@ public class BigqueryWriter
         }
         loadConfig.setWriteDisposition("WRITE_APPEND");
         if (autoCreateTable) {
-            loadConfig.setSchema(getTableSchema());
+            loadConfig.setSchema(createTableSchema());
             loadConfig.setCreateDisposition("CREATE_IF_NEEDED");
             log.info(String.format("table:[%s] will be create if not exists", table));
         } else {
             loadConfig.setCreateDisposition("CREATE_NEVER");
         }
 
-        loadConfig.setDestinationTable(getTableReference());
+        loadConfig.setDestinationTable(createTableReference());
 
         File file = new File(localFilePath);
         InputStreamContent mediaContent = new InputStreamContent("application/octet-stream",
@@ -187,7 +189,12 @@ public class BigqueryWriter
                 .setProgressListener(listner)
                 .setDirectUploadEnabled(false);
 
-        JobReference jobRef = insert.execute().getJobReference();
+        try {
+            jobRef = insert.execute().getJobReference();
+        } catch (Exception ex) {
+            log.warn("Job execution was failed. Please check your settings or data... like data matches schema");
+            throw Throwables.propagate(ex);
+        }
         log.info(String.format("Job executed. job id:[%s] file:[%s]", jobRef.getJobId(), localFilePath));
         if (isSkipJobResultCheck) {
             log.info(String.format("Skip job status check. job id:[%s]", jobRef.getJobId()));
@@ -196,15 +203,14 @@ public class BigqueryWriter
         }
     }
 
-    private TableReference getTableReference()
-    {
+    private TableReference createTableReference() {
         return new TableReference()
                 .setProjectId(project)
                 .setDatasetId(dataset)
                 .setTableId(table);
     }
 
-    private TableSchema getTableSchema() throws FileNotFoundException, IOException
+    private TableSchema createTableSchema() throws FileNotFoundException, IOException
     {
         String path = schemaPath.orNull();
         File file = new File(path);
