@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.FileInputStream;
-import com.google.api.client.http.FileContent;
+import java.io.BufferedInputStream;
 import com.google.api.client.http.InputStreamContent;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +46,10 @@ import com.google.api.services.bigquery.model.TableCell;
 import com.google.api.services.bigquery.model.TableRow;
 import com.google.api.services.bigquery.model.ErrorProto;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+
+import com.google.api.client.googleapis.media.MediaHttpUploader;
+import com.google.api.client.googleapis.media.MediaHttpUploaderProgressListener;
+import com.google.api.client.googleapis.media.MediaHttpUploader.UploadState;
 
 public class BigqueryWriter
 {
@@ -135,7 +139,7 @@ public class BigqueryWriter
         }
     }
 
-    public void executeLoad(String localFilePath) throws IOException, TimeoutException, JobFailedException
+    public void executeLoad(String localFilePath) throws GoogleJsonResponseException, IOException, TimeoutException, JobFailedException
     {
         log.info(String.format("Job preparing... project:%s dataset:%s table:%s", project, dataset, table));
 
@@ -163,15 +167,25 @@ public class BigqueryWriter
 
         loadConfig.setDestinationTable(getTableReference());
 
-        log.info(String.format("Uploading file [%s]", localFilePath));
         File file = new File(localFilePath);
-        FileContent mediaContent = new FileContent("application/octet-stream", file);
+        InputStreamContent mediaContent = new InputStreamContent("application/octet-stream",
+                new BufferedInputStream(
+                        new FileInputStream(file)));
+        mediaContent.setLength(file.length());
 
         Insert insert = bigQueryClient.jobs().insert(project, job, mediaContent);
-        insert.setDisableGZipContent(true);
         insert.setProjectId(project);
+        insert.setDisableGZipContent(true);
+
+        // @see https://code.google.com/p/google-api-java-client/wiki/MediaUpload
+        UploadProgressListener listner = new UploadProgressListener();
+        listner.setFileName(localFilePath);
+        insert.getMediaHttpUploader()
+                .setProgressListener(listner)
+                .setDirectUploadEnabled(false);
+
         JobReference jobRef = insert.execute().getJobReference();
-        log.info(String.format("Job executed. job id:[%s]", jobRef.getJobId()));
+        log.info(String.format("Job executed. job id:[%s] file:[%s]", jobRef.getJobId(), localFilePath));
         if (isSkipJobResultCheck) {
             log.info(String.format("Skip job status check. job id:[%s]", jobRef.getJobId()));
         } else {
@@ -228,6 +242,34 @@ public class BigqueryWriter
             if(!isExistTable(table)) {
                 throw new IOException(String.format("table [%s] is not exists", table));
             }
+        }
+    }
+
+    private class UploadProgressListener implements MediaHttpUploaderProgressListener
+    {
+        private String fileName;
+
+        @Override
+        public void progressChanged(MediaHttpUploader uploader) throws IOException
+        {
+            switch (uploader.getUploadState()) {
+                case INITIATION_STARTED:
+                    log.info(String.format("Upload start [%s]", fileName));
+                    break;
+                case INITIATION_COMPLETE:
+                    //log.info(String.format("Upload initiation completed file [%s]", fileName));
+                    break;
+                case MEDIA_IN_PROGRESS:
+                    log.debug(String.format("Uploading [%s] progress %3.0f", fileName, uploader.getProgress() * 100) + "%");
+                    break;
+                case MEDIA_COMPLETE:
+                    log.info(String.format("Upload completed [%s]", fileName));
+            }
+        }
+
+        public void setFileName(String fileName)
+        {
+            this.fileName = fileName;
         }
     }
 
