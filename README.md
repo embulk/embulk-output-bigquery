@@ -66,13 +66,16 @@ out:
 
 ## Dynamic table creating
 
-When **auto_create_table** is set to true, try to create the table using BigQuery API
+When `auto_create_table` is set to true, try to create the table using BigQuery API.
 
 To describe the schema of the target table, please write schema path.
 
+`table` option accept [Time#strftime](http://ruby-doc.org/core-1.9.3/Time.html#method-i-strftime)
+format of ruby to construct table name.
+
 ```
 auto_create_table: true
-table: table_name
+table: table_%Y_%m
 schema_path: /path/to/schema.json
 ```
 

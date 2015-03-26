@@ -13,6 +13,7 @@ import java.util.concurrent.TimeoutException;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import java.security.GeneralSecurityException;
+import org.jruby.embed.ScriptingContainer;
 
 import org.embulk.config.Config;
 import org.embulk.config.ConfigException;
@@ -119,7 +120,7 @@ public class BigqueryOutputPlugin
                     .setApplicationName(task.getApplicationName())
                     .setProject(task.getProject())
                     .setDataset(task.getDataset())
-                    .setTable(task.getTable())
+                    .setTable(generateTableName(task.getTable()))
                     .setAutoCreateTable(task.getAutoCreateTable())
                     .setSchemaPath(task.getSchemaPath())
                     .setSourceFormat(task.getSourceFormat())
@@ -253,5 +254,14 @@ public class BigqueryOutputPlugin
                 return report;
             }
         };
+    }
+
+    // Parse like "table_%Y_%m"(include pattern or not) format using Java is difficult. So use jRuby.
+    public String generateTableName(String tableName)
+    {
+        ScriptingContainer jruby = new ScriptingContainer();
+        Object result = jruby.runScriptlet("Time.now.strftime('" + tableName + "')");
+
+        return result.toString();
     }
 }
