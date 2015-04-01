@@ -131,8 +131,6 @@ public class BigqueryOutputPlugin
                     .setJobStatusPollingInterval(task.getJobStatusPollingInterval())
                     .setIsSkipJobResultCheck(task.getIsSkipJobResultCheck())
                     .build();
-
-            bigQueryWriter.checkConfig();
         } catch (FileNotFoundException ex) {
             throw new ConfigException(ex);
         } catch (IOException | GeneralSecurityException ex) {

@@ -61,6 +61,7 @@ public class BigqueryWriter
     private final String table;
     private final boolean autoCreateTable;
     private final Optional<String> schemaPath;
+    private final TableSchema tableSchema;
     private final String sourceFormat;
     private final String fieldDelimiter;
     private final int maxBadrecords;
@@ -70,7 +71,7 @@ public class BigqueryWriter
     private final boolean isSkipJobResultCheck;
     private final Bigquery bigQueryClient;
 
-    public BigqueryWriter(Builder builder) throws IOException, GeneralSecurityException
+    public BigqueryWriter(Builder builder) throws FileNotFoundException, IOException, GeneralSecurityException
     {
         this.project = builder.project;
         this.dataset = builder.dataset;
@@ -87,6 +88,13 @@ public class BigqueryWriter
 
         BigqueryAuthentication auth = new BigqueryAuthentication(builder.serviceAccountEmail, builder.p12KeyFilePath, builder.applicationName);
         this.bigQueryClient = auth.getBigqueryClient();
+
+        checkConfig();
+        if (autoCreateTable) {
+            this.tableSchema = createTableSchema(builder.schemaPath);
+        } else {
+            this.tableSchema = null;
+        }
     }
 
     private String getJobStatus(JobReference jobRef) throws JobFailedException
@@ -163,7 +171,7 @@ public class BigqueryWriter
         }
         loadConfig.setWriteDisposition("WRITE_APPEND");
         if (autoCreateTable) {
-            loadConfig.setSchema(createTableSchema());
+            loadConfig.setSchema(tableSchema);
             loadConfig.setCreateDisposition("CREATE_IF_NEEDED");
             log.info(String.format("table:[%s] will be create if not exists", table));
         } else {
@@ -203,14 +211,15 @@ public class BigqueryWriter
         }
     }
 
-    private TableReference createTableReference() {
+    private TableReference createTableReference()
+    {
         return new TableReference()
                 .setProjectId(project)
                 .setDatasetId(dataset)
                 .setTableId(table);
     }
 
-    private TableSchema createTableSchema() throws FileNotFoundException, IOException
+    private TableSchema createTableSchema(Optional<String> schemaPath) throws FileNotFoundException, IOException
     {
         String path = schemaPath.orNull();
         File file = new File(path);
@@ -228,7 +237,8 @@ public class BigqueryWriter
         }
     }
 
-    public boolean isExistTable(String tableName) throws IOException{
+    public boolean isExistTable(String tableName) throws IOException
+    {
         Tables tableRequest = bigQueryClient.tables();
         try {
             Table tableData = tableRequest.get(project, dataset, tableName).execute();
@@ -241,14 +251,16 @@ public class BigqueryWriter
     public void checkConfig() throws FileNotFoundException, IOException
     {
         if (autoCreateTable) {
-            if (schemaPath != null) {
+            if (!schemaPath.isPresent()) {
+                throw new IOException("schema_path is empty");
+            } else {
                 File file = new File(schemaPath.orNull());
                 if (!file.exists()) {
                     throw new FileNotFoundException("Can not load schema file.");
                 }
             }
         } else {
-            if(!isExistTable(table)) {
+            if (!isExistTable(table)) {
                 throw new IOException(String.format("table [%s] is not exists", table));
             }
         }
