@@ -72,9 +72,9 @@ public class BigqueryOutputPlugin
         @ConfigDefault("\"UTF-8\"")
         public String getEncoding();
 
-        @Config("delete_from_local_when_upload_end")
+        @Config("delete_from_local_when_job_end")
         @ConfigDefault("false")
-        public boolean getDeleteFromLocalWhenUploadEnd();
+        public boolean getDeleteFromLocalWhenJobEnd();
 
         @Config("project")
         public String getProject();
@@ -227,7 +227,7 @@ public class BigqueryOutputPlugin
                     try {
                         bigQueryWriter.executeLoad(filePath);
 
-                        if (task.getDeleteFromLocalWhenUploadEnd()) {
+                        if (task.getDeleteFromLocalWhenJobEnd()) {
                             log.info(String.format("Delete local file [%s]", filePath));
                             file.delete();
                         }

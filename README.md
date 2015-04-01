@@ -36,7 +36,7 @@ OAuth flow for installed applications.
 - **auto_create_table**: (boolean, optional default is 0)
 - **schema_path**: (string, optional)
 - **application_name**: application name anything you like (string, optional)
-- **delete_from_local_when_upload_end**: (boolean, optional, default is 0)
+- **delete_from_local_when_job_end**: (boolean, optional, default is 0)
 - **job_status_max_polling_time**: max job status polling time. (int, optional, default is 3600 sec)
 - **job_status_polling_interval**: job status polling interval. (int, optional, default is 10 sec)
 - **is_skip_job_result_check**: (boolean, optional, default is 0)
