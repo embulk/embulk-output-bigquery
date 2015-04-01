@@ -22,9 +22,7 @@ dependencies {
     provided "org.embulk:embulk-core:0.5.1"
 
     compile "com.google.http-client:google-http-client-jackson2:1.19.0"
-    compile ("com.google.apis:google-api-services-storage:v1-rev27-1.19.1") {exclude module: "guava-jdk5"}
     compile "com.google.apis:google-api-services-bigquery:v2-rev193-1.19.1"
-    compile "eu.medsea.mimeutil:mime-util:2.1.3"
 
     testCompile "junit:junit:4.+"
 }

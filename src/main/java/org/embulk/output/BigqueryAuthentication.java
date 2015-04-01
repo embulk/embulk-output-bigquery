@@ -23,8 +23,6 @@ import com.google.api.client.http.HttpTransport;
 import com.google.api.client.http.InputStreamContent;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
-import com.google.api.services.storage.Storage;
-import com.google.api.services.storage.StorageScopes;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.BigqueryScopes;
 import com.google.api.services.bigquery.model.ProjectList;
@@ -64,7 +62,6 @@ public class BigqueryAuthentication
                 .setServiceAccountId(serviceAccountEmail)
                 .setServiceAccountScopes(
                         ImmutableList.of(
-                                BigqueryScopes.DEVSTORAGE_READ_WRITE,
                                 BigqueryScopes.BIGQUERY
                         )
                 )
@@ -84,15 +81,6 @@ public class BigqueryAuthentication
         long maxResults = 1;
         Bigquery.Projects.List req = client.projects().list().setMaxResults(maxResults);
         ProjectList projectList = req.execute();
-
-        return client;
-    }
-
-    public Storage getGcsClient() throws IOException
-    {
-        Storage client = new Storage.Builder(httpTransport, jsonFactory, credentials)
-                .setApplicationName(applicationName)
-                .build();
 
         return client;
     }
