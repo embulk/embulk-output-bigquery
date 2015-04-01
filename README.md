@@ -1,17 +1,17 @@
 
 # embulk-output-bigquery
 
-[Embulk](https://github.com/embulk/embulk/) output plugin to load/insert data into [Google BigQuery](https://cloud.google.com/bigquery/) via [GCS(Google Cloud Storage)](https://cloud.google.com/storage/)
+[Embulk](https://github.com/embulk/embulk/) output plugin to load/insert data into [Google BigQuery](https://cloud.google.com/bigquery/)
 
 ## Overview
 
-load data into Google BigQuery as batch jobs via GCS for big amount of data
+load data into Google BigQuery as batch jobs for big amount of data
 https://developers.google.com/bigquery/loading-data-into-bigquery
 
 * **Plugin type**: output
 * **Resume supported**: no
 * **Cleanup supported**: no
-* **Dynamic table creating**: todo
+* **Dynamic table creating**: yes
 
 ### NOT IMPLEMENTED 
 * insert data over streaming inserts
@@ -30,32 +30,19 @@ OAuth flow for installed applications.
 - **sequence_format**: (string, optional, default is %03d.%02d)
 - **file_ext**: (string, required)
 - **source_format**: file type (NEWLINE_DELIMITED_JSON or CSV) (string, required, default is CSV)
-- **is_file_compressed**: upload file is gzip compressed or not. (boolean, optional, default is 1)
-- **bucket**: Google Cloud Storage output bucket name (string, required)
-- **remote_path**: folder name in GCS bucket (string, optional)
 - **project**: project_id (string, required)
 - **dataset**: dataset (string, required)
 - **table**: table name (string, required)
+- **auto_create_table**: (boolean, optional default is 0)
+- **schema_path**: (string, optional)
 - **application_name**: application name anything you like (string, optional)
 - **delete_from_local_when_upload_end**: (boolean, optional, default is 0)
-- **delete_from_bucket_when_job_end**: (boolean, optional, default is 0)
 - **job_status_max_polling_time**: max job status polling time. (int, optional, default is 3600 sec)
 - **job_status_polling_interval**: job status polling interval. (int, optional, default is 10 sec)
 - **is_skip_job_result_check**: (boolean, optional, default is 0)
-
-## Support for Google BigQuery Quota policy
-embulk-output-bigquery support following [Google BigQuery Quota policy](https://cloud.google.com/bigquery/loading-data-into-bigquery#quota).
-
-* Supported
-  * Maximum size per load job: 1TB across all input files
-  * Maximum number of files per load job: 10,000
-    * embulk-output-bigquery divides a file into more than one job, like below.
-      * job1: file1(1GB) file2(1GB)...file10(1GB)
-      * job2: file11(1GB) file12(1GB)
-
-* Not Supported
-  * Daily limit: 1,000 load jobs per table per day (including failures)
-  * 10,000 load jobs per project per day (including failures)
+- **field_delimiter**: (string, optional, default is ",")
+- **max_bad_records**: (int, optional, default is 0)
+- **encoding**: (UTF-8 or ISO-8859-1) (string, optional, default is "UTF-8")
 
 ## Example
 
@@ -67,10 +54,7 @@ out:
   path_prefix: /path/to/output
   file_ext: csv.gz
   source_format: CSV
-  is_file_compressed: 1
   project: your-project-000
-  bucket: output_bucket_name
-  remote_path: folder_name
   dataset: your_dataset_name
   table: your_table_name
   formatter:
@@ -78,6 +62,21 @@ out:
     header_line: false
   encoders:
   - {type: gzip}
+```
+
+## Dynamic table creating
+
+When `auto_create_table` is set to true, try to create the table using BigQuery API.
+
+To describe the schema of the target table, please write schema path.
+
+`table` option accept [Time#strftime](http://ruby-doc.org/core-1.9.3/Time.html#method-i-strftime)
+format of ruby to construct table name.
+
+```
+auto_create_table: true
+table: table_%Y_%m
+schema_path: /path/to/schema.json
 ```
 
 ## Build
