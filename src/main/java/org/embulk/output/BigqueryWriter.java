@@ -6,19 +6,11 @@ import java.io.FileNotFoundException;
 import java.io.FileInputStream;
 import java.io.BufferedInputStream;
 import com.google.api.client.http.InputStreamContent;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Iterator;
-import java.util.HashMap;
-import java.util.IllegalFormatException;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
-import org.apache.commons.lang3.StringUtils;
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.base.Throwables;
 import java.security.GeneralSecurityException;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 
@@ -26,31 +18,21 @@ import org.embulk.spi.Exec;
 import org.slf4j.Logger;
 
 import com.google.api.services.bigquery.Bigquery;
-import com.google.api.services.bigquery.BigqueryScopes;
-import com.google.api.services.bigquery.Bigquery.Datasets;
 import com.google.api.services.bigquery.Bigquery.Tables;
 import com.google.api.services.bigquery.Bigquery.Jobs.Insert;
-import com.google.api.services.bigquery.Bigquery.Jobs.GetQueryResults;
 import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.JobConfiguration;
 import com.google.api.services.bigquery.model.JobConfigurationLoad;
-import com.google.api.services.bigquery.model.JobStatus;
 import com.google.api.services.bigquery.model.JobStatistics;
 import com.google.api.services.bigquery.model.JobReference;
-import com.google.api.services.bigquery.model.DatasetList;
 import com.google.api.services.bigquery.model.Table;
-import com.google.api.services.bigquery.model.TableList;
 import com.google.api.services.bigquery.model.TableSchema;
 import com.google.api.services.bigquery.model.TableReference;
 import com.google.api.services.bigquery.model.TableFieldSchema;
-import com.google.api.services.bigquery.model.TableCell;
-import com.google.api.services.bigquery.model.TableRow;
 import com.google.api.services.bigquery.model.ErrorProto;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
-
 import com.google.api.client.googleapis.media.MediaHttpUploader;
 import com.google.api.client.googleapis.media.MediaHttpUploaderProgressListener;
-import com.google.api.client.googleapis.media.MediaHttpUploader.UploadState;
 
 public class BigqueryWriter
 {

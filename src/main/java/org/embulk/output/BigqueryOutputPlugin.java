@@ -1,14 +1,11 @@
 package org.embulk.output;
 
 import java.io.File;
-import java.io.FileWriter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.concurrent.TimeoutException;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
@@ -170,8 +167,6 @@ public class BigqueryOutputPlugin
             private BufferedOutputStream output = null;
             private File file;
             private String filePath;
-            private String fileName;
-            private long fileSize;
 
             public void nextFile()
             {
