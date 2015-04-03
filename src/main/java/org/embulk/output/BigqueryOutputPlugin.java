@@ -33,11 +33,17 @@ public class BigqueryOutputPlugin
     public interface PluginTask
             extends Task
     {
+        @Config("auth_method")
+        @ConfigDefault("\"private_key\"")
+        public String getAuthMethod();
+
         @Config("service_account_email")
-        public String getServiceAccountEmail();
+        @ConfigDefault("null")
+        public Optional<String> getServiceAccountEmail();
 
         @Config("p12_keyfile_path")
-        public String getP12KeyfilePath();
+        @ConfigDefault("null")
+        public Optional<String> getP12KeyfilePath();
 
         @Config("application_name")
         @ConfigDefault("\"Embulk BigQuery plugin\"")
@@ -112,7 +118,8 @@ public class BigqueryOutputPlugin
         final PluginTask task = config.loadConfig(PluginTask.class);
 
         try {
-            bigQueryWriter = new BigqueryWriter.Builder(task.getServiceAccountEmail())
+            bigQueryWriter = new BigqueryWriter.Builder(task.getAuthMethod())
+                    .setServiceAccountEmail(task.getServiceAccountEmail())
                     .setP12KeyFilePath(task.getP12KeyfilePath())
                     .setApplicationName(task.getApplicationName())
                     .setProject(task.getProject())

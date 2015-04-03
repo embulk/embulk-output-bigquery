@@ -68,7 +68,7 @@ public class BigqueryWriter
         this.jobStatusPollingInterval = builder.jobStatusPollingInterval;
         this.isSkipJobResultCheck = builder.isSkipJobResultCheck;
 
-        BigqueryAuthentication auth = new BigqueryAuthentication(builder.serviceAccountEmail, builder.p12KeyFilePath, builder.applicationName);
+        BigqueryAuthentication auth = new BigqueryAuthentication(builder.authMethod, builder.serviceAccountEmail, builder.p12KeyFilePath, builder.applicationName);
         this.bigQueryClient = auth.getBigqueryClient();
 
         checkConfig();
@@ -278,8 +278,9 @@ public class BigqueryWriter
 
     public static class Builder
     {
-        private final String serviceAccountEmail;
-        private String p12KeyFilePath;
+        private final String authMethod;
+        private Optional<String> serviceAccountEmail;
+        private Optional<String> p12KeyFilePath;
         private String applicationName;
         private String project;
         private String dataset;
@@ -294,13 +295,18 @@ public class BigqueryWriter
         private int jobStatusPollingInterval;
         private boolean isSkipJobResultCheck;
 
-
-        public Builder(String serviceAccountEmail)
+        public Builder(String authMethod)
         {
-            this.serviceAccountEmail = serviceAccountEmail;
+            this.authMethod = authMethod;
         }
 
-        public Builder setP12KeyFilePath(String p12KeyFilePath)
+        public Builder setServiceAccountEmail(Optional<String> serviceAccountEmail)
+        {
+            this.serviceAccountEmail = serviceAccountEmail;
+            return this;
+        }
+
+        public Builder setP12KeyFilePath(Optional<String> p12KeyFilePath)
         {
             this.p12KeyFilePath = p12KeyFilePath;
             return this;

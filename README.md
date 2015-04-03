@@ -1,7 +1,7 @@
 
 # embulk-output-bigquery
 
-[Embulk](https://github.com/embulk/embulk/) output plugin to load/insert data into [Google BigQuery](https://cloud.google.com/bigquery/)
+[Embulk](https://github.com/embulk/embulk/) output plugin to load/insert data into [Google BigQuery](https://cloud.google.com/bigquery/) using [direct insert](https://cloud.google.com/bigquery/loading-data-into-bigquery#loaddatapostrequest)
 
 ## Overview
 
@@ -16,7 +16,7 @@ https://developers.google.com/bigquery/loading-data-into-bigquery
 ### NOT IMPLEMENTED 
 * insert data over streaming inserts
   * for continuous real-time insertions
-  * Pleast use other product, like [fluent-plugin-bigquery](https://github.com/kaizenplatform/fluent-plugin-bigquery)
+  * Please use other product, like [fluent-plugin-bigquery](https://github.com/kaizenplatform/fluent-plugin-bigquery)
   * https://developers.google.com/bigquery/streaming-data-into-bigquery#usecases
 
 Current version of this plugin supports Google API with Service Account Authentication, but does not support
@@ -24,8 +24,9 @@ OAuth flow for installed applications.
 
 ## Configuration
 
-- **service_account_email**: your Google service account email (string, required)
-- **p12_keyfile_path**: fullpath of private key in P12(PKCS12) format (string, required)
+- **auth_method**: (private_key or compute_engine) (string, optional, default is private_key)
+- **service_account_email**: your Google service account email (string, required when auth_method is private_key)
+- **p12_keyfile_path**: fullpath of private key in P12(PKCS12) format (string, required when auth_method is private_key)
 - **path_prefix**: (string, required)
 - **sequence_format**: (string, optional, default is %03d.%02d)
 - **file_ext**: (string, required)
@@ -42,13 +43,14 @@ OAuth flow for installed applications.
 - **is_skip_job_result_check**: (boolean, optional, default is 0)
 - **field_delimiter**: (string, optional, default is ",")
 - **max_bad_records**: (int, optional, default is 0)
-- **encoding**: (UTF-8 or ISO-8859-1) (string, optional, default is "UTF-8")
+- **encoding**: (UTF-8 or ISO-8859-1) (string, optional, default is UTF-8)
 
-## Example
+### Example
 
 ```yaml
 out:
   type: bigquery
+  auth_method: private_key   # default
   service_account_email: ABCXYZ123ABCXYZ123.gserviceaccount.com
   p12_keyfile_path: /path/to/p12_keyfile.p12
   path_prefix: /path/to/output
@@ -64,19 +66,58 @@ out:
   - {type: gzip}
 ```
 
-## Dynamic table creating
+### Authentication
+
+There are two methods supported to fetch access token for the service account.
+
+1. Public-Private key pair
+2. Predefined access token (Compute Engine only)
+
+The examples above use the first one.  You first need to create a service account (client ID),
+download its private key and deploy the key with embulk.
+
+On the other hand, you don't need to explicitly create a service account for embulk when you
+run embulk in Google Compute Engine.  In this second authentication method, you need to
+add the API scope "https://www.googleapis.com/auth/bigquery" to the scope list of your
+Compute Engine instance, then you can configure embulk like this.
+
+```yaml
+out:
+  type: bigquery
+  auth_method: compute_engine
+```
+
+### Table id formatting
+
+`table` and option accept [Time#strftime](http://ruby-doc.org/core-1.9.3/Time.html#method-i-strftime)
+format to construct table ids.
+Table ids are formatted at runtime
+using the local time of the embulk server.
+
+For example, with the configuration below,
+data is inserted into tables `table_2015_04`, `table_2015_05` and so on.
+
+```yaml
+out:
+  type: bigquery
+  table: table_%Y_%m
+```
+
+### Dynamic table creating
 
 When `auto_create_table` is set to true, try to create the table using BigQuery API.
 
+If table already exists, insert into it.
+
 To describe the schema of the target table, please write schema path.
 
-`table` option accept [Time#strftime](http://ruby-doc.org/core-1.9.3/Time.html#method-i-strftime)
-format of ruby to construct table name.
 
-```
-auto_create_table: true
-table: table_%Y_%m
-schema_path: /path/to/schema.json
+```yaml
+out:
+  type: bigquery
+  auto_create_table: true
+  table: table_%Y_%m
+  schema_path: /path/to/schema.json
 ```
 
 ## Build
