@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 import com.google.common.base.Optional;
@@ -96,6 +97,10 @@ public class BigqueryOutputPlugin
         @ConfigDefault("null")
         public Optional<String> getSchemaPath();
 
+        @Config("prevent_duplicate_insert")
+        @ConfigDefault("false")
+        public boolean getPreventDuplicateInsert();
+
         @Config("job_status_max_polling_time")
         @ConfigDefault("3600")
         public int getJobStatusMaxPollingTime();
@@ -131,6 +136,7 @@ public class BigqueryOutputPlugin
                     .setFieldDelimiter(task.getFieldDelimiter())
                     .setMaxBadrecords(task.getMaxBadrecords())
                     .setEncoding(task.getEncoding())
+                    .setPreventDuplicateInsert(task.getPreventDuplicateInsert())
                     .setJobStatusMaxPollingTime(task.getJobStatusMaxPollingTime())
                     .setJobStatusPollingInterval(task.getJobStatusPollingInterval())
                     .setIsSkipJobResultCheck(task.getIsSkipJobResultCheck())
@@ -233,7 +239,8 @@ public class BigqueryOutputPlugin
                             log.info(String.format("Delete local file [%s]", filePath));
                             file.delete();
                         }
-                    } catch (IOException | TimeoutException | BigqueryWriter.JobFailedException ex) {
+                    } catch (NoSuchAlgorithmException | TimeoutException | BigqueryWriter.JobFailedException | IOException ex) {
+                        log.error(ex.getMessage());
                         throw Throwables.propagate(ex);
                     }
                 }

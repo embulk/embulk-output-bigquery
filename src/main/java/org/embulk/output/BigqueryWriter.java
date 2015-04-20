@@ -6,14 +6,18 @@ import java.io.FileNotFoundException;
 import java.io.FileInputStream;
 import java.io.BufferedInputStream;
 import com.google.api.client.http.InputStreamContent;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 import com.google.common.base.Optional;
+import com.google.api.client.util.Base64;
 import com.google.common.base.Throwables;
 import java.security.GeneralSecurityException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import org.apache.commons.codec.binary.Hex;
 import org.embulk.spi.Exec;
 import org.slf4j.Logger;
 
@@ -48,6 +52,7 @@ public class BigqueryWriter
     private final String fieldDelimiter;
     private final int maxBadrecords;
     private final String encoding;
+    private final boolean preventDuplicateInsert;
     private final long jobStatusMaxPollingTime;
     private final long jobStatusPollingInterval;
     private final boolean isSkipJobResultCheck;
@@ -64,6 +69,7 @@ public class BigqueryWriter
         this.fieldDelimiter = builder.fieldDelimiter;
         this.maxBadrecords = builder.maxBadrecords;
         this.encoding = builder.encoding.toUpperCase();
+        this.preventDuplicateInsert = builder.preventDuplicateInsert;
         this.jobStatusMaxPollingTime = builder.jobStatusMaxPollingTime;
         this.jobStatusPollingInterval = builder.jobStatusPollingInterval;
         this.isSkipJobResultCheck = builder.isSkipJobResultCheck;
@@ -91,7 +97,7 @@ public class BigqueryWriter
             List<ErrorProto> errors = job.getStatus().getErrors();
             if (errors != null) {
                 for (ErrorProto error : errors) {
-                    log.warn(String.format("Error: job id:[%s] reason[%s][%s] location:[%s]", jobRef.getJobId(), error.getReason(), error.getMessage(), error.getLocation()));
+                    log.error(String.format("Error: job id:[%s] reason[%s][%s] location:[%s]", jobRef.getJobId(), error.getReason(), error.getMessage(), error.getLocation()));
                 }
             }
 
@@ -132,16 +138,23 @@ public class BigqueryWriter
         }
     }
 
-    public void executeLoad(String localFilePath) throws GoogleJsonResponseException, IOException, TimeoutException, JobFailedException
+    public void executeLoad(String localFilePath) throws GoogleJsonResponseException, NoSuchAlgorithmException,
+            TimeoutException, JobFailedException, IOException
     {
         log.info(String.format("Job preparing... project:%s dataset:%s table:%s", project, dataset, table));
 
         Job job = new Job();
-        JobReference jobRef = null;
+        JobReference jobRef = new JobReference();
         JobConfiguration jobConfig = new JobConfiguration();
         JobConfigurationLoad loadConfig = new JobConfigurationLoad();
         jobConfig.setLoad(loadConfig);
         job.setConfiguration(jobConfig);
+
+        if (preventDuplicateInsert) {
+            String jobId = createJobId(localFilePath);
+            jobRef.setJobId(jobId);
+            job.setJobReference(jobRef);
+        }
 
         loadConfig.setAllowQuotedNewlines(false);
         loadConfig.setEncoding(encoding);
@@ -181,9 +194,8 @@ public class BigqueryWriter
 
         try {
             jobRef = insert.execute().getJobReference();
-        } catch (Exception ex) {
-            log.warn("Job execution was failed. Please check your settings or data... like data matches schema");
-            throw Throwables.propagate(ex);
+        } catch (IllegalStateException ex) {
+            throw new JobFailedException(ex.getMessage());
         }
         log.info(String.format("Job executed. job id:[%s] file:[%s]", jobRef.getJobId(), localFilePath));
         if (isSkipJobResultCheck) {
@@ -191,6 +203,25 @@ public class BigqueryWriter
         } else {
             getJobStatusUntilDone(jobRef);
         }
+    }
+
+    private String createJobId(String localFilePath) throws NoSuchAlgorithmException, IOException
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getLocalMd5hash(localFilePath));
+        sb.append(dataset);
+        sb.append(table);
+        sb.append(tableSchema);
+        sb.append(sourceFormat);
+        sb.append(fieldDelimiter);
+        sb.append(maxBadrecords);
+        sb.append(encoding);
+
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        String str = new String(sb);
+        byte[] digest = md.digest(str.getBytes());
+        String hash = new String(Hex.encodeHex(digest));
+        return "embulk_job_" + hash;
     }
 
     private TableReference createTableReference()
@@ -248,6 +279,28 @@ public class BigqueryWriter
         }
     }
 
+    private String getLocalMd5hash(String filePath) throws NoSuchAlgorithmException, IOException
+    {
+        FileInputStream stream = null;
+        try {
+            stream = new FileInputStream(filePath);
+            MessageDigest digest = MessageDigest.getInstance("MD5");
+
+            byte[] bytesBuffer = new byte[1024];
+            int bytesRead = -1;
+
+            while ((bytesRead = stream.read(bytesBuffer)) != -1) {
+                digest.update(bytesBuffer, 0, bytesRead);
+            }
+            byte[] hashedBytes = digest.digest();
+
+            byte[] encoded = (hashedBytes);
+            return new String(encoded);
+        } finally {
+            stream.close();
+        }
+    }
+
     private class UploadProgressListener implements MediaHttpUploaderProgressListener
     {
         private String fileName;
@@ -291,6 +344,7 @@ public class BigqueryWriter
         private String fieldDelimiter;
         private int maxBadrecords;
         private String encoding;
+        private boolean preventDuplicateInsert;
         private int jobStatusMaxPollingTime;
         private int jobStatusPollingInterval;
         private boolean isSkipJobResultCheck;
@@ -372,6 +426,12 @@ public class BigqueryWriter
             return this;
         }
 
+        public Builder setPreventDuplicateInsert(boolean preventDuplicateInsert)
+        {
+            this.preventDuplicateInsert = preventDuplicateInsert;
+            return this;
+        }
+
         public Builder setJobStatusMaxPollingTime(int jobStatusMaxPollingTime)
         {
             this.jobStatusMaxPollingTime = jobStatusMaxPollingTime;
@@ -396,7 +456,7 @@ public class BigqueryWriter
         }
     }
 
-    public class JobFailedException extends Exception
+    public class JobFailedException extends RuntimeException
     {
         public JobFailedException(String message) {
             super(message);
