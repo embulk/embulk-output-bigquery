@@ -105,7 +105,7 @@ public class BigqueryOutputPlugin
         public int getJobStatusPollingInterval();
 
         @Config("is_skip_job_result_check")
-        @ConfigDefault("0")
+        @ConfigDefault("false")
         public boolean getIsSkipJobResultCheck();
     }
 
