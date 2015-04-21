@@ -36,6 +36,7 @@ OAuth flow for installed applications.
 - **table**: table name (string, required)
 - **auto_create_table**: (boolean, optional default is 0)
 - **schema_path**: (string, optional)
+- **prevent_duplicate_insert**: (boolean, optional default is 0)
 - **application_name**: application name anything you like (string, optional)
 - **delete_from_local_when_job_end**: (boolean, optional, default is 0)
 - **job_status_max_polling_time**: max job status polling time. (int, optional, default is 3600 sec)
@@ -118,6 +119,22 @@ out:
   auto_create_table: true
   table: table_%Y_%m
   schema_path: /path/to/schema.json
+```
+
+### Data Consistency
+
+When `prevent_duplicate_insert` is set to true, embulk-output-bigquery generate job ID from md5 hash of file  and other options to prevent duplicate data insertion.
+
+`job ID = md5(md5(file) + dataset + table + schema + source_format + file_delimiter + max_bad_records + encoding)`
+
+[job ID must be unique(including failures)](https://cloud.google.com/bigquery/loading-data-into-bigquery#consistency). So same data can't insert with same settings.
+
+In other words, you can retry as many times as you like, in case something bad error(like network error) happens before job insertion.
+
+```yaml
+out:
+  type: bigquery
+  prevent_duplicate_insert: true
 ```
 
 ## Build
