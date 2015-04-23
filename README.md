@@ -45,6 +45,7 @@ OAuth flow for installed applications.
 - **field_delimiter**: (string, optional, default is ",")
 - **max_bad_records**: (int, optional, default is 0)
 - **encoding**: (UTF-8 or ISO-8859-1) (string, optional, default is UTF-8)
+- **ignore_unknown_values**: (boolean, optional, default is 0)
 
 ### Example
 
