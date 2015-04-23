@@ -126,7 +126,7 @@ out:
 
 When `prevent_duplicate_insert` is set to true, embulk-output-bigquery generate job ID from md5 hash of file  and other options to prevent duplicate data insertion.
 
-`job ID = md5(md5(file) + dataset + table + schema + source_format + file_delimiter + max_bad_records + encoding)`
+`job ID = md5(md5(file) + dataset + table + schema + source_format + file_delimiter + max_bad_records + encoding + ignore_unknown_values)`
 
 [job ID must be unique(including failures)](https://cloud.google.com/bigquery/loading-data-into-bigquery#consistency). So same data can't insert with same settings.
 
