@@ -219,6 +219,7 @@ public class BigqueryWriter
         sb.append(fieldDelimiter);
         sb.append(maxBadrecords);
         sb.append(encoding);
+        sb.append(ignoreUnknownValues);
 
         MessageDigest md = MessageDigest.getInstance("MD5");
         String str = new String(sb);
