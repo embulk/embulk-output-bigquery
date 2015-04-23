@@ -56,6 +56,7 @@ public class BigqueryWriter
     private final long jobStatusMaxPollingTime;
     private final long jobStatusPollingInterval;
     private final boolean isSkipJobResultCheck;
+    private final boolean ignoreUnknownValues;
     private final Bigquery bigQueryClient;
 
     public BigqueryWriter(Builder builder) throws FileNotFoundException, IOException, GeneralSecurityException
@@ -73,6 +74,7 @@ public class BigqueryWriter
         this.jobStatusMaxPollingTime = builder.jobStatusMaxPollingTime;
         this.jobStatusPollingInterval = builder.jobStatusPollingInterval;
         this.isSkipJobResultCheck = builder.isSkipJobResultCheck;
+        this.ignoreUnknownValues = builder.ignoreUnknownValues;
 
         BigqueryAuthentication auth = new BigqueryAuthentication(builder.authMethod, builder.serviceAccountEmail, builder.p12KeyFilePath, builder.applicationName);
         this.bigQueryClient = auth.getBigqueryClient();
@@ -172,6 +174,7 @@ public class BigqueryWriter
         } else {
             loadConfig.setCreateDisposition("CREATE_NEVER");
         }
+        loadConfig.setIgnoreUnknownValues(ignoreUnknownValues);
 
         loadConfig.setDestinationTable(createTableReference());
 
@@ -348,6 +351,7 @@ public class BigqueryWriter
         private int jobStatusMaxPollingTime;
         private int jobStatusPollingInterval;
         private boolean isSkipJobResultCheck;
+        private boolean ignoreUnknownValues;
 
         public Builder(String authMethod)
         {
@@ -447,6 +451,12 @@ public class BigqueryWriter
         public Builder setIsSkipJobResultCheck(boolean isSkipJobResultCheck)
         {
             this.isSkipJobResultCheck = isSkipJobResultCheck;
+            return this;
+        }
+
+        public Builder setIgnoreUnknownValues(boolean ignoreUnknownValues)
+        {
+            this.ignoreUnknownValues = ignoreUnknownValues;
             return this;
         }
 

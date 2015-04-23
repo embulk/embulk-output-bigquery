@@ -112,6 +112,10 @@ public class BigqueryOutputPlugin
         @Config("is_skip_job_result_check")
         @ConfigDefault("false")
         public boolean getIsSkipJobResultCheck();
+
+        @Config("ignore_unknown_values")
+        @ConfigDefault("false")
+        public boolean getIgnoreUnknownValues();
     }
 
     private final Logger log = Exec.getLogger(BigqueryOutputPlugin.class);
@@ -140,6 +144,7 @@ public class BigqueryOutputPlugin
                     .setJobStatusMaxPollingTime(task.getJobStatusMaxPollingTime())
                     .setJobStatusPollingInterval(task.getJobStatusPollingInterval())
                     .setIsSkipJobResultCheck(task.getIsSkipJobResultCheck())
+                    .setIgnoreUnknownValues(task.getIgnoreUnknownValues())
                     .build();
         } catch (FileNotFoundException ex) {
             throw new ConfigException(ex);
