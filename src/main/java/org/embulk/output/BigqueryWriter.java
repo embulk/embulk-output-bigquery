@@ -57,6 +57,7 @@ public class BigqueryWriter
     private final long jobStatusPollingInterval;
     private final boolean isSkipJobResultCheck;
     private final boolean ignoreUnknownValues;
+    private final boolean allowQuotedNewlines;
     private final Bigquery bigQueryClient;
 
     public BigqueryWriter(Builder builder) throws FileNotFoundException, IOException, GeneralSecurityException
@@ -75,6 +76,7 @@ public class BigqueryWriter
         this.jobStatusPollingInterval = builder.jobStatusPollingInterval;
         this.isSkipJobResultCheck = builder.isSkipJobResultCheck;
         this.ignoreUnknownValues = builder.ignoreUnknownValues;
+        this.allowQuotedNewlines = builder.allowQuotedNewlines;
 
         BigqueryAuthentication auth = new BigqueryAuthentication(builder.authMethod, builder.serviceAccountEmail, builder.p12KeyFilePath, builder.applicationName);
         this.bigQueryClient = auth.getBigqueryClient();
@@ -158,7 +160,7 @@ public class BigqueryWriter
             job.setJobReference(jobRef);
         }
 
-        loadConfig.setAllowQuotedNewlines(false);
+        loadConfig.setAllowQuotedNewlines(allowQuotedNewlines);
         loadConfig.setEncoding(encoding);
         loadConfig.setMaxBadRecords(maxBadrecords);
         if (sourceFormat.equals("NEWLINE_DELIMITED_JSON")) {
@@ -353,6 +355,7 @@ public class BigqueryWriter
         private int jobStatusPollingInterval;
         private boolean isSkipJobResultCheck;
         private boolean ignoreUnknownValues;
+        private boolean allowQuotedNewlines;
 
         public Builder(String authMethod)
         {
@@ -458,6 +461,12 @@ public class BigqueryWriter
         public Builder setIgnoreUnknownValues(boolean ignoreUnknownValues)
         {
             this.ignoreUnknownValues = ignoreUnknownValues;
+            return this;
+        }
+
+        public Builder setAllowQuotedNewlines(boolean allowQuotedNewlines)
+        {
+            this.allowQuotedNewlines = allowQuotedNewlines;
             return this;
         }
 
