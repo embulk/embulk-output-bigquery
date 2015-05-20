@@ -17,6 +17,7 @@ import java.security.GeneralSecurityException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.commons.codec.binary.Hex;
 import org.embulk.spi.Exec;
 import org.slf4j.Logger;
@@ -212,20 +213,18 @@ public class BigqueryWriter
 
     private String createJobId(String localFilePath) throws NoSuchAlgorithmException, IOException
     {
+        ImmutableList<Object> elements = ImmutableList.of(
+                getLocalMd5hash(localFilePath), dataset, table, tableSchema, sourceFormat,
+                fieldDelimiter, maxBadrecords, encoding, ignoreUnknownValues, allowQuotedNewlines
+        );
+
         StringBuilder sb = new StringBuilder();
-        sb.append(getLocalMd5hash(localFilePath));
-        sb.append(dataset);
-        sb.append(table);
-        sb.append(tableSchema);
-        sb.append(sourceFormat);
-        sb.append(fieldDelimiter);
-        sb.append(maxBadrecords);
-        sb.append(encoding);
-        sb.append(ignoreUnknownValues);
+        for (Object element : elements) {
+            sb.append(element);
+        }
 
         MessageDigest md = MessageDigest.getInstance("MD5");
-        String str = new String(sb);
-        byte[] digest = md.digest(str.getBytes());
+        byte[] digest = md.digest(new String(sb).getBytes());
         String hash = new String(Hex.encodeHex(digest));
         return "embulk_job_" + hash;
     }
