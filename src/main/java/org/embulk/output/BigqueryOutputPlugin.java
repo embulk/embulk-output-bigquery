@@ -66,7 +66,7 @@ public class BigqueryOutputPlugin
 
         @Config("field_delimiter")
         @ConfigDefault("\",\"")
-        public String getFieldDelimiter();
+        public char getFieldDelimiter();
 
         @Config("max_bad_records")
         @ConfigDefault("0")
@@ -141,7 +141,7 @@ public class BigqueryOutputPlugin
                     .setAutoCreateTable(task.getAutoCreateTable())
                     .setSchemaPath(task.getSchemaPath())
                     .setSourceFormat(task.getSourceFormat())
-                    .setFieldDelimiter(task.getFieldDelimiter())
+                    .setFieldDelimiter(String.valueOf(task.getFieldDelimiter()))
                     .setMaxBadrecords(task.getMaxBadrecords())
                     .setEncoding(task.getEncoding())
                     .setPreventDuplicateInsert(task.getPreventDuplicateInsert())

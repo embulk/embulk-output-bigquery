@@ -53,7 +53,7 @@ Following options are same as [bq command-line tools](https://cloud.google.com/b
 |:--------------------------|:------------|:-----------|:-------------|:-----------------------|
 |  source_format            | string      | required   | "CSV"          | File type (`NEWLINE_DELIMITED_JSON` or `CSV`) |
 |  max_bad_records          | int         | optional   | 0            | |
-|  field_delimiter          | string      | optional   | ","          | |
+|  field_delimiter          | char        | optional   | ","          |  |
 |  encoding                 | string      | optional   | "UTF-8"      | `UTF-8` or `ISO-8859-1` |
 |  ignore_unknown_values    | boolean     | optional   | 0            | |
 |  allow_quoted_newlines    | boolean     | optional   | 0            | Set true, if data contains newline characters. It may cause slow procsssing |
