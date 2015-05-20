@@ -116,6 +116,10 @@ public class BigqueryOutputPlugin
         @Config("ignore_unknown_values")
         @ConfigDefault("false")
         public boolean getIgnoreUnknownValues();
+
+        @Config("allow_quoted_newlines")
+        @ConfigDefault("false")
+        public boolean getAllowQuotedNewlines();
     }
 
     private final Logger log = Exec.getLogger(BigqueryOutputPlugin.class);
@@ -145,6 +149,7 @@ public class BigqueryOutputPlugin
                     .setJobStatusPollingInterval(task.getJobStatusPollingInterval())
                     .setIsSkipJobResultCheck(task.getIsSkipJobResultCheck())
                     .setIgnoreUnknownValues(task.getIgnoreUnknownValues())
+                    .setAllowQuotedNewlines(task.getAllowQuotedNewlines())
                     .build();
         } catch (FileNotFoundException ex) {
             throw new ConfigException(ex);
