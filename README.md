@@ -24,29 +24,39 @@ OAuth flow for installed applications.
 
 ## Configuration
 
-- **auth_method**: (private_key or compute_engine) (string, optional, default is private_key)
-- **service_account_email**: your Google service account email (string, required when auth_method is private_key)
-- **p12_keyfile_path**: fullpath of private key in P12(PKCS12) format (string, required when auth_method is private_key)
-- **path_prefix**: (string, required)
-- **sequence_format**: (string, optional, default is %03d.%02d)
-- **file_ext**: (string, required)
-- **source_format**: file type (NEWLINE_DELIMITED_JSON or CSV) (string, required, default is CSV)
-- **project**: project_id (string, required)
-- **dataset**: dataset (string, required)
-- **table**: table name (string, required)
-- **auto_create_table**: (boolean, optional default is 0)
-- **schema_path**: (string, optional)
-- **prevent_duplicate_insert**: (boolean, optional default is 0)
-- **application_name**: application name anything you like (string, optional)
-- **delete_from_local_when_job_end**: (boolean, optional, default is 0)
-- **job_status_max_polling_time**: max job status polling time. (int, optional, default is 3600 sec)
-- **job_status_polling_interval**: job status polling interval. (int, optional, default is 10 sec)
-- **is_skip_job_result_check**: (boolean, optional, default is 0)
-- **field_delimiter**: (string, optional, default is ",")
-- **max_bad_records**: (int, optional, default is 0)
-- **encoding**: (UTF-8 or ISO-8859-1) (string, optional, default is UTF-8)
-- **ignore_unknown_values**: (boolean, optional, default is 0)
-- **allow_quoted_newlines**: (boolean, optional, default is 0)
+#### Original options
+
+| name                      | type        | required?  | default      | description            |  
+|:--------------------------|:------------|:-----------|:-------------|:-----------------------|
+|  auth_method              | string      | optional   | "private_key"  | `private_key` or `compute_engine`
+|  service_account_email    | string      | required when auth_method is private_key  |   | Your Google service account email
+|  p12_keyfile_path         | string      | required when auth_method is private_key   |   | Fullpath of private key in P12(PKCS12) format |
+|  sequence_format          | string      | optional   | %03d.%02d      |  |
+|  file_ext                 | string      | optional   |                | e.g. ".csv.gz" ".json.gz" |
+|  project                  | string      | required   |                | project_id |
+|  dataset                  | string      | required   |                | dataset |
+|  table                    | string      | required   |                | table name |
+|  auto_create_table        | boolean     | optional   | 0              | [See below](#dynamic-table-creating) |
+|  schema_path              | string      | optional   |                | /path/to/schema.json |
+|  prevent_duplicate_insert | boolean     | optional   | 0              | [See below](#data-consistency) |
+|  delete_from_local_when_job_end | boolean     | optional   | 0            | If set to true, delete local file when job is end |
+|  job_status_max_polling_time    | int         | optional   | 3600 sec     | Max job status polling time |
+|  job_status_max_polling_time    | int         | optional   | 10 sec       | Job status polling interval |
+|  is_skip_job_result_check       | boolean     | optional   | 0            |  |
+|  application_name         | string      | optional   | "Embulk BigQuery plugin" | Anything you like |
+
+#### Same options of bq command-line tools or BigQuery job's propery
+
+Following options are same as [bq command-line tools](https://cloud.google.com/bigquery/bq-command-line-tool#creatingtablefromfile) or BigQuery [job's property](https://cloud.google.com/bigquery/docs/reference/v2/jobs#resource).
+
+| name                      | type        | required?  | default      | description            |  
+|:--------------------------|:------------|:-----------|:-------------|:-----------------------|
+|  source_format            | string      | required   | "CSV"          | File type (`NEWLINE_DELIMITED_JSON` or `CSV`) |
+|  max_bad_records          | int         | optional   | 0            | |
+|  field_delimiter          | string      | optional   | ","          | |
+|  encoding                 | string      | optional   | "UTF-8"      | `UTF-8` or `ISO-8859-1` |
+|  ignore_unknown_values    | boolean     | optional   | 0            | |
+|  allow_quoted_newlines    | boolean     | optional   | 0            | Set true, if data contains newline characters. It may cause slow procsssing |
 
 ### Example
 
