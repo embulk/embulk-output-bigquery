@@ -68,7 +68,7 @@ public class BigqueryWriter
         this.table = builder.table;
         this.autoCreateTable = builder.autoCreateTable;
         this.schemaPath = builder.schemaPath;
-        this.sourceFormat = builder.sourceFormat.toUpperCase();
+        this.sourceFormat = builder.sourceFormat;
         this.fieldDelimiter = builder.fieldDelimiter;
         this.maxBadrecords = builder.maxBadrecords;
         this.encoding = builder.encoding.toUpperCase();
