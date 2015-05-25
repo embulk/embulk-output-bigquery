@@ -6,17 +6,17 @@ import java.io.FileNotFoundException;
 import java.io.FileInputStream;
 import java.io.BufferedInputStream;
 import com.google.api.client.http.InputStreamContent;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 import com.google.common.base.Optional;
-import com.google.api.client.util.Base64;
-import com.google.common.base.Throwables;
 import java.security.GeneralSecurityException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.commons.codec.binary.Hex;
 import org.embulk.spi.Exec;
 import org.slf4j.Logger;
@@ -40,17 +40,13 @@ import com.google.api.client.googleapis.media.MediaHttpUploaderProgressListener;
 
 public class BigqueryWriter
 {
-
     private final Logger log = Exec.getLogger(BigqueryWriter.class);
-    private final String project;
-    private final String dataset;
-    private final String table;
     private final boolean autoCreateTable;
     private final Optional<String> schemaPath;
     private final TableSchema tableSchema;
     private final String sourceFormat;
     private final String fieldDelimiter;
-    private final int maxBadrecords;
+    private final int maxBadRecords;
     private final String encoding;
     private final boolean preventDuplicateInsert;
     private final long jobStatusMaxPollingTime;
@@ -60,16 +56,14 @@ public class BigqueryWriter
     private final boolean allowQuotedNewlines;
     private final Bigquery bigQueryClient;
 
-    public BigqueryWriter(Builder builder) throws FileNotFoundException, IOException, GeneralSecurityException
+    public BigqueryWriter(Builder builder)
+            throws IOException, GeneralSecurityException
     {
-        this.project = builder.project;
-        this.dataset = builder.dataset;
-        this.table = builder.table;
         this.autoCreateTable = builder.autoCreateTable;
         this.schemaPath = builder.schemaPath;
         this.sourceFormat = builder.sourceFormat.toUpperCase();
         this.fieldDelimiter = builder.fieldDelimiter;
-        this.maxBadrecords = builder.maxBadrecords;
+        this.maxBadRecords = builder.maxBadRecords;
         this.encoding = builder.encoding.toUpperCase();
         this.preventDuplicateInsert = builder.preventDuplicateInsert;
         this.jobStatusMaxPollingTime = builder.jobStatusMaxPollingTime;
@@ -81,15 +75,14 @@ public class BigqueryWriter
         BigqueryAuthentication auth = new BigqueryAuthentication(builder.authMethod, builder.serviceAccountEmail, builder.p12KeyFilePath, builder.applicationName);
         this.bigQueryClient = auth.getBigqueryClient();
 
-        checkConfig();
         if (autoCreateTable) {
-            this.tableSchema = createTableSchema(builder.schemaPath);
+            this.tableSchema = createTableSchema();
         } else {
             this.tableSchema = null;
         }
     }
 
-    private String getJobStatus(JobReference jobRef) throws JobFailedException
+    private String getJobStatus(String project, JobReference jobRef) throws JobFailedException
     {
         try {
             Job job = bigQueryClient.jobs().get(project, jobRef.getJobId()).execute();
@@ -108,7 +101,6 @@ public class BigqueryWriter
             String jobStatus = job.getStatus().getState();
             if (jobStatus.equals("DONE")) {
                 JobStatistics statistics = job.getStatistics();
-                //log.info(String.format("Job end. create:[%s] end:[%s]", statistics.getCreationTime(), statistics.getEndTime()));
                 log.info(String.format("Job statistics [%s]", statistics.getLoad()));
             }
             return jobStatus;
@@ -118,14 +110,14 @@ public class BigqueryWriter
         }
     }
 
-    private void getJobStatusUntilDone(JobReference jobRef) throws TimeoutException, JobFailedException
+    private void getJobStatusUntilDone(String project, JobReference jobRef) throws TimeoutException, JobFailedException
     {
         long startTime = System.currentTimeMillis();
         long elapsedTime;
 
         try {
             while (true) {
-                String jobStatus = getJobStatus(jobRef);
+                String jobStatus = getJobStatus(project, jobRef);
                 elapsedTime = System.currentTimeMillis() - startTime;
                 if (jobStatus.equals("DONE")) {
                     log.info(String.format("Job completed successfully. job id:[%s] elapsed_time:%dms status:[%s]", jobRef.getJobId(), elapsedTime, "SUCCESS"));
@@ -142,43 +134,25 @@ public class BigqueryWriter
         }
     }
 
-    public void executeLoad(String localFilePath) throws GoogleJsonResponseException, NoSuchAlgorithmException,
-            TimeoutException, JobFailedException, IOException
+    public void executeLoad(String project, String dataset, String table, String localFilePath)
+            throws NoSuchAlgorithmException, TimeoutException, JobFailedException, IOException
     {
         log.info(String.format("Job preparing... project:%s dataset:%s table:%s", project, dataset, table));
 
         Job job = new Job();
         JobReference jobRef = new JobReference();
-        JobConfiguration jobConfig = new JobConfiguration();
-        JobConfigurationLoad loadConfig = new JobConfigurationLoad();
-        jobConfig.setLoad(loadConfig);
+        JobConfiguration jobConfig = new JobConfiguration().setLoad(setLoadConfig(project, dataset, table));
         job.setConfiguration(jobConfig);
 
         if (preventDuplicateInsert) {
-            String jobId = createJobId(localFilePath);
+            ImmutableList<String> elements = ImmutableList.of(
+                    getLocalMd5hash(localFilePath), dataset, table
+            );
+            String jobId = createJobId(elements);
+
             jobRef.setJobId(jobId);
             job.setJobReference(jobRef);
         }
-
-        loadConfig.setAllowQuotedNewlines(allowQuotedNewlines);
-        loadConfig.setEncoding(encoding);
-        loadConfig.setMaxBadRecords(maxBadrecords);
-        if (sourceFormat.equals("NEWLINE_DELIMITED_JSON")) {
-            loadConfig.setSourceFormat("NEWLINE_DELIMITED_JSON");
-        } else {
-            loadConfig.setFieldDelimiter(fieldDelimiter);
-        }
-        loadConfig.setWriteDisposition("WRITE_APPEND");
-        if (autoCreateTable) {
-            loadConfig.setSchema(tableSchema);
-            loadConfig.setCreateDisposition("CREATE_IF_NEEDED");
-            log.info(String.format("table:[%s] will be create if not exists", table));
-        } else {
-            loadConfig.setCreateDisposition("CREATE_NEVER");
-        }
-        loadConfig.setIgnoreUnknownValues(ignoreUnknownValues);
-
-        loadConfig.setDestinationTable(createTableReference());
 
         File file = new File(localFilePath);
         InputStreamContent mediaContent = new InputStreamContent("application/octet-stream",
@@ -206,31 +180,52 @@ public class BigqueryWriter
         if (isSkipJobResultCheck) {
             log.info(String.format("Skip job status check. job id:[%s]", jobRef.getJobId()));
         } else {
-            getJobStatusUntilDone(jobRef);
+            getJobStatusUntilDone(project, jobRef);
         }
     }
 
-    private String createJobId(String localFilePath) throws NoSuchAlgorithmException, IOException
+    private JobConfigurationLoad setLoadConfig(String project, String dataset, String table)
     {
-        StringBuilder sb = new StringBuilder();
-        sb.append(getLocalMd5hash(localFilePath));
-        sb.append(dataset);
-        sb.append(table);
-        sb.append(tableSchema);
-        sb.append(sourceFormat);
-        sb.append(fieldDelimiter);
-        sb.append(maxBadrecords);
-        sb.append(encoding);
-        sb.append(ignoreUnknownValues);
+        JobConfigurationLoad config = new JobConfigurationLoad();
+        config.setAllowQuotedNewlines(allowQuotedNewlines)
+                .setEncoding(encoding)
+                .setMaxBadRecords(maxBadRecords)
+                .setSourceFormat(sourceFormat)
+                .setIgnoreUnknownValues(ignoreUnknownValues)
+                .setDestinationTable(createTableReference(project, dataset, table))
+                .setWriteDisposition("WRITE_APPEND");
 
-        MessageDigest md = MessageDigest.getInstance("MD5");
-        String str = new String(sb);
-        byte[] digest = md.digest(str.getBytes());
-        String hash = new String(Hex.encodeHex(digest));
-        return "embulk_job_" + hash;
+        if (sourceFormat.equals("CSV")) {
+            config.setFieldDelimiter(String.valueOf(fieldDelimiter));
+        }
+        if (autoCreateTable) {
+            config.setSchema(tableSchema);
+            config.setCreateDisposition("CREATE_IF_NEEDED");
+            log.info(String.format("table:[%s] will be create if not exists", table));
+        } else {
+            config.setCreateDisposition("CREATE_NEVER");
+        }
+        return config;
     }
 
-    private TableReference createTableReference()
+    private String createJobId(ImmutableList<String> elements) throws NoSuchAlgorithmException, IOException
+    {
+        StringBuilder sb = new StringBuilder();
+        for (Object element : elements) {
+            sb.append(element);
+        }
+
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        byte[] digest = md.digest(new String(sb).getBytes());
+        String hash = new String(Hex.encodeHex(digest));
+
+        StringBuilder jobId = new StringBuilder();
+        jobId.append("embulk_job_");
+        jobId.append(hash);
+        return jobId.toString();
+    }
+
+    private TableReference createTableReference(String project, String dataset, String table)
     {
         return new TableReference()
                 .setProjectId(project)
@@ -238,7 +233,7 @@ public class BigqueryWriter
                 .setTableId(table);
     }
 
-    private TableSchema createTableSchema(Optional<String> schemaPath) throws FileNotFoundException, IOException
+    public TableSchema createTableSchema() throws IOException
     {
         String path = schemaPath.orNull();
         File file = new File(path);
@@ -247,8 +242,7 @@ public class BigqueryWriter
             stream = new FileInputStream(file);
             ObjectMapper mapper = new ObjectMapper();
             List<TableFieldSchema> fields = mapper.readValue(stream, new TypeReference<List<TableFieldSchema>>() {});
-            TableSchema tableSchema = new TableSchema().setFields(fields);
-            return tableSchema;
+            return new TableSchema().setFields(fields);
         } finally {
             if (stream != null) {
                 stream.close();
@@ -256,18 +250,18 @@ public class BigqueryWriter
         }
     }
 
-    public boolean isExistTable(String tableName) throws IOException
+    public boolean isExistTable(String project, String dataset, String table) throws IOException
     {
         Tables tableRequest = bigQueryClient.tables();
         try {
-            Table tableData = tableRequest.get(project, dataset, tableName).execute();
+            Table tableData = tableRequest.get(project, dataset, table).execute();
         } catch (GoogleJsonResponseException ex) {
             return false;
         }
         return true;
     }
 
-    public void checkConfig() throws FileNotFoundException, IOException
+    public void checkConfig(String project, String dataset, String table) throws IOException
     {
         if (autoCreateTable) {
             if (!schemaPath.isPresent()) {
@@ -279,7 +273,7 @@ public class BigqueryWriter
                 }
             }
         } else {
-            if (!isExistTable(table)) {
+            if (!isExistTable(project, dataset, table)) {
                 throw new IOException(String.format("table [%s] is not exists", table));
             }
         }
@@ -341,14 +335,11 @@ public class BigqueryWriter
         private Optional<String> serviceAccountEmail;
         private Optional<String> p12KeyFilePath;
         private String applicationName;
-        private String project;
-        private String dataset;
-        private String table;
         private boolean autoCreateTable;
         private Optional<String> schemaPath;
         private String sourceFormat;
         private String fieldDelimiter;
-        private int maxBadrecords;
+        private int maxBadRecords;
         private String encoding;
         private boolean preventDuplicateInsert;
         private int jobStatusMaxPollingTime;
@@ -357,45 +348,12 @@ public class BigqueryWriter
         private boolean ignoreUnknownValues;
         private boolean allowQuotedNewlines;
 
-        public Builder(String authMethod)
+        public Builder(String authMethod, Optional<String> serviceAccountEmail, Optional<String> p12KeyFilePath, String applicationName)
         {
             this.authMethod = authMethod;
-        }
-
-        public Builder setServiceAccountEmail(Optional<String> serviceAccountEmail)
-        {
             this.serviceAccountEmail = serviceAccountEmail;
-            return this;
-        }
-
-        public Builder setP12KeyFilePath(Optional<String> p12KeyFilePath)
-        {
             this.p12KeyFilePath = p12KeyFilePath;
-            return this;
-        }
-
-        public Builder setApplicationName(String applicationName)
-        {
             this.applicationName = applicationName;
-            return this;
-        }
-
-        public Builder setProject(String project)
-        {
-            this.project = project;
-            return this;
-        }
-
-        public Builder setDataset(String dataset)
-        {
-            this.dataset = dataset;
-            return this;
-        }
-
-        public Builder setTable(String table)
-        {
-            this.table = table;
-            return this;
         }
 
         public Builder setAutoCreateTable(boolean autoCreateTable)
@@ -422,9 +380,9 @@ public class BigqueryWriter
             return this;
         }
 
-        public Builder setMaxBadrecords(int maxBadrecords)
+        public Builder setMaxBadRecords(int maxBadRecords)
         {
-            this.maxBadrecords = maxBadrecords;
+            this.maxBadRecords = maxBadRecords;
             return this;
         }
 
