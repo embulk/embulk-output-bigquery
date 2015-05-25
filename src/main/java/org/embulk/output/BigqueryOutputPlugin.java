@@ -132,19 +132,17 @@ public class BigqueryOutputPlugin
         final PluginTask task = config.loadConfig(PluginTask.class);
 
         try {
-            bigQueryWriter = new BigqueryWriter.Builder(task.getAuthMethod().getString())
-                    .setServiceAccountEmail(task.getServiceAccountEmail())
-                    .setP12KeyFilePath(task.getP12KeyfilePath())
-                    .setApplicationName(task.getApplicationName())
-                    .setProject(task.getProject())
-                    .setDataset(task.getDataset())
-                    .setTable(generateTableName(task.getTable()))
+            bigQueryWriter = new BigqueryWriter.Builder (
+                    task.getAuthMethod().getString(),
+                    task.getServiceAccountEmail(),
+                    task.getP12KeyfilePath(),
+                    task.getApplicationName())
                     .setAutoCreateTable(task.getAutoCreateTable())
                     .setSchemaPath(task.getSchemaPath())
                     .setSourceFormat(task.getSourceFormat().getString())
                     .setFieldDelimiter(String.valueOf(task.getFieldDelimiter()))
-                    .setMaxBadrecords(task.getMaxBadrecords())
-                    .setEncoding(task.getEncoding().toString())
+                    .setMaxBadRecords(task.getMaxBadrecords())
+                    .setEncoding(String.valueOf(task.getEncoding()))
                     .setPreventDuplicateInsert(task.getPreventDuplicateInsert())
                     .setJobStatusMaxPollingTime(task.getJobStatusMaxPollingTime())
                     .setJobStatusPollingInterval(task.getJobStatusPollingInterval())
@@ -152,8 +150,9 @@ public class BigqueryOutputPlugin
                     .setIgnoreUnknownValues(task.getIgnoreUnknownValues())
                     .setAllowQuotedNewlines(task.getAllowQuotedNewlines())
                     .build();
-        } catch (FileNotFoundException ex) {
-            throw new ConfigException(ex);
+
+            bigQueryWriter.checkConfig(task.getProject(), task.getDataset(), task.getTable());
+
         } catch (IOException | GeneralSecurityException ex) {
             throw new ConfigException(ex);
         }
@@ -187,6 +186,11 @@ public class BigqueryOutputPlugin
         final String pathSuffix = task.getFileNameExtension();
 
         return new TransactionalFileOutput() {
+            private final String project = task.getProject();
+            private final String dataset = task.getDataset();
+            private final String table = generateTableName(task.getTable());
+            private final boolean deleteFromLocalWhenJobEnd = task.getDeleteFromLocalWhenJobEnd();
+
             private int fileIndex = 0;
             private BufferedOutputStream output = null;
             private File file;
@@ -244,9 +248,9 @@ public class BigqueryOutputPlugin
                 closeFile();
                 if (filePath != null) {
                     try {
-                        bigQueryWriter.executeLoad(filePath);
+                        bigQueryWriter.executeLoad(project, dataset, table, filePath);
 
-                        if (task.getDeleteFromLocalWhenJobEnd()) {
+                        if (deleteFromLocalWhenJobEnd) {
                             log.info(String.format("Delete local file [%s]", filePath));
                             file.delete();
                         }
