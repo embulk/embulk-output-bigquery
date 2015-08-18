@@ -140,6 +140,7 @@ public class BigqueryOutputPlugin
     private final Logger log = Exec.getLogger(BigqueryOutputPlugin.class);
     private static BigqueryWriter bigQueryWriter;
 
+    @Override
     public ConfigDiff transaction(ConfigSource config, int taskCount,
                                   FileOutputPlugin.Control control)
     {
@@ -196,6 +197,7 @@ public class BigqueryOutputPlugin
         return resume(task.dump(), taskCount, control);
     }
 
+    @Override
     public ConfigDiff resume(TaskSource taskSource,
                              int taskCount,
                              FileOutputPlugin.Control control)
