@@ -343,7 +343,7 @@ public class BigqueryOutputPlugin
 
         private final String string;
 
-        private SourceFormat(String string)
+        SourceFormat(String string)
         {
             this.string = string;
         }
@@ -361,7 +361,7 @@ public class BigqueryOutputPlugin
 
         private final String string;
 
-        private AuthMethod(String string)
+        AuthMethod(String string)
         {
             this.string = string;
         }
