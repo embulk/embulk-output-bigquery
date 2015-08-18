@@ -39,102 +39,102 @@ public class BigqueryOutputPlugin
     {
         @Config("auth_method")
         @ConfigDefault("\"private_key\"")
-        public AuthMethod getAuthMethod();
+        AuthMethod getAuthMethod();
 
         @Config("service_account_email")
         @ConfigDefault("null")
-        public Optional<String> getServiceAccountEmail();
+        Optional<String> getServiceAccountEmail();
 
         // kept for backward compatibility
         @Config("p12_keyfile_path")
         @ConfigDefault("null")
-        public Optional<String> getP12KeyfilePath();
+        Optional<String> getP12KeyfilePath();
 
         @Config("p12_keyfile")
         @ConfigDefault("null")
-        public Optional<LocalFile> getP12Keyfile();
-        public void setP12Keyfile(Optional<LocalFile> p12Keyfile);
+        Optional<LocalFile> getP12Keyfile();
+        void setP12Keyfile(Optional<LocalFile> p12Keyfile);
 
         @Config("application_name")
         @ConfigDefault("\"Embulk BigQuery plugin\"")
-        public String getApplicationName();
+        String getApplicationName();
 
         @Config("path_prefix")
-        public String getPathPrefix();
+        String getPathPrefix();
 
         @Config("sequence_format")
         @ConfigDefault("\".%03d.%02d\"")
-        public String getSequenceFormat();
+        String getSequenceFormat();
 
         @Config("file_ext")
-        public String getFileNameExtension();
+        String getFileNameExtension();
 
         @Config("source_format")
         @ConfigDefault("\"CSV\"")
-        public SourceFormat getSourceFormat();
+        SourceFormat getSourceFormat();
 
         @Config("field_delimiter")
         @ConfigDefault("\",\"")
-        public char getFieldDelimiter();
+        char getFieldDelimiter();
 
         @Config("max_bad_records")
         @ConfigDefault("0")
-        public int getMaxBadrecords();
+        int getMaxBadrecords();
 
         @Config("encoding")
         @ConfigDefault("\"UTF-8\"")
-        public Charset getEncoding();
+        Charset getEncoding();
 
         @Config("delete_from_local_when_job_end")
         @ConfigDefault("false")
-        public boolean getDeleteFromLocalWhenJobEnd();
+        boolean getDeleteFromLocalWhenJobEnd();
 
         @Config("project")
-        public String getProject();
+        String getProject();
 
         @Config("dataset")
-        public String getDataset();
+        String getDataset();
 
         @Config("table")
-        public String getTable();
+        String getTable();
 
         @Config("auto_create_table")
         @ConfigDefault("false")
-        public boolean getAutoCreateTable();
+        boolean getAutoCreateTable();
 
         // kept for backward compatibility
         @Config("schema_path")
         @ConfigDefault("null")
-        public Optional<String> getSchemaPath();
+        Optional<String> getSchemaPath();
 
         @Config("schema_file")
         @ConfigDefault("null")
-        public Optional<LocalFile> getSchemaFile();
-        public void setSchemaFile(Optional<LocalFile> schemaFile);
+        Optional<LocalFile> getSchemaFile();
+        void setSchemaFile(Optional<LocalFile> schemaFile);
 
         @Config("prevent_duplicate_insert")
         @ConfigDefault("false")
-        public boolean getPreventDuplicateInsert();
+        boolean getPreventDuplicateInsert();
 
         @Config("job_status_max_polling_time")
         @ConfigDefault("3600")
-        public int getJobStatusMaxPollingTime();
+        int getJobStatusMaxPollingTime();
 
         @Config("job_status_polling_interval")
         @ConfigDefault("10")
-        public int getJobStatusPollingInterval();
+        int getJobStatusPollingInterval();
 
         @Config("is_skip_job_result_check")
         @ConfigDefault("false")
-        public boolean getIsSkipJobResultCheck();
+        boolean getIsSkipJobResultCheck();
 
         @Config("ignore_unknown_values")
         @ConfigDefault("false")
-        public boolean getIgnoreUnknownValues();
+        boolean getIgnoreUnknownValues();
 
         @Config("allow_quoted_newlines")
         @ConfigDefault("false")
-        public boolean getAllowQuotedNewlines();
+        boolean getAllowQuotedNewlines();
     }
 
     private final Logger log = Exec.getLogger(BigqueryOutputPlugin.class);
