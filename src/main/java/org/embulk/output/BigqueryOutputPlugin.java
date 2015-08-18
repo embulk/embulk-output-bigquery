@@ -9,6 +9,7 @@ import java.nio.charset.Charset;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import java.security.GeneralSecurityException;
@@ -22,6 +23,7 @@ import org.embulk.config.ConfigDiff;
 import org.embulk.config.CommitReport;
 import org.embulk.config.Task;
 import org.embulk.config.TaskSource;
+import org.embulk.spi.unit.LocalFile;
 import org.embulk.spi.Buffer;
 import org.embulk.spi.FileOutputPlugin;
 import org.embulk.spi.TransactionalFileOutput;
@@ -43,9 +45,15 @@ public class BigqueryOutputPlugin
         @ConfigDefault("null")
         public Optional<String> getServiceAccountEmail();
 
+        // kept for backward compatibility
         @Config("p12_keyfile_path")
         @ConfigDefault("null")
         public Optional<String> getP12KeyfilePath();
+
+        @Config("p12_keyfile")
+        @ConfigDefault("null")
+        public Optional<LocalFile> getP12Keyfile();
+        public void setP12Keyfile(Optional<LocalFile> p12Keyfile);
 
         @Config("application_name")
         @ConfigDefault("\"Embulk BigQuery plugin\"")
@@ -94,9 +102,15 @@ public class BigqueryOutputPlugin
         @ConfigDefault("false")
         public boolean getAutoCreateTable();
 
+        // kept for backward compatibility
         @Config("schema_path")
         @ConfigDefault("null")
         public Optional<String> getSchemaPath();
+
+        @Config("schema_file")
+        @ConfigDefault("null")
+        public Optional<LocalFile> getSchemaFile();
+        public void setSchemaFile(Optional<LocalFile> schemaFile);
 
         @Config("prevent_duplicate_insert")
         @ConfigDefault("false")
@@ -131,14 +145,36 @@ public class BigqueryOutputPlugin
     {
         final PluginTask task = config.loadConfig(PluginTask.class);
 
+        if (task.getP12KeyfilePath().isPresent()) {
+            if (task.getP12Keyfile().isPresent()) {
+                throw new ConfigException("Setting both p12_keyfile_path and p12_keyfile is invalid");
+            }
+            try {
+                task.setP12Keyfile(Optional.of(LocalFile.of(task.getP12KeyfilePath().get())));
+            } catch (IOException ex) {
+                throw Throwables.propagate(ex);
+            }
+        }
+
+        if (task.getSchemaPath().isPresent()) {
+            if (task.getSchemaFile().isPresent()) {
+                throw new ConfigException("Setting both p12_keyfile_path and p12_keyfile is invalid");
+            }
+            try {
+                task.setSchemaFile(Optional.of(LocalFile.of(task.getSchemaPath().get())));
+            } catch (IOException ex) {
+                throw Throwables.propagate(ex);
+            }
+        }
+
         try {
             bigQueryWriter = new BigqueryWriter.Builder (
                     task.getAuthMethod().getString(),
                     task.getServiceAccountEmail(),
-                    task.getP12KeyfilePath(),
+                    task.getP12Keyfile().transform(localFileToPathString()),
                     task.getApplicationName())
                     .setAutoCreateTable(task.getAutoCreateTable())
-                    .setSchemaPath(task.getSchemaPath())
+                    .setSchemaPath(task.getSchemaFile().transform(localFileToPathString()))
                     .setSourceFormat(task.getSourceFormat().getString())
                     .setFieldDelimiter(String.valueOf(task.getFieldDelimiter()))
                     .setMaxBadRecords(task.getMaxBadrecords())
@@ -174,6 +210,17 @@ public class BigqueryOutputPlugin
                         int taskCount,
                         List<CommitReport> successCommitReports)
     {
+    }
+
+    private Function<LocalFile, String> localFileToPathString()
+    {
+        return new Function<LocalFile, String>()
+        {
+            public String apply(LocalFile file)
+            {
+                return file.getPath().toString();
+            }
+        };
     }
 
     @Override

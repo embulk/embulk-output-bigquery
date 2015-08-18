@@ -30,14 +30,14 @@ OAuth flow for installed applications.
 |:--------------------------|:------------|:-----------|:-------------|:-----------------------|
 |  auth_method              | string      | optional   | "private_key"  | `private_key` or `compute_engine`
 |  service_account_email    | string      | required when auth_method is private_key  |   | Your Google service account email
-|  p12_keyfile_path         | string      | required when auth_method is private_key   |   | Fullpath of private key in P12(PKCS12) format |
+|  p12_keyfile              | string      | required when auth_method is private_key   |   | Fullpath of private key in P12(PKCS12) format |
 |  sequence_format          | string      | optional   | %03d.%02d      |  |
 |  file_ext                 | string      | optional   |                | e.g. ".csv.gz" ".json.gz" |
 |  project                  | string      | required   |                | project_id |
 |  dataset                  | string      | required   |                | dataset |
 |  table                    | string      | required   |                | table name |
 |  auto_create_table        | boolean     | optional   | 0              | [See below](#dynamic-table-creating) |
-|  schema_path              | string      | optional   |                | /path/to/schema.json |
+|  schema_file              | string      | optional   |                | /path/to/schema.json |
 |  prevent_duplicate_insert | boolean     | optional   | 0              | [See below](#data-consistency) |
 |  delete_from_local_when_job_end | boolean     | optional   | 0            | If set to true, delete local file when job is end |
 |  job_status_max_polling_time    | int         | optional   | 3600 sec     | Max job status polling time |
@@ -65,7 +65,7 @@ out:
   type: bigquery
   auth_method: private_key   # default
   service_account_email: ABCXYZ123ABCXYZ123.gserviceaccount.com
-  p12_keyfile_path: /path/to/p12_keyfile.p12
+  p12_keyfile: /path/to/p12_keyfile.p12
   path_prefix: /path/to/output
   file_ext: csv.gz
   source_format: CSV
@@ -130,7 +130,7 @@ out:
   type: bigquery
   auto_create_table: true
   table: table_%Y_%m
-  schema_path: /path/to/schema.json
+  schema_file: /path/to/schema.json
 ```
 
 ### Data Consistency

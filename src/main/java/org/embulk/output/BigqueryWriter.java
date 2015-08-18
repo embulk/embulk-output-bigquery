@@ -265,7 +265,7 @@ public class BigqueryWriter
     {
         if (autoCreateTable) {
             if (!schemaPath.isPresent()) {
-                throw new FileNotFoundException("schema_path is empty");
+                throw new FileNotFoundException("schema_file is empty");
             } else {
                 File file = new File(schemaPath.orNull());
                 if (!file.exists()) {
