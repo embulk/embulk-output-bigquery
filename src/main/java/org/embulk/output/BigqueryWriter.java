@@ -146,7 +146,9 @@ public class BigqueryWriter
 
         if (preventDuplicateInsert) {
             ImmutableList<String> elements = ImmutableList.of(
-                    getLocalMd5hash(localFilePath), dataset, table
+                    getLocalMd5hash(localFilePath), dataset, table,
+                    String.valueOf(tableSchema), sourceFormat, fieldDelimiter, String.valueOf(maxBadRecords),
+                    encoding, String.valueOf(ignoreUnknownValues), String.valueOf(allowQuotedNewlines)
             );
             String jobId = createJobId(elements);
 
@@ -211,7 +213,7 @@ public class BigqueryWriter
     private String createJobId(ImmutableList<String> elements) throws NoSuchAlgorithmException, IOException
     {
         StringBuilder sb = new StringBuilder();
-        for (Object element : elements) {
+        for (String element : elements) {
             sb.append(element);
         }
 
