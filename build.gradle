@@ -15,7 +15,7 @@ configurations {
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
-version = "0.1.7"
+version = "0.1.8"
 
 dependencies {
     compile  "org.embulk:embulk-core:0.6.22"
@@ -49,7 +49,7 @@ Gem::Specification.new do |spec|
   spec.description   = %[Embulk plugin that insert records to Google BigQuery.]
   spec.email         = ["satoshiakama@gmail.com"]
   spec.licenses      = ["Apache-2.0"]
-  spec.homepage      = "https://github.com/sakama/embulk-output-bigquery"
+  spec.homepage      = "https://github.com/embulk/embulk-output-bigquery"
 
   spec.files         = `git ls-files`.split("\n") + Dir["classpath/*.jar"]
   spec.test_files    = spec.files.grep(%r"^(test|spec)/")
