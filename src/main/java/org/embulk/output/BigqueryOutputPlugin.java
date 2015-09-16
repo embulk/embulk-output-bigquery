@@ -55,6 +55,10 @@ public class BigqueryOutputPlugin
         Optional<LocalFile> getP12Keyfile();
         void setP12Keyfile(Optional<LocalFile> p12Keyfile);
 
+        @Config("json_keyfile")
+        @ConfigDefault("null")
+        Optional<LocalFile> getJsonKeyfile();
+
         @Config("application_name")
         @ConfigDefault("\"Embulk BigQuery plugin\"")
         String getApplicationName();
@@ -168,11 +172,22 @@ public class BigqueryOutputPlugin
             }
         }
 
+        if (task.getAuthMethod().getString().equals("json_key")) {
+            if (!task.getJsonKeyfile().isPresent()) {
+                throw new ConfigException("If auth_method is json_key, you have to set json_keyfile");
+            }
+        } else if (task.getAuthMethod().getString().equals("private_key")) {
+            if (!task.getP12Keyfile().isPresent() || !task.getServiceAccountEmail().isPresent()) {
+                throw new ConfigException("If auth_method is private_key, you have to set both service_account_email and p12_keyfile");
+            }
+        }
+
         try {
             bigQueryWriter = new BigqueryWriter.Builder (
                     task.getAuthMethod().getString(),
                     task.getServiceAccountEmail(),
                     task.getP12Keyfile().transform(localFileToPathString()),
+                    task.getJsonKeyfile().transform(localFileToPathString()),
                     task.getApplicationName())
                     .setAutoCreateTable(task.getAutoCreateTable())
                     .setSchemaPath(task.getSchemaFile().transform(localFileToPathString()))
@@ -357,7 +372,8 @@ public class BigqueryOutputPlugin
     public enum AuthMethod
     {
         private_key("private_key"),
-        compute_engine("compute_engine");
+        compute_engine("compute_engine"),
+        json_key("json_key");
 
         private final String string;
 
