@@ -72,7 +72,10 @@ public class BigqueryWriter
         this.ignoreUnknownValues = builder.ignoreUnknownValues;
         this.allowQuotedNewlines = builder.allowQuotedNewlines;
 
-        BigqueryAuthentication auth = new BigqueryAuthentication(builder.authMethod, builder.serviceAccountEmail, builder.p12KeyFilePath, builder.applicationName);
+        BigqueryAuthentication auth = new BigqueryAuthentication(
+                builder.authMethod, builder.serviceAccountEmail, builder.p12KeyFilePath,
+                builder.jsonKeyFilePath, builder.applicationName
+        );
         this.bigQueryClient = auth.getBigqueryClient();
 
         if (autoCreateTable) {
@@ -336,6 +339,7 @@ public class BigqueryWriter
         private final String authMethod;
         private Optional<String> serviceAccountEmail;
         private Optional<String> p12KeyFilePath;
+        private Optional<String> jsonKeyFilePath;
         private String applicationName;
         private boolean autoCreateTable;
         private Optional<String> schemaPath;
@@ -350,11 +354,13 @@ public class BigqueryWriter
         private boolean ignoreUnknownValues;
         private boolean allowQuotedNewlines;
 
-        public Builder(String authMethod, Optional<String> serviceAccountEmail, Optional<String> p12KeyFilePath, String applicationName)
+        public Builder(String authMethod, Optional<String> serviceAccountEmail, Optional<String> p12KeyFilePath,
+                Optional<String> jsonKeyFilePath, String applicationName)
         {
             this.authMethod = authMethod;
             this.serviceAccountEmail = serviceAccountEmail;
             this.p12KeyFilePath = p12KeyFilePath;
+            this.jsonKeyFilePath = jsonKeyFilePath;
             this.applicationName = applicationName;
         }
 

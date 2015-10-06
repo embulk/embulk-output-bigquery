@@ -28,9 +28,10 @@ OAuth flow for installed applications.
 
 | name                      | type        | required?  | default      | description            |  
 |:--------------------------|:------------|:-----------|:-------------|:-----------------------|
-|  auth_method              | string      | optional   | "private_key"  | `private_key` or `compute_engine`
+|  auth_method              | string      | optional   | "private_key"  | `private_key` , `json_key` or `compute_engine`
 |  service_account_email    | string      | required when auth_method is private_key  |   | Your Google service account email
 |  p12_keyfile              | string      | required when auth_method is private_key   |   | Fullpath of private key in P12(PKCS12) format |
+|  json_keyfile             | string      | required when auth_method is json_key     |   | Fullpath of json key |
 |  sequence_format          | string      | optional   | %03d.%02d      |  |
 |  file_ext                 | string      | optional   |                | e.g. ".csv.gz" ".json.gz" |
 |  project                  | string      | required   |                | project_id |
@@ -81,18 +82,43 @@ out:
 
 ### Authentication
 
-There are two methods supported to fetch access token for the service account.
+There are three methods supported to fetch access token for the service account.
 
-1. Public-Private key pair
-2. Predefined access token (Compute Engine only)
+1. Public-Private key pair of GCP(Google Cloud Platform)'s service account
+2. JSON key of GCP(Google Cloud Platform)'s service account
+3. Pre-defined access token (Google Compute Engine only)
 
-The examples above use the first one.  You first need to create a service account (client ID),
+#### Public-Private key pair of GCP's service account
+
+You first need to create a service account (client ID),
 download its private key and deploy the key with embulk.
 
+```yaml
+out:
+  type: bigquery
+  auth_method: private_key   # default
+  service_account_email: ABCXYZ123ABCXYZ123.gserviceaccount.com
+  p12_keyfile: /path/to/p12_keyfile.p12
+```
+
+#### JSON key of GCP's service account
+
+You first need to create a service account (client ID),
+download its json key and deploy the key with embulk.
+
+```yaml
+out:
+  type: bigquery
+  auth_method: json_key
+  json_keyfile: /path/to/json_keyfile.json
+```
+
+#### Pre-defined access token(GCE only)
+
 On the other hand, you don't need to explicitly create a service account for embulk when you
-run embulk in Google Compute Engine.  In this second authentication method, you need to
+run embulk in Google Compute Engine. In this third authentication method, you need to
 add the API scope "https://www.googleapis.com/auth/bigquery" to the scope list of your
-Compute Engine instance, then you can configure embulk like this.
+Compute Engine VM instance, then you can configure embulk like this.
 
 ```yaml
 out:
