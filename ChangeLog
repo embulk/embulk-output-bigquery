@@ -12,7 +12,7 @@ Release 0.1.8 - 2015-08-19
 * Fixed job_id generation logic
 * Refactored
 
-Release 0.1.7 - 2015-03-20
+Release 0.1.7 - 2015-05-20
 
 * Added allow_quoted_newlines option
 * Upgraded embulk version to 0.6.8
