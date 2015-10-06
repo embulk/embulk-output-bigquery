@@ -113,6 +113,21 @@ out:
   json_keyfile: /path/to/json_keyfile.json
 ```
 
+You can also embed contents of json_keyfile at config.yml.
+
+```yaml
+in:
+  type: gcs
+  auth_method: json_key
+  json_keyfile:
+    content: |
+      {
+          "private_key_id": "123456789",
+          "private_key": "-----BEGIN PRIVATE KEY-----\nABCDEF",
+          "client_email": "..."
+       }
+```
+
 #### Pre-defined access token(GCE only)
 
 On the other hand, you don't need to explicitly create a service account for embulk when you
