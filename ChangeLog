@@ -1,0 +1,42 @@
+Release 0.1.10 - 2015-10-06
+
+* Added new auth method - json_keyfile of GCP(Google Cloud Platform)'s service account
+
+Release 0.1.9 - 2015-08-19
+
+* Upgraded embulk version to 0.7.1
+
+Release 0.1.8 - 2015-08-19
+
+* Supported mapreduce-executor. @frsyuki thanks!
+* Fixed job_id generation logic
+* Refactored
+
+Release 0.1.7 - 2015-03-20
+
+* Added allow_quoted_newlines option
+* Upgraded embulk version to 0.6.8
+
+Release 0.1.6 - 2015-04-23
+
+* Added ignore_unknown_values option to job_id generation logic.
+
+Release 0.1.5 - 2015-04-23
+
+* Added ignore_unknown_values option. @takus thanks!
+
+Release 0.1.4 - 2015-04-21
+
+* Added prevent_duplicate_insert option
+
+Release 0.1.3 - 2015-04-06
+
+* Added new auth method - pre-defined access token of GCE(Google Compute Engine)
+* Updated Google provided libraries
+  * http-client:google-http-client-jackson2 from 1.19.0 to 1.20.0
+  * apis:google-api-services-bigquery from v2-rev193-1.19.1 to v2-rev205-1.20.0
+
+Release 0.1.2 - 2015-04-01
+
+* Changed bulk-load method from "via GCS" to direct-insert
+* added dynamic table creationg option
