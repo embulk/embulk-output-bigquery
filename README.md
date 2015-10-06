@@ -116,8 +116,8 @@ out:
 You can also embed contents of json_keyfile at config.yml.
 
 ```yaml
-in:
-  type: gcs
+out:
+  type: bigquery
   auth_method: json_key
   json_keyfile:
     content: |
