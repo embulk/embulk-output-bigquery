@@ -1,3 +1,7 @@
+Release 0.1.11 - 2015-11-16
+
+* Change error result display for easy investigation.
+
 Release 0.1.10 - 2015-10-06
 
 * Added new auth method - json_keyfile of GCP(Google Cloud Platform)'s service account
