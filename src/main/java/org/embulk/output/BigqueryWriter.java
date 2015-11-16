@@ -90,15 +90,16 @@ public class BigqueryWriter
         try {
             Job job = bigQueryClient.jobs().get(project, jobRef.getJobId()).execute();
 
-            ErrorProto fatalError = job.getStatus().getErrorResult();
-            if (fatalError != null) {
-                throw new JobFailedException(String.format("Job failed. job id:[%s] reason:[%s][%s] status:[FAILED]", jobRef.getJobId(), fatalError.getReason(), fatalError.getMessage()));
-            }
             List<ErrorProto> errors = job.getStatus().getErrors();
             if (errors != null) {
                 for (ErrorProto error : errors) {
-                    log.error(String.format("Error: job id:[%s] reason[%s][%s] location:[%s]", jobRef.getJobId(), error.getReason(), error.getMessage(), error.getLocation()));
+                    log.error(String.format("Error: reason[%s][%s] location:[%s]", error.getReason(), error.getMessage(), error.getLocation()));
                 }
+            }
+
+            ErrorProto fatalError = job.getStatus().getErrorResult();
+            if (fatalError != null) {
+                throw new JobFailedException(String.format("Job failed. job id:[%s] reason:[%s][%s] status:[FAILED]", jobRef.getJobId(), fatalError.getReason(), fatalError.getMessage()));
             }
 
             String jobStatus = job.getStatus().getState();
