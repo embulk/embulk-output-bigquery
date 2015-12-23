@@ -139,6 +139,10 @@ public class BigqueryOutputPlugin
         @Config("allow_quoted_newlines")
         @ConfigDefault("false")
         boolean getAllowQuotedNewlines();
+
+        @Config("write_disposition")
+        @ConfigDefault("\"WRITE_APPEND\"")
+        String getWriteDisposition();
     }
 
     private final Logger log = Exec.getLogger(BigqueryOutputPlugin.class);
@@ -201,6 +205,7 @@ public class BigqueryOutputPlugin
                     .setIsSkipJobResultCheck(task.getIsSkipJobResultCheck())
                     .setIgnoreUnknownValues(task.getIgnoreUnknownValues())
                     .setAllowQuotedNewlines(task.getAllowQuotedNewlines())
+                    .setWriteDisposition(task.getWriteDisposition())
                     .build();
 
             bigQueryWriter.checkConfig(task.getProject(), task.getDataset(), task.getTable());

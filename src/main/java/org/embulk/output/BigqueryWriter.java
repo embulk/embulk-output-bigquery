@@ -54,6 +54,7 @@ public class BigqueryWriter
     private final boolean isSkipJobResultCheck;
     private final boolean ignoreUnknownValues;
     private final boolean allowQuotedNewlines;
+    private final String writeDisposition;
     private final Bigquery bigQueryClient;
 
     public BigqueryWriter(Builder builder)
@@ -71,6 +72,7 @@ public class BigqueryWriter
         this.isSkipJobResultCheck = builder.isSkipJobResultCheck;
         this.ignoreUnknownValues = builder.ignoreUnknownValues;
         this.allowQuotedNewlines = builder.allowQuotedNewlines;
+        this.writeDisposition = builder.writeDisposition;
 
         BigqueryAuthentication auth = new BigqueryAuthentication(
                 builder.authMethod, builder.serviceAccountEmail, builder.p12KeyFilePath,
@@ -199,7 +201,7 @@ public class BigqueryWriter
                 .setSourceFormat(sourceFormat)
                 .setIgnoreUnknownValues(ignoreUnknownValues)
                 .setDestinationTable(createTableReference(project, dataset, table))
-                .setWriteDisposition("WRITE_APPEND");
+                .setWriteDisposition(writeDisposition);
 
         if (sourceFormat.equals("CSV")) {
             config.setFieldDelimiter(String.valueOf(fieldDelimiter));
@@ -354,6 +356,7 @@ public class BigqueryWriter
         private boolean isSkipJobResultCheck;
         private boolean ignoreUnknownValues;
         private boolean allowQuotedNewlines;
+        private String writeDisposition;
 
         public Builder(String authMethod, Optional<String> serviceAccountEmail, Optional<String> p12KeyFilePath,
                 Optional<String> jsonKeyFilePath, String applicationName)
@@ -434,6 +437,12 @@ public class BigqueryWriter
         public Builder setAllowQuotedNewlines(boolean allowQuotedNewlines)
         {
             this.allowQuotedNewlines = allowQuotedNewlines;
+            return this;
+        }
+
+        public Builder setWriteDisposition(String writeDisposition)
+        {
+            this.writeDisposition = writeDisposition;
             return this;
         }
 
