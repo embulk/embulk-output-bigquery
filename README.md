@@ -50,14 +50,15 @@ OAuth flow for installed applications.
 
 Following options are same as [bq command-line tools](https://cloud.google.com/bigquery/bq-command-line-tool#creatingtablefromfile) or BigQuery [job's property](https://cloud.google.com/bigquery/docs/reference/v2/jobs#resource).
 
-| name                      | type        | required?  | default      | description            |  
-|:--------------------------|:------------|:-----------|:-------------|:-----------------------|
-|  source_format            | string      | required   | "CSV"          | File type (`NEWLINE_DELIMITED_JSON` or `CSV`) |
-|  max_bad_records          | int         | optional   | 0            | |
-|  field_delimiter          | char        | optional   | ","          |  |
-|  encoding                 | string      | optional   | "UTF-8"      | `UTF-8` or `ISO-8859-1` |
-|  ignore_unknown_values    | boolean     | optional   | 0            | |
-|  allow_quoted_newlines    | boolean     | optional   | 0            | Set true, if data contains newline characters. It may cause slow procsssing |
+| name                        | type          | required?    | default        | description                                                                 |
+| :-------------------------- | :------------ | :----------- | :------------- | :-----------------------                                                    |
+| source_format               | string        | required     | "CSV"          | File type (`NEWLINE_DELIMITED_JSON` or `CSV`)                               |
+| max_bad_records             | int           | optional     | 0              |                                                                             |
+| field_delimiter             | char          | optional     | ","            |                                                                             |
+| encoding                    | string        | optional     | "UTF-8"        | `UTF-8` or `ISO-8859-1`                                                     |
+| ignore_unknown_values       | boolean       | optional     | 0              |                                                                             |
+| allow_quoted_newlines       | boolean       | optional     | 0              | Set true, if data contains newline characters. It may cause slow procsssing |
+| write_disposition           | string        | optional     | "WRITE_APPEND" | `WRITE_APPEND`, `WRITE_TRUNCATE` or `WRITE_EMPTY`                           |
 
 ### Example
 
