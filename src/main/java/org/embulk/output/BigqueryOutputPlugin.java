@@ -228,13 +228,22 @@ public class BigqueryOutputPlugin
                              int taskCount,
                              FileOutputPlugin.Control control)
     {
+        Mode mode = taskSource.get(Mode.class, "Mode");
+        String project = taskSource.get(String.class, "Project");
+        String dataset = taskSource.get(String.class, "Dataset");
+        String tableName = taskSource.get(String.class, "Table");
+
+        if (mode == Mode.delete_in_advance) {
+            try {
+                bigQueryWriter.deleteTable(project, dataset, generateTableName(tableName));
+            } catch (IOException ex) {
+                log.warn(ex.getMessage());
+            }
+        }
+
         control.run(taskSource);
 
-        Mode mode = taskSource.get(Mode.class, "Mode");
         if (mode.isReplaceMode()) {
-            String project = taskSource.get(String.class, "Project");
-            String dataset = taskSource.get(String.class, "Dataset");
-            String tableName = taskSource.get(String.class, "Table");
             try {
                 if (mode == Mode.replace_backup && bigQueryWriter.isExistTable(project, dataset, generateTableName(tableName))) {
                     bigQueryWriter.replaceTable(project, dataset, generateTableName(tableName) + "_old", generateTableName(tableName));
@@ -430,6 +439,7 @@ public class BigqueryOutputPlugin
     public enum Mode
     {
         append("append"),
+        delete_in_advance("delete_in_advance"),
         replace("replace") {
             @Override
             public boolean isReplaceMode() { return true; }
