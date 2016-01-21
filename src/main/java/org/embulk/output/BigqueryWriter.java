@@ -11,6 +11,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+
+import com.google.api.services.bigquery.model.*;
 import com.google.common.base.Optional;
 import java.security.GeneralSecurityException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,16 +26,6 @@ import org.slf4j.Logger;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.Bigquery.Tables;
 import com.google.api.services.bigquery.Bigquery.Jobs.Insert;
-import com.google.api.services.bigquery.model.Job;
-import com.google.api.services.bigquery.model.JobConfiguration;
-import com.google.api.services.bigquery.model.JobConfigurationLoad;
-import com.google.api.services.bigquery.model.JobStatistics;
-import com.google.api.services.bigquery.model.JobReference;
-import com.google.api.services.bigquery.model.Table;
-import com.google.api.services.bigquery.model.TableSchema;
-import com.google.api.services.bigquery.model.TableReference;
-import com.google.api.services.bigquery.model.TableFieldSchema;
-import com.google.api.services.bigquery.model.ErrorProto;
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.googleapis.media.MediaHttpUploader;
 import com.google.api.client.googleapis.media.MediaHttpUploaderProgressListener;
@@ -190,6 +182,44 @@ public class BigqueryWriter
         }
     }
 
+    public void replaceTable(String project, String dataset, String oldTable, String newTable)
+            throws TimeoutException, JobFailedException, IOException
+    {
+        copyTable(project, dataset, newTable, oldTable, false);
+    }
+
+    public void copyTable(String project, String dataset, String fromTable, String toTable, boolean append)
+            throws TimeoutException, JobFailedException, IOException
+    {
+        log.info(String.format("Copy Job preparing... project:%s dataset:%s from:%s to:%s", project, dataset, fromTable, toTable));
+
+        Job job = new Job();
+        JobReference jobRef = null;
+        JobConfiguration jobConfig = new JobConfiguration().setCopy(setCopyConfig(project, dataset, fromTable, toTable, append));
+        job.setConfiguration(jobConfig);
+        Insert insert = bigQueryClient.jobs().insert(project, job);
+        insert.setProjectId(project);
+        insert.setDisableGZipContent(true);
+
+        try {
+            jobRef = insert.execute().getJobReference();
+        } catch (IllegalStateException ex) {
+            throw new JobFailedException(ex.getMessage());
+        }
+        log.info(String.format("Job executed. job id:[%s]", jobRef.getJobId()));
+        getJobStatusUntilDone(project, jobRef);
+    }
+
+    public void deleteTable(String project, String dataset, String table) throws IOException {
+        try {
+            Tables.Delete delete = bigQueryClient.tables().delete(project, dataset, table);
+            delete.execute();
+            log.info(String.format("Table deleted. project:%s dataset:%s table:%s", delete.getProjectId(), delete.getDatasetId(), delete.getTableId()));
+        } catch (GoogleJsonResponseException ex) {
+            log.warn(ex.getMessage());
+        }
+    }
+
     private JobConfigurationLoad setLoadConfig(String project, String dataset, String table)
     {
         JobConfigurationLoad config = new JobConfigurationLoad();
@@ -211,6 +241,21 @@ public class BigqueryWriter
         } else {
             config.setCreateDisposition("CREATE_NEVER");
         }
+        return config;
+    }
+
+    private JobConfigurationTableCopy setCopyConfig(String project, String dataset, String fromTable, String toTable, boolean append)
+    {
+        JobConfigurationTableCopy config = new JobConfigurationTableCopy();
+        config.setSourceTable(createTableReference(project, dataset, fromTable))
+                .setDestinationTable(createTableReference(project, dataset, toTable));
+
+        if (append) {
+            config.setWriteDisposition("WRITE_APPEND");
+        } else {
+            config.setWriteDisposition("WRITE_TRUNCATE");
+        }
+
         return config;
     }
 

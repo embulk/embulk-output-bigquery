@@ -139,9 +139,14 @@ public class BigqueryOutputPlugin
         @Config("allow_quoted_newlines")
         @ConfigDefault("false")
         boolean getAllowQuotedNewlines();
+
+        @Config("mode")
+        @ConfigDefault("\"append\"")
+        Mode getMode();
     }
 
     private final Logger log = Exec.getLogger(BigqueryOutputPlugin.class);
+    private final static String temporaryTableSuffix = Long.toString(System.currentTimeMillis());
     private static BigqueryWriter bigQueryWriter;
 
     @Override
@@ -182,6 +187,12 @@ public class BigqueryOutputPlugin
             }
         }
 
+        if (task.getMode().isReplaceMode()) {
+            if (task.getIsSkipJobResultCheck()) {
+                throw new ConfigException("If mode is replace or replace_backup, is_skip_job_result_check must be false");
+            }
+        }
+
         try {
             bigQueryWriter = new BigqueryWriter.Builder (
                     task.getAuthMethod().getString(),
@@ -219,6 +230,28 @@ public class BigqueryOutputPlugin
     {
         control.run(taskSource);
 
+        Mode mode = taskSource.get(Mode.class, "Mode");
+        if (mode.isReplaceMode()) {
+            String project = taskSource.get(String.class, "Project");
+            String dataset = taskSource.get(String.class, "Dataset");
+            String tableName = taskSource.get(String.class, "Table");
+            try {
+                if (mode == Mode.replace_backup && bigQueryWriter.isExistTable(project, dataset, generateTableName(tableName))) {
+                    bigQueryWriter.replaceTable(project, dataset, generateTableName(tableName) + "_old", generateTableName(tableName));
+                }
+                bigQueryWriter.replaceTable(project, dataset, generateTableName(tableName), generateTemporaryTableName(tableName));
+            } catch (TimeoutException | BigqueryWriter.JobFailedException | IOException ex) {
+                log.error(ex.getMessage());
+                throw Throwables.propagate(ex);
+            } finally {
+                try {
+                    bigQueryWriter.deleteTable(project, dataset, generateTemporaryTableName(tableName));
+                } catch (IOException ex) {
+                    log.warn(ex.getMessage());
+                }
+            }
+        }
+
         return Exec.newConfigDiff();
     }
 
@@ -252,7 +285,8 @@ public class BigqueryOutputPlugin
         return new TransactionalFileOutput() {
             private final String project = task.getProject();
             private final String dataset = task.getDataset();
-            private final String table = generateTableName(task.getTable());
+            private final String table = task.getMode().isReplaceMode() ?
+                    generateTemporaryTableName(task.getTable()) : generateTableName(task.getTable());
             private final boolean deleteFromLocalWhenJobEnd = task.getDeleteFromLocalWhenJobEnd();
 
             private int fileIndex = 0;
@@ -351,6 +385,11 @@ public class BigqueryOutputPlugin
         return result.toString();
     }
 
+    public String generateTemporaryTableName(String tableName)
+    {
+        return generateTableName(tableName) + temporaryTableSuffix;
+    }
+
     public enum SourceFormat
     {
         CSV("CSV"),
@@ -386,5 +425,28 @@ public class BigqueryOutputPlugin
         {
             return string;
         }
+    }
+
+    public enum Mode
+    {
+        append("append"),
+        replace("replace") {
+            @Override
+            public boolean isReplaceMode() { return true; }
+        },
+        replace_backup("replace_backup") {
+            @Override
+            public boolean isReplaceMode() { return true; }
+        };
+
+        private final String string;
+
+        Mode(String string)
+        {
+            this.string = string;
+        }
+
+        public String getString() { return string; }
+        public boolean isReplaceMode() { return false; }
     }
 }
