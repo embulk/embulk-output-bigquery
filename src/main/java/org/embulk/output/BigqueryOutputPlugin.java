@@ -193,6 +193,12 @@ public class BigqueryOutputPlugin
             }
         }
 
+        if (task.getMode().isDeleteInAdvance()) {
+            if (!task.getAutoCreateTable()) {
+                throw new ConfigException("If mode is delete_in_advance, auto_create_table must be true");
+            }
+        }
+
         try {
             bigQueryWriter = new BigqueryWriter.Builder (
                     task.getAuthMethod().getString(),
@@ -439,7 +445,10 @@ public class BigqueryOutputPlugin
     public enum Mode
     {
         append("append"),
-        delete_in_advance("delete_in_advance"),
+        delete_in_advance("delete_in_advance") {
+            @Override
+            public boolean isDeleteInAdvance() { return true; }
+        },
         replace("replace") {
             @Override
             public boolean isReplaceMode() { return true; }
@@ -458,5 +467,6 @@ public class BigqueryOutputPlugin
 
         public String getString() { return string; }
         public boolean isReplaceMode() { return false; }
+        public boolean isDeleteInAdvance() { return true; }
     }
 }
