@@ -1,3 +1,7 @@
+Release 0.2.0 - 2016-01-26
+
+* Added mode parameters and support 4 modes(append, replace, replace_backup, delete_in_advance). @joker1007 thanks!
+
 Release 0.1.11 - 2015-11-16
 
 * Change error result display for easy investigation.
