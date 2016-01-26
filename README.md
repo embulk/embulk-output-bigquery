@@ -28,7 +28,7 @@ OAuth flow for installed applications.
 
 | name                      | type        | required?  | default      | description            |  
 |:--------------------------|:------------|:-----------|:-------------|:-----------------------|
-|  mode                     | string      | optional   | append       | [See below](#mode)     |
+|  mode                     | string      | optional   | "append"     | [See below](#mode)     |
 |  auth_method              | string      | optional   | "private_key"  | `private_key` , `json_key` or `compute_engine`
 |  service_account_email    | string      | required when auth_method is private_key  |   | Your Google service account email
 |  p12_keyfile              | string      | required when auth_method is private_key   |   | Fullpath of private key in P12(PKCS12) format |
@@ -65,6 +65,7 @@ Following options are same as [bq command-line tools](https://cloud.google.com/b
 ```yaml
 out:
   type: bigquery
+  mode: append
   auth_method: private_key   # default
   service_account_email: ABCXYZ123ABCXYZ123.gserviceaccount.com
   p12_keyfile: /path/to/p12_keyfile.p12
@@ -85,18 +86,18 @@ out:
 
 4 modes are provided.
 
-#### append
+##### append
 
 default. When append mode, plugin will insert data into existing table.
 
-#### replace
+##### replace
 
 1. Load to temporary table.
 2. Copy temporary table to destination table. (WRITE_TRUNCATE)
 
 ```is_skip_job_result_check``` must be false when replace mode
 
-#### replace_backup
+##### replace_backup
 
 1. Load to temporary table.
 2. Copy destination table to backup table. (table_name_old)
@@ -104,7 +105,7 @@ default. When append mode, plugin will insert data into existing table.
 
 ```is_skip_job_result_check``` must be false when replace_backup mode.
 
-#### delete_in_advance
+##### delete_in_advance
 
 1. Delete destination table, if it exists.
 2. Load to destination table.
