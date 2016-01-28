@@ -72,7 +72,8 @@ public class BigqueryWriter
 
         if (autoCreateTable) {
             this.tableSchema = createTableSchema();
-        } else {
+        }
+        else {
             this.tableSchema = null;
         }
     }
@@ -100,7 +101,8 @@ public class BigqueryWriter
                 log.info(String.format("Job statistics [%s]", statistics.getLoad()));
             }
             return jobStatus;
-        } catch (IOException ex) {
+        }
+        catch (IOException ex) {
             log.warn(ex.getMessage());
             return "UNKNOWN";
         }
@@ -118,14 +120,17 @@ public class BigqueryWriter
                 if (jobStatus.equals("DONE")) {
                     log.info(String.format("Job completed successfully. job id:[%s] elapsed_time:%dms status:[%s]", jobRef.getJobId(), elapsedTime, "SUCCESS"));
                     break;
-                } else if (elapsedTime > jobStatusMaxPollingTime * 1000) {
+                }
+                else if (elapsedTime > jobStatusMaxPollingTime * 1000) {
                     throw new TimeoutException(String.format("Checking job status...Timeout. job id:[%s] elapsed_time:%dms status:[%s]", jobRef.getJobId(), elapsedTime, "TIMEOUT"));
-                } else {
+                }
+                else {
                     log.info(String.format("Checking job status... job id:[%s] elapsed_time:%dms status:[%s]", jobRef.getJobId(), elapsedTime, jobStatus));
                 }
                 Thread.sleep(jobStatusPollingInterval * 1000);
             }
-        } catch (InterruptedException ex) {
+        }
+        catch (InterruptedException ex) {
             log.warn(ex.getMessage());
         }
     }
@@ -171,13 +176,15 @@ public class BigqueryWriter
 
         try {
             jobRef = insert.execute().getJobReference();
-        } catch (IllegalStateException ex) {
+        }
+        catch (IllegalStateException ex) {
             throw new JobFailedException(ex.getMessage());
         }
         log.info(String.format("Job executed. job id:[%s] file:[%s]", jobRef.getJobId(), localFilePath));
         if (isSkipJobResultCheck) {
             log.info(String.format("Skip job status check. job id:[%s]", jobRef.getJobId()));
-        } else {
+        }
+        else {
             getJobStatusUntilDone(project, jobRef);
         }
     }
@@ -203,19 +210,22 @@ public class BigqueryWriter
 
         try {
             jobRef = insert.execute().getJobReference();
-        } catch (IllegalStateException ex) {
+        }
+        catch (IllegalStateException ex) {
             throw new JobFailedException(ex.getMessage());
         }
         log.info(String.format("Job executed. job id:[%s]", jobRef.getJobId()));
         getJobStatusUntilDone(project, jobRef);
     }
 
-    public void deleteTable(String project, String dataset, String table) throws IOException {
+    public void deleteTable(String project, String dataset, String table) throws IOException
+    {
         try {
             Tables.Delete delete = bigQueryClient.tables().delete(project, dataset, table);
             delete.execute();
             log.info(String.format("Table deleted. project:%s dataset:%s table:%s", delete.getProjectId(), delete.getDatasetId(), delete.getTableId()));
-        } catch (GoogleJsonResponseException ex) {
+        }
+        catch (GoogleJsonResponseException ex) {
             log.warn(ex.getMessage());
         }
     }
@@ -238,7 +248,8 @@ public class BigqueryWriter
             config.setSchema(tableSchema);
             config.setCreateDisposition("CREATE_IF_NEEDED");
             log.info(String.format("table:[%s] will be create if not exists", table));
-        } else {
+        }
+        else {
             config.setCreateDisposition("CREATE_NEVER");
         }
         return config;
@@ -252,7 +263,8 @@ public class BigqueryWriter
 
         if (append) {
             config.setWriteDisposition("WRITE_APPEND");
-        } else {
+        }
+        else {
             config.setWriteDisposition("WRITE_TRUNCATE");
         }
 
@@ -294,7 +306,8 @@ public class BigqueryWriter
             ObjectMapper mapper = new ObjectMapper();
             List<TableFieldSchema> fields = mapper.readValue(stream, new TypeReference<List<TableFieldSchema>>() {});
             return new TableSchema().setFields(fields);
-        } finally {
+        }
+        finally {
             if (stream != null) {
                 stream.close();
             }
@@ -306,7 +319,8 @@ public class BigqueryWriter
         Tables tableRequest = bigQueryClient.tables();
         try {
             Table tableData = tableRequest.get(project, dataset, table).execute();
-        } catch (GoogleJsonResponseException ex) {
+        }
+        catch (GoogleJsonResponseException ex) {
             return false;
         }
         return true;
@@ -317,13 +331,15 @@ public class BigqueryWriter
         if (autoCreateTable) {
             if (!schemaPath.isPresent()) {
                 throw new FileNotFoundException("schema_file is empty");
-            } else {
+            }
+            else {
                 File file = new File(schemaPath.orNull());
                 if (!file.exists()) {
                     throw new FileNotFoundException("Can not load schema file.");
                 }
             }
-        } else {
+        }
+        else {
             if (!isExistTable(project, dataset, table)) {
                 throw new IOException(String.format("table [%s] is not exists", table));
             }
@@ -347,7 +363,8 @@ public class BigqueryWriter
 
             byte[] encoded = (hashedBytes);
             return new String(encoded);
-        } finally {
+        }
+        finally {
             stream.close();
         }
     }
@@ -490,7 +507,8 @@ public class BigqueryWriter
 
     public class JobFailedException extends RuntimeException
     {
-        public JobFailedException(String message) {
+        public JobFailedException(String message)
+        {
             super(message);
         }
     }

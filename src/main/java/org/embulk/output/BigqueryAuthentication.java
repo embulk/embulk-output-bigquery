@@ -47,9 +47,11 @@ public class BigqueryAuthentication
 
         if (authMethod.toLowerCase().equals("compute_engine")) {
             this.credentials = getComputeCredential();
-        } else if(authMethod.toLowerCase().equals("json_key")) {
+        }
+        else if (authMethod.toLowerCase().equals("json_key")) {
             this.credentials = getServiceAccountCredentialFromJsonFile();
-        } else {
+        }
+        else {
             this.credentials = getServiceAccountCredential();
         }
     }

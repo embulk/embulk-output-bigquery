@@ -146,7 +146,7 @@ public class BigqueryOutputPlugin
     }
 
     private final Logger log = Exec.getLogger(BigqueryOutputPlugin.class);
-    private final static String temporaryTableSuffix = Long.toString(System.currentTimeMillis());
+    private static final String temporaryTableSuffix = Long.toString(System.currentTimeMillis());
     private static BigqueryWriter bigQueryWriter;
 
     @Override
@@ -161,7 +161,8 @@ public class BigqueryOutputPlugin
             }
             try {
                 task.setP12Keyfile(Optional.of(LocalFile.of(task.getP12KeyfilePath().get())));
-            } catch (IOException ex) {
+            }
+            catch (IOException ex) {
                 throw Throwables.propagate(ex);
             }
         }
@@ -172,7 +173,8 @@ public class BigqueryOutputPlugin
             }
             try {
                 task.setSchemaFile(Optional.of(LocalFile.of(task.getSchemaPath().get())));
-            } catch (IOException ex) {
+            }
+            catch (IOException ex) {
                 throw Throwables.propagate(ex);
             }
         }
@@ -181,7 +183,8 @@ public class BigqueryOutputPlugin
             if (!task.getJsonKeyfile().isPresent()) {
                 throw new ConfigException("If auth_method is json_key, you have to set json_keyfile");
             }
-        } else if (task.getAuthMethod().getString().equals("private_key")) {
+        }
+        else if (task.getAuthMethod().getString().equals("private_key")) {
             if (!task.getP12Keyfile().isPresent() || !task.getServiceAccountEmail().isPresent()) {
                 throw new ConfigException("If auth_method is private_key, you have to set both service_account_email and p12_keyfile");
             }
@@ -200,7 +203,7 @@ public class BigqueryOutputPlugin
         }
 
         try {
-            bigQueryWriter = new BigqueryWriter.Builder (
+            bigQueryWriter = new BigqueryWriter.Builder(
                     task.getAuthMethod().getString(),
                     task.getServiceAccountEmail(),
                     task.getP12Keyfile().transform(localFileToPathString()),
@@ -222,7 +225,8 @@ public class BigqueryOutputPlugin
 
             bigQueryWriter.checkConfig(task.getProject(), task.getDataset(), task.getTable());
 
-        } catch (IOException | GeneralSecurityException ex) {
+        }
+        catch (IOException | GeneralSecurityException ex) {
             throw new ConfigException(ex);
         }
         // non-retryable (non-idempotent) output:
@@ -242,7 +246,8 @@ public class BigqueryOutputPlugin
         if (mode == Mode.delete_in_advance) {
             try {
                 bigQueryWriter.deleteTable(project, dataset, generateTableName(tableName));
-            } catch (IOException ex) {
+            }
+            catch (IOException ex) {
                 log.warn(ex.getMessage());
             }
         }
@@ -255,13 +260,16 @@ public class BigqueryOutputPlugin
                     bigQueryWriter.replaceTable(project, dataset, generateTableName(tableName) + "_old", generateTableName(tableName));
                 }
                 bigQueryWriter.replaceTable(project, dataset, generateTableName(tableName), generateTemporaryTableName(tableName));
-            } catch (TimeoutException | BigqueryWriter.JobFailedException | IOException ex) {
+            }
+            catch (TimeoutException | BigqueryWriter.JobFailedException | IOException ex) {
                 log.error(ex.getMessage());
                 throw Throwables.propagate(ex);
-            } finally {
+            }
+            finally {
                 try {
                     bigQueryWriter.deleteTable(project, dataset, generateTemporaryTableName(tableName));
-                } catch (IOException ex) {
+                }
+                catch (IOException ex) {
                     log.warn(ex.getMessage());
                 }
             }
@@ -328,7 +336,8 @@ public class BigqueryOutputPlugin
                     }
                     log.info(String.format("Writing file [%s]", filePath));
                     output = new BufferedOutputStream(new FileOutputStream(filePath));
-                } catch (FileNotFoundException ex) {
+                }
+                catch (FileNotFoundException ex) {
                     throw Throwables.propagate(ex);
                 }
                 fileIndex++;
@@ -339,7 +348,8 @@ public class BigqueryOutputPlugin
                 if (output != null) {
                     try {
                         output.close();
-                    } catch (IOException ex) {
+                    }
+                    catch (IOException ex) {
                         throw Throwables.propagate(ex);
                     }
                 }
@@ -349,9 +359,11 @@ public class BigqueryOutputPlugin
             {
                 try {
                     output.write(buffer.array(), buffer.offset(), buffer.limit());
-                } catch (IOException ex) {
+                }
+                catch (IOException ex) {
                     throw Throwables.propagate(ex);
-                } finally {
+                }
+                finally {
                     buffer.release();
                 }
             }
@@ -367,7 +379,8 @@ public class BigqueryOutputPlugin
                             log.info(String.format("Delete local file [%s]", filePath));
                             file.delete();
                         }
-                    } catch (NoSuchAlgorithmException | TimeoutException | BigqueryWriter.JobFailedException | IOException ex) {
+                    }
+                    catch (NoSuchAlgorithmException | TimeoutException | BigqueryWriter.JobFailedException | IOException ex) {
                         log.error(ex.getMessage());
                         throw Throwables.propagate(ex);
                     }
@@ -447,15 +460,24 @@ public class BigqueryOutputPlugin
         append("append"),
         delete_in_advance("delete_in_advance") {
             @Override
-            public boolean isDeleteInAdvance() { return true; }
+            public boolean isDeleteInAdvance()
+            {
+                return true;
+            }
         },
         replace("replace") {
             @Override
-            public boolean isReplaceMode() { return true; }
+            public boolean isReplaceMode()
+            {
+                return true;
+            }
         },
         replace_backup("replace_backup") {
             @Override
-            public boolean isReplaceMode() { return true; }
+            public boolean isReplaceMode()
+            {
+                return true;
+            }
         };
 
         private final String string;
@@ -465,8 +487,17 @@ public class BigqueryOutputPlugin
             this.string = string;
         }
 
-        public String getString() { return string; }
-        public boolean isReplaceMode() { return false; }
-        public boolean isDeleteInAdvance() { return true; }
+        public String getString()
+        {
+            return string;
+        }
+        public boolean isReplaceMode()
+        {
+            return false;
+        }
+        public boolean isDeleteInAdvance()
+        {
+            return true;
+        }
     }
 }
