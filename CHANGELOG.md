@@ -1,3 +1,8 @@
+## 0.2.1 - 2016-01-28
+
+* [maintenance] Upgraded Embulk version to 0.8.1 [#22](https://github.com/embulk/embulk-output-bigquery/pull/22). @joker1007 thanks!
+* [maintenance] Formatted code style by checkstyle [#23](https://github.com/embulk/embulk-output-bigquery/pull/23)
+
 ## 0.2.0 - 2016-01-26
 
 * [new feature] Added mode parameters and support 4 modes(append, replace, replace_backup, delete_in_advance). [#20](https://github.com/embulk/embulk-output-bigquery/pull/20) [#21](https://github.com/embulk/embulk-output-bigquery/pull/21) @joker1007 thanks!
