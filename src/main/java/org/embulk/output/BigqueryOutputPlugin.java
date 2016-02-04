@@ -1,35 +1,35 @@
 package org.embulk.output;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.security.NoSuchAlgorithmException;
-import java.util.List;
-import java.util.concurrent.TimeoutException;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
-import java.security.GeneralSecurityException;
-import org.jruby.embed.ScriptingContainer;
-
 import org.embulk.config.Config;
-import org.embulk.config.ConfigException;
 import org.embulk.config.ConfigDefault;
-import org.embulk.config.ConfigSource;
 import org.embulk.config.ConfigDiff;
-import org.embulk.config.TaskReport;
+import org.embulk.config.ConfigException;
+import org.embulk.config.ConfigSource;
 import org.embulk.config.Task;
+import org.embulk.config.TaskReport;
 import org.embulk.config.TaskSource;
-import org.embulk.spi.unit.LocalFile;
 import org.embulk.spi.Buffer;
+import org.embulk.spi.Exec;
 import org.embulk.spi.FileOutputPlugin;
 import org.embulk.spi.TransactionalFileOutput;
-import org.embulk.spi.Exec;
-
+import org.embulk.spi.unit.LocalFile;
+import org.jruby.embed.ScriptingContainer;
 import org.slf4j.Logger;
+
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
+import java.util.List;
+import java.util.concurrent.TimeoutException;
 
 public class BigqueryOutputPlugin
         implements FileOutputPlugin
@@ -224,7 +224,6 @@ public class BigqueryOutputPlugin
                     .build();
 
             bigQueryWriter.checkConfig(task.getProject(), task.getDataset(), task.getTable());
-
         }
         catch (IOException | GeneralSecurityException ex) {
             throw new ConfigException(ex);
