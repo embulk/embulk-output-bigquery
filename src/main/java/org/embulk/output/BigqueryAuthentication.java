@@ -1,26 +1,27 @@
 package org.embulk.output;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Collections;
-import java.security.GeneralSecurityException;
-
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.googleapis.compute.ComputeCredential;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
+import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.HttpTransport;
 import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
-import com.google.api.client.http.HttpRequestInitializer;
-import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.BigqueryScopes;
 import com.google.api.services.bigquery.model.ProjectList;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import org.embulk.spi.Exec;
 import org.slf4j.Logger;
+
+import java.io.File;
+import java.io.FileInputStream;
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.Collections;
 
 public class BigqueryAuthentication
 {
