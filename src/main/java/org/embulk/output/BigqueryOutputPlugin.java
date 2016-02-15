@@ -116,6 +116,10 @@ public class BigqueryOutputPlugin
         Optional<LocalFile> getSchemaFile();
         void setSchemaFile(Optional<LocalFile> schemaFile);
 
+        @Config("template_table")
+        @ConfigDefault("null")
+        Optional<String> getTemplateTable();
+
         @Config("prevent_duplicate_insert")
         @ConfigDefault("false")
         boolean getPreventDuplicateInsert();
@@ -209,8 +213,12 @@ public class BigqueryOutputPlugin
                     task.getP12Keyfile().transform(localFileToPathString()),
                     task.getJsonKeyfile().transform(localFileToPathString()),
                     task.getApplicationName())
+                    .setProject(task.getProject())
+                    .setDataset(task.getDataset())
+                    .setTable(task.getTable())
                     .setAutoCreateTable(task.getAutoCreateTable())
                     .setSchemaPath(task.getSchemaFile().transform(localFileToPathString()))
+                    .setTemplateTable(task.getTemplateTable())
                     .setSourceFormat(task.getSourceFormat().getString())
                     .setFieldDelimiter(String.valueOf(task.getFieldDelimiter()))
                     .setMaxBadRecords(task.getMaxBadrecords())
@@ -222,8 +230,6 @@ public class BigqueryOutputPlugin
                     .setIgnoreUnknownValues(task.getIgnoreUnknownValues())
                     .setAllowQuotedNewlines(task.getAllowQuotedNewlines())
                     .build();
-
-            bigQueryWriter.checkConfig(task.getProject(), task.getDataset(), task.getTable());
         }
         catch (IOException | GeneralSecurityException ex) {
             throw new ConfigException(ex);

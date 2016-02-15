@@ -41,8 +41,12 @@ import java.util.concurrent.TimeoutException;
 public class BigqueryWriter
 {
     private final Logger log = Exec.getLogger(BigqueryWriter.class);
+    private final String project;
+    private final String dataset;
+    private final String table;
     private final boolean autoCreateTable;
     private final Optional<String> schemaPath;
+    private final Optional<String> templateTable;
     private final TableSchema tableSchema;
     private final String sourceFormat;
     private final String fieldDelimiter;
@@ -59,8 +63,12 @@ public class BigqueryWriter
     public BigqueryWriter(Builder builder)
             throws IOException, GeneralSecurityException
     {
+        this.project = builder.project;
+        this.dataset = builder.dataset;
+        this.table = builder.table;
         this.autoCreateTable = builder.autoCreateTable;
         this.schemaPath = builder.schemaPath;
+        this.templateTable = builder.templateTable;
         this.sourceFormat = builder.sourceFormat.toUpperCase();
         this.fieldDelimiter = builder.fieldDelimiter;
         this.maxBadRecords = builder.maxBadRecords;
@@ -78,8 +86,15 @@ public class BigqueryWriter
         );
         this.bigQueryClient = auth.getBigqueryClient();
 
+        checkConfig();
+
         if (autoCreateTable) {
-            this.tableSchema = createTableSchema();
+            if (schemaPath.isPresent()) {
+                this.tableSchema = createTableSchema();
+            }
+            else {
+               this.tableSchema = fetchTableSchema();
+            }
         }
         else {
             this.tableSchema = null;
@@ -322,6 +337,15 @@ public class BigqueryWriter
         }
     }
 
+    public TableSchema fetchTableSchema() throws IOException
+    {
+        String fetchTarget = templateTable.orNull();
+        log.info(String.format("Fetch table schema from project:%s dataset:%s table:%s", project, dataset, fetchTarget));
+        Tables tableRequest = bigQueryClient.tables();
+        Table tableData = tableRequest.get(project, dataset, fetchTarget).execute();
+        return tableData.getSchema();
+    }
+
     public boolean isExistTable(String project, String dataset, String table) throws IOException
     {
         Tables tableRequest = bigQueryClient.tables();
@@ -334,17 +358,17 @@ public class BigqueryWriter
         return true;
     }
 
-    public void checkConfig(String project, String dataset, String table) throws IOException
+    public void checkConfig() throws IOException
     {
         if (autoCreateTable) {
-            if (!schemaPath.isPresent()) {
-                throw new FileNotFoundException("schema_file is empty");
-            }
-            else {
+            if (schemaPath.isPresent()) {
                 File file = new File(schemaPath.orNull());
                 if (!file.exists()) {
                     throw new FileNotFoundException("Can not load schema file.");
                 }
+            }
+            else if (!templateTable.isPresent()) {
+                throw new FileNotFoundException("schema_file or template_table must be present");
             }
         }
         else {
@@ -412,8 +436,12 @@ public class BigqueryWriter
         private Optional<String> p12KeyFilePath;
         private Optional<String> jsonKeyFilePath;
         private String applicationName;
+        private String project;
+        private String dataset;
+        private String table;
         private boolean autoCreateTable;
         private Optional<String> schemaPath;
+        private Optional<String> templateTable;
         private String sourceFormat;
         private String fieldDelimiter;
         private int maxBadRecords;
@@ -435,6 +463,24 @@ public class BigqueryWriter
             this.applicationName = applicationName;
         }
 
+        public Builder setProject(String project)
+        {
+            this.project = project;
+            return this;
+        }
+
+        public Builder setDataset(String dataset)
+        {
+            this.dataset = dataset;
+            return this;
+        }
+
+        public Builder setTable(String table)
+        {
+            this.table = table;
+            return this;
+        }
+
         public Builder setAutoCreateTable(boolean autoCreateTable)
         {
             this.autoCreateTable = autoCreateTable;
@@ -444,6 +490,12 @@ public class BigqueryWriter
         public Builder setSchemaPath(Optional<String> schemaPath)
         {
             this.schemaPath = schemaPath;
+            return this;
+        }
+
+        public Builder setTemplateTable(Optional<String> templateTable)
+        {
+            this.templateTable = templateTable;
             return this;
         }
 
