@@ -1,3 +1,7 @@
+## 0.2.2 - 2016-02-15
+
+* [new feature] Added template_table option. [#25](https://github.com/embulk/embulk-output-bigquery/pull/25). @joker1007 thanks!
+
 ## 0.2.1 - 2016-01-28
 
 * [maintenance] Upgraded Embulk version to 0.8.1 [#22](https://github.com/embulk/embulk-output-bigquery/pull/22). @joker1007 thanks!
