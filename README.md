@@ -40,6 +40,7 @@ OAuth flow for installed applications.
 |  table                    | string      | required   |                | table name |
 |  auto_create_table        | boolean     | optional   | 0              | [See below](#dynamic-table-creating) |
 |  schema_file              | string      | optional   |                | /path/to/schema.json |
+|  template_table           | string      | optional   |                | existing_table_name [See below](#dynamic-table-creating) |
 |  prevent_duplicate_insert | boolean     | optional   | 0              | [See below](#data-consistency) |
 |  delete_from_local_when_job_end | boolean     | optional   | 0            | If set to true, delete local file when job is end |
 |  job_status_max_polling_time    | int         | optional   | 3600 sec     | Max job status polling time |
@@ -195,8 +196,11 @@ When `auto_create_table` is set to true, try to create the table using BigQuery 
 
 If table already exists, insert into it.
 
-To describe the schema of the target table, please write schema path.
+There are 2 ways to set schema.
 
+#### Set schema.json
+
+Please set file path of schema.json.
 
 ```yaml
 out:
@@ -204,6 +208,18 @@ out:
   auto_create_table: true
   table: table_%Y_%m
   schema_file: /path/to/schema.json
+```
+
+#### Set template_table in dataset
+
+Plugin will try to read schema from existing table and use it as schema template.
+
+```yaml
+out:
+  type: bigquery
+  auto_create_table: true
+  table: table_%Y_%m
+  template_table: existing_table_name
 ```
 
 ### Data Consistency
