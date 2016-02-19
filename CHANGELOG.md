@@ -1,3 +1,7 @@
+## 0.2.3 - 2016-02-19
+
+* [maintenance] Fix detect logic of delete_in_advance mode. [#26](https://github.com/embulk/embulk-output-bigquery/issues/26). @sonots thanks!
+
 ## 0.2.2 - 2016-02-15
 
 * [new feature] Added template_table option. [#25](https://github.com/embulk/embulk-output-bigquery/pull/25). @joker1007 thanks!
