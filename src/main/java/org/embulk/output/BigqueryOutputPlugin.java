@@ -502,7 +502,7 @@ public class BigqueryOutputPlugin
         }
         public boolean isDeleteInAdvance()
         {
-            return true;
+            return false;
         }
     }
 }
