@@ -3,6 +3,7 @@ package org.embulk.output;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.embulk.config.Config;
 import org.embulk.config.ConfigDefault;
 import org.embulk.config.ConfigDiff;
@@ -28,7 +29,13 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
 public class BigqueryOutputPlugin
@@ -152,6 +159,57 @@ public class BigqueryOutputPlugin
     private final Logger log = Exec.getLogger(BigqueryOutputPlugin.class);
     private static final String temporaryTableSuffix = Long.toString(System.currentTimeMillis());
     private static BigqueryWriter bigQueryWriter;
+    private static final List<File> uploadFiles = Collections.synchronizedList(new ArrayList<File>());
+
+    private static class UploadWorker implements Callable<Throwable>
+    {
+        private final String project;
+        private final String dataset;
+        private final String table;
+        private final boolean deleteFromLocalWhenJobEnd;
+        private final File uploadFile;
+        private final Future<Throwable> future;
+        private final Logger log = Exec.getLogger(BigqueryOutputPlugin.class);
+
+        public UploadWorker(String project, String dataset, String table, File uploadFile, boolean deleteFromLocalWhenJobEnd, ExecutorService executor)
+        {
+            this.project = project;
+            this.dataset = dataset;
+            this.table = table;
+            this.deleteFromLocalWhenJobEnd = deleteFromLocalWhenJobEnd;
+            this.uploadFile = uploadFile;
+            this.future = executor.submit(this);
+        }
+
+        public synchronized Throwable call()
+        {
+            try {
+                bigQueryWriter.executeLoad(project, dataset, table, this.uploadFile.getPath());
+
+                if (deleteFromLocalWhenJobEnd) {
+                    log.info(String.format("Delete local file [%s]", this.uploadFile.getPath()));
+                    this.uploadFile.delete();
+                }
+
+                return null;
+            }
+            catch (NoSuchAlgorithmException | TimeoutException | BigqueryWriter.JobFailedException | IOException ex) {
+                log.error(ex.getMessage());
+                throw Throwables.propagate(ex);
+            }
+        }
+
+        public Throwable join()
+                throws InterruptedException
+        {
+            try {
+                return future.get();
+            }
+            catch (ExecutionException ex) {
+                return ex.getCause();
+            }
+        }
+    }
 
     @Override
     public ConfigDiff transaction(ConfigSource config, int taskCount,
@@ -243,10 +301,12 @@ public class BigqueryOutputPlugin
                              int taskCount,
                              FileOutputPlugin.Control control)
     {
-        Mode mode = taskSource.get(Mode.class, "Mode");
-        String project = taskSource.get(String.class, "Project");
-        String dataset = taskSource.get(String.class, "Dataset");
-        String tableName = taskSource.get(String.class, "Table");
+        PluginTask task = taskSource.loadTask(PluginTask.class);
+        Mode mode = task.getMode();
+        String project = task.getProject();
+        String dataset = task.getDataset();
+        String tableName = task.getTable();
+        boolean deleteFromLocalWhenJobEnd = task.getDeleteFromLocalWhenJobEnd();
 
         if (mode == Mode.delete_in_advance) {
             try {
@@ -259,28 +319,68 @@ public class BigqueryOutputPlugin
 
         control.run(taskSource);
 
-        if (mode.isReplaceMode()) {
-            try {
-                if (mode == Mode.replace_backup && bigQueryWriter.isExistTable(project, dataset, generateTableName(tableName))) {
-                    bigQueryWriter.replaceTable(project, dataset, generateTableName(tableName) + "_old", generateTableName(tableName));
-                }
-                bigQueryWriter.replaceTable(project, dataset, generateTableName(tableName), generateTemporaryTableName(tableName));
-            }
-            catch (TimeoutException | BigqueryWriter.JobFailedException | IOException ex) {
-                log.error(ex.getMessage());
-                throw Throwables.propagate(ex);
-            }
-            finally {
-                try {
-                    bigQueryWriter.deleteTable(project, dataset, generateTemporaryTableName(tableName));
-                }
-                catch (IOException ex) {
-                    log.warn(ex.getMessage());
-                }
+        if (!uploadFiles.isEmpty()) {
+            String uploadTable = task.getMode().isReplaceMode() ?
+                    generateTemporaryTableName(task.getTable()) : generateTableName(task.getTable());
+            upload(project, dataset, uploadTable, deleteFromLocalWhenJobEnd);
+
+            if (mode.isReplaceMode()) {
+                replaceTable(project, dataset, tableName, mode);
             }
         }
 
         return Exec.newConfigDiff();
+    }
+
+    private void upload(String project, String dataset, String tableName, boolean deleteFromLocalWhenJobEnd)
+    {
+        ExecutorService uploadExecutor = java.util.concurrent.Executors.newCachedThreadPool(
+                new ThreadFactoryBuilder()
+                        .setNameFormat("embulk-output-bigquery-upload-%d")
+                        .setDaemon(true)
+                        .build());
+        ArrayList<UploadWorker> uploadWorkers = new ArrayList<>();
+        for (File uploadFile : uploadFiles) {
+            UploadWorker worker = new UploadWorker(project, dataset, tableName, uploadFile, deleteFromLocalWhenJobEnd, uploadExecutor);
+            uploadWorkers.add(worker);
+        }
+
+        for (UploadWorker worker : uploadWorkers) {
+            Throwable error = null;
+            try {
+                error = worker.join();
+            }
+            catch (InterruptedException ex) {
+                error = ex;
+            }
+            if (error != null) {
+                throw Throwables.propagate(error);
+            }
+        }
+    }
+
+    private void replaceTable(String project, String dataset, String tableName, Mode mode)
+    {
+        String targetTable = generateTableName(tableName);
+        String temporaryTable = generateTemporaryTableName(tableName);
+        try {
+            if (mode == Mode.replace_backup && bigQueryWriter.isExistTable(project, dataset, targetTable)) {
+                bigQueryWriter.replaceTable(project, dataset, targetTable + "_old", targetTable);
+            }
+            bigQueryWriter.replaceTable(project, dataset, targetTable, temporaryTable);
+        }
+        catch (TimeoutException | BigqueryWriter.JobFailedException | IOException ex) {
+            log.error(ex.getMessage());
+            throw Throwables.propagate(ex);
+        }
+        finally {
+            try {
+                bigQueryWriter.deleteTable(project, dataset, temporaryTable);
+            }
+            catch (IOException ex) {
+                log.warn(ex.getMessage());
+            }
+        }
     }
 
     @Override
@@ -311,12 +411,6 @@ public class BigqueryOutputPlugin
         final String pathSuffix = task.getFileNameExtension();
 
         return new TransactionalFileOutput() {
-            private final String project = task.getProject();
-            private final String dataset = task.getDataset();
-            private final String table = task.getMode().isReplaceMode() ?
-                    generateTemporaryTableName(task.getTable()) : generateTableName(task.getTable());
-            private final boolean deleteFromLocalWhenJobEnd = task.getDeleteFromLocalWhenJobEnd();
-
             private int fileIndex = 0;
             private BufferedOutputStream output = null;
             private File file;
@@ -333,6 +427,7 @@ public class BigqueryOutputPlugin
                     }
                     filePath = pathPrefix + String.format(sequenceFormat, taskIndex, fileIndex) + suffix;
                     file = new File(filePath);
+                    uploadFiles.add(file);
 
                     String parentPath = file.getParent();
                     File dir = new File(parentPath);
@@ -376,20 +471,6 @@ public class BigqueryOutputPlugin
             public void finish()
             {
                 closeFile();
-                if (filePath != null) {
-                    try {
-                        bigQueryWriter.executeLoad(project, dataset, table, filePath);
-
-                        if (deleteFromLocalWhenJobEnd) {
-                            log.info(String.format("Delete local file [%s]", filePath));
-                            file.delete();
-                        }
-                    }
-                    catch (NoSuchAlgorithmException | TimeoutException | BigqueryWriter.JobFailedException | IOException ex) {
-                        log.error(ex.getMessage());
-                        throw Throwables.propagate(ex);
-                    }
-                }
             }
 
             public void close()
