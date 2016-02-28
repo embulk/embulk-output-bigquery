@@ -197,11 +197,28 @@ public class BigqueryWriter
                 .setProgressListener(listner)
                 .setDirectUploadEnabled(false);
 
-        try {
-            jobRef = insert.execute().getJobReference();
-        }
-        catch (IllegalStateException ex) {
-            throw new JobFailedException(ex.getMessage());
+        int retryCount = 0;
+        int retryLimit = 3;
+        int retryWaitSec = 5;
+        while (true) {
+            try {
+                jobRef = insert.execute().getJobReference();
+                break;
+            }
+            catch (java.net.SocketTimeoutException ex) {
+                if (retryCount++ >= retryLimit) {
+                    throw new JobFailedException(ex.getMessage());
+                }
+                log.warn(String.format("Retry after %d secs", retryWaitSec), ex);
+            }
+            catch (IllegalStateException ex) {
+                throw new JobFailedException(ex.getMessage());
+            }
+
+            try {
+                Thread.sleep(retryWaitSec * 1000);
+            }
+            catch (InterruptedException ignored) { }
         }
         log.info(String.format("Job executed. job id:[%s] file:[%s]", jobRef.getJobId(), localFilePath));
         if (isSkipJobResultCheck) {
