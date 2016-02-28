@@ -1,0 +1,8 @@
+*~
+/pkg/
+/tmp/
+/.bundle/
+/Gemfile.lock
+vendor/
+.ruby-version
+.tags

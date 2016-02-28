@@ -1,0 +1,6 @@
+require_relative 'fake_embulk/logger'
+require_relative 'fake_embulk/plugin'
+require_relative 'fake_embulk/output_plugin'
+require_relative 'fake_embulk/schema'
+require_relative 'fake_embulk/config_error'
+require_relative 'fake_embulk/data_source'

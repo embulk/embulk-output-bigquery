@@ -1,0 +1,20 @@
+# embulk gem install embulk-parser-none
+in:
+  type: file
+  path_prefix: example/example.jsonl
+  parser:
+    type: none
+    column_name: payload
+out:
+  type: bigquery
+  mode: replace
+  auth_method: json_key
+  json_keyfile: /tmp/your-project-000.json
+  dataset: your_dataset_name
+  table: your_table_name_%Y%m%d
+  compression: GZIP
+  source_format: NEWLINE_DELIMITED_JSON
+  auto_create_table: true
+  template_table: your_table_name
+  payload_column: payload
+  skip_load: true # for debug
