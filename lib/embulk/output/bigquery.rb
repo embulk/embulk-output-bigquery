@@ -235,7 +235,7 @@ module Embulk
 
         if task['mode'] == 'replace_backup' and task['dataset_old'] != task['dataset']
           if task['auto_create_dataset']
-            bigquery.create_dataset(task['dataset_old'])
+            bigquery.create_dataset(task['dataset_old'], reference: task['dataset'])
           else
             bigquery.get_dataset(task['dataset_old']) # raises NotFoundError
           end

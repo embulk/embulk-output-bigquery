@@ -272,17 +272,23 @@ module Embulk
           _response
         end
 
-        def create_dataset(dataset = nil)
+        def create_dataset(dataset = nil, reference: nil)
           dataset ||= @dataset
           begin
             Embulk.logger.info { "embulk-output-bigquery: Create dataset... #{@project}:#{dataset}" }
+            hint = {}
+            if reference
+              response = get_dataset(reference)
+              hint = { access: response.access }
+            end
             body = {
               dataset_reference: {
                 project_id: @project,
                 dataset_id: dataset,
               },
-            }
+            }.merge(hint)
             opts = {}
+            Embulk.logger.debug { "embulk-output-bigquery: insert_dataset(#{@project}, #{dataset}, #{body}, #{opts})" }
             client.insert_dataset(@project, body, opts)
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             if e.status_code == 409 && /Already Exists:/ =~ e.message

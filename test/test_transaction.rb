@@ -99,7 +99,7 @@ class Embulk::Output::Bigquery
         config = least_config.merge('mode' => 'replace_backup', 'dataset_old' => 'dataset_old', 'table_old' => 'table_old', 'temp_table' => 'temp_table', 'auto_create_dataset' => true)
         any_instance_of(BigqueryClient) do |obj|
           mock(obj).create_dataset(config['dataset'])
-          mock(obj).create_dataset(config['dataset_old'])
+          mock(obj).create_dataset(config['dataset_old'], reference: config['dataset'])
           mock(obj).create_table(config['temp_table'])
           mock(obj).load_in_parallel(anything, config['temp_table']) { [] }
 

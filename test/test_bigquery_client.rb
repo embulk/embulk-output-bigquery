@@ -68,6 +68,16 @@ if ENV['CONNECT']
         def test_create_dataset
           assert_nothing_raised { client.create_dataset }
         end
+
+        def test_create_dataset_with_reference
+          response = client.get_dataset
+          any_instance_of(BigqueryClient) do |obj|
+            mock(obj).get_dataset('your_dataset_name') { response }
+          end
+          assert_nothing_raised do
+            client.create_dataset('your_dataset_name_old', reference: 'your_dataset_name')
+          end
+        end
       end
 
       sub_test_case "get_dataset" do
