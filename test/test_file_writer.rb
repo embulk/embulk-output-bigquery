@@ -49,7 +49,7 @@ class Embulk::Output::Bigquery
       end
     end
 
-    sub_test_case "formatter_proc" do
+    sub_test_case "formatter" do
       def record
         [true, 1, 1.1, 'foo', Time.parse("2016-02-26 00:00:00 +09:00"), {"foo"=>"foo"}]
       end
@@ -84,7 +84,7 @@ class Embulk::Output::Bigquery
       end
     end
 
-    sub_test_case "write_proc" do
+    sub_test_case "compression" do
       def record
         [true, 1, 1.1, 'foo', Time.parse("2016-02-26 00:00:00 +09:00"), {"foo"=>"foo"}]
       end
@@ -96,10 +96,14 @@ class Embulk::Output::Bigquery
       def test_gzip
         task = default_task.merge('compression' => 'GZIP')
         file_writer = FileWriter.new(task, schema, 0, converters)
-        write_proc = file_writer.instance_variable_get(:@write_proc)
-        assert_equal :write_gzip, write_proc.name
+        io = file_writer.instance_variable_get(:@io)
+        assert_equal Zlib::GzipWriter, io.class
 
-        write_proc.call(page)
+        begin
+          file_writer.add(page)
+        ensure
+          file_writer.commit
+        end
         assert_true File.exist?(file_writer.path)
         assert_nothing_raised { Zlib::GzipReader.open(file_writer.path) {|gz| } }
       end
@@ -107,10 +111,14 @@ class Embulk::Output::Bigquery
       def test_uncompressed
         task = default_task.merge('compression' => 'NONE')
         file_writer = FileWriter.new(task, schema, 0, converters)
-        write_proc = file_writer.instance_variable_get(:@write_proc)
-        assert_equal :write_uncompressed, write_proc.name
+        io = file_writer.instance_variable_get(:@io)
+        assert_equal File, io.class
 
-        write_proc.call(page)
+        begin
+          file_writer.add(page)
+        ensure
+          file_writer.commit
+        end
         assert_true File.exist?(file_writer.path)
         assert_raise { Zlib::GzipReader.open(file_writer.path) {|gz| } }
       end

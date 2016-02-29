@@ -19,13 +19,6 @@ module Embulk
           @progress_log_timer = Time.now
           @previous_num_input_rows = 0
 
-          case @task['compression'].downcase
-          when 'gzip'
-            @write_proc = self.method(:write_gzip)
-          else
-            @write_proc = self.method(:write_uncompressed)
-          end
-
           if @task['payload_column']
             @payload_column_index = @schema.find_index {|c| c[:name] == @task['payload_column'] }
             if @payload_column_index.nil?
@@ -46,6 +39,14 @@ module Embulk
           if File.exist?(@path)
             Embulk.logger.warn { "embulk-output-bigquery: unlink already existing #{@path}" }
             File.unlink(@path) rescue nil
+          end
+          @file_io = File.open(@path, 'w')
+
+          case @task['compression'].downcase
+          when 'gzip'
+            @io = Zlib::GzipWriter.new(@file_io)
+          else
+            @io = @file_io
           end
         end
 
@@ -69,26 +70,18 @@ module Embulk
           "#{hash.to_json}\n"
         end
 
-        def write_gzip(page)
-          f = File.open(@path, 'a')
-          # ToDo: support gzip compression level option
-          Zlib::GzipWriter.wrap(f) do |io|
-            write_io(io, page)
-          end
+        def num_format(number)
+          number.to_s.gsub(/(\d)(?=(\d{3})+(?!\d))/, '\1,')
         end
 
-        def write_uncompressed(page)
-          File.open(@path, 'a') do |io|
-            write_io(io, page)
-          end
-        end
-
-        def write_io(io, page)
+        def add(page)
+          # I once tried to split IO writing into another IO thread using SizedQueue
+          # However, it resulted in worse performance, so I removed the codes.
           page.each do |record|
             Embulk.logger.trace { "embulk-output-bigquery: record #{record}" }
             formatted_record = @formatter_proc.call(record)
             Embulk.logger.trace { "embulk-output-bigquery: formatted_record #{formatted_record.chomp}" }
-            io << formatted_record
+            @io.write formatted_record
             @num_input_rows += 1
           end
           now = Time.now
@@ -100,17 +93,8 @@ module Embulk
           end
         end
 
-        def num_format(number)
-          number.to_s.gsub(/(\d)(?=(\d{3})+(?!\d))/, '\1,')
-        end
-
-        def add(page)
-          # I once tried to split IO writing into another IO thread using SizedQueue
-          # However, it resulted in worse performance, so I removed the codes.
-          @write_proc.call(page)
-        end
-
         def commit
+          @io.close rescue nil
           task_report = {
             'num_input_rows' => @num_input_rows,
             'path' => @path,
