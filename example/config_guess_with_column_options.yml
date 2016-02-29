@@ -22,6 +22,7 @@ out:
   table: your_table_name
   compression: GZIP
   source_format: NEWLINE_DELIMITED_JSON
+  auto_create_dataset: true
   auto_create_table: true
   column_options:
     - {name: date,        type: TIMESTAMP, timestamp_format: "%Y-%m-%d", timezone: "+09:00"}

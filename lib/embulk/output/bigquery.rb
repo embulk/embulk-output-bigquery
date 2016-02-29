@@ -39,6 +39,7 @@ module Embulk
           'dataset_old'                    => config.param('dataset_old',                    :string,  :default => nil),
           'table_old'                      => config.param('table_old',                      :string,  :default => nil),
           'table_name_old'                 => config.param('table_name_old',                 :string,  :default => nil), # lower version compatibility
+          'auto_create_dataset'            => config.param('auto_create_dataset',            :bool,    :default => false),
           'auto_create_table'              => config.param('auto_create_table',              :bool,    :default => false),
           'schema_file'                    => config.param('schema_file',                    :string,  :default => nil),
           'template_table'                 => config.param('template_table',                 :string,  :default => nil),
@@ -92,6 +93,8 @@ module Embulk
           if task['dataset_old'].nil? and task['table_old'].nil?
             raise ConfigError.new "`mode replace_backup` requires either of `dataset_old` or `table_old`"
           end
+          task['dataset_old'] ||= task['dataset']
+          task['table_old']   ||= task['table']
         end
 
         if task['table_old']
@@ -224,7 +227,19 @@ module Embulk
         @bigquery = BigqueryClient.new(task, schema)
         @converters = ValueConverterFactory.create_converters(task, schema)
 
-        bigquery.create_dataset(task['dataset'])
+        if task['auto_create_dataset']
+          bigquery.create_dataset(task['dataset'])
+        else
+          bigquery.get_dataset(task['dataset']) # raises NotFoundError
+        end
+
+        if task['mode'] == 'replace_backup' and task['dataset_old'] != task['dataset']
+          if task['auto_create_dataset']
+            bigquery.create_dataset(task['dataset_old'])
+          else
+            bigquery.get_dataset(task['dataset_old']) # raises NotFoundError
+          end
+        end
 
         case task['mode']
         when 'delete_in_advance'
@@ -263,7 +278,6 @@ module Embulk
             Embulk.logger.info { "embulk-output-bigquery: transaction_report: #{transaction_report.to_json}" }
 
             if task['mode'] == 'replace_backup'
-              bigquery.create_dataset(task['dataset_old'])
               bigquery.copy(task['table'], task['table_old'], task['dataset_old'])
             end
 

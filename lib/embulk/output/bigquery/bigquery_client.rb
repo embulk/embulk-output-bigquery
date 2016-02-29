@@ -24,7 +24,7 @@ module Embulk
           @project = task['project']
           @dataset = task['dataset']
 
-          reset_fields(fields)
+          reset_fields(fields) if fields
         end
 
         def client
@@ -298,6 +298,24 @@ module Embulk
           end
         end
 
+        def get_dataset(dataset = nil)
+          dataset ||= @dataset
+          begin
+            Embulk.logger.info { "embulk-output-bigquery: Get dataset... #{@project}:#{@dataset}" }
+            client.get_dataset(@project, dataset)
+          rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
+            if e.status_code == 404
+              raise NotFoundError, "Dataset #{@project}:#{dataset} is not found"
+            end
+
+            response = {status_code: e.status_code, message: e.message, error_class: e.class}
+            Embulk.logger.error {
+              "embulk-output-bigquery: get_dataset(#{@project}, #{dataset}), response:#{response}"
+            }
+            raise Error, "failed to get dataset #{@project}:#{dataset}, response:#{response}"
+          end
+        end
+
         def create_table(table)
           begin
             Embulk.logger.info { "embulk-output-bigquery: Create table... #{@project}:#{@dataset}.#{table}" }
@@ -350,7 +368,7 @@ module Embulk
             client.get_table(@project, @dataset, table)
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             if e.status_code == 404
-              raise NotFoundError, "#{@project}:#{@dataset}.#{table} is not found"
+              raise NotFoundError, "Table #{@project}:#{@dataset}.#{table} is not found"
             end
 
             response = {status_code: e.status_code, message: e.message, error_class: e.class}

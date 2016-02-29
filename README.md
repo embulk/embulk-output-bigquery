@@ -35,6 +35,7 @@ OAuth flow for installed applications.
 |  project                             | string      | required if json_keyfile is not given     |   | project_id |
 |  dataset                             | string      | required   |                          | dataset |
 |  table                               | string      | required   |                          | table name |
+|  auto_create_dataset                 | boolean     | optional   | false                    | automatically create dataset |
 |  auto_create_table                   | boolean     | optional   | false                    | [See below](#dynamic-table-creating) |
 |  schema_file                         | string      | optional   |                          | /path/to/schema.json |
 |  template_table                      | string      | optional   |                          | template table name [See below](#dynamic-table-creating) |

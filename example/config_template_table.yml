@@ -14,6 +14,7 @@ out:
   table: your_table_name_%Y%m%d
   compression: GZIP
   source_format: NEWLINE_DELIMITED_JSON
+  auto_create_dataset: true
   auto_create_table: true
   template_table: your_table_name
   payload_column: payload

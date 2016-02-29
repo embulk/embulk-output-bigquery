@@ -52,6 +52,7 @@ class Embulk::Output::Bigquery
       assert_equal nil, task['dataset_old']
       assert_equal nil, task['table_old']
       assert_equal nil, task['table_name_old']
+      assert_equal false, task['auto_create_dataset']
       assert_equal false, task['auto_create_table']
       assert_equal nil, task['schema_file']
       assert_equal nil, task['template_table']
@@ -100,10 +101,19 @@ class Embulk::Output::Bigquery
 
       config = least_config.merge('mode' => 'replace_backup')
       assert_raise { Bigquery.configure(config, schema, processor_count) }
+    end
+
+    def test_dataset_table_old
+      task = nil
       config = least_config.merge('mode' => 'replace_backup', 'table_old' => 'backup')
-      assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
+      assert_nothing_raised { task = Bigquery.configure(config, schema, processor_count) }
+      assert_equal task['dataset_old'], task['dataset']
+      assert_equal task['table_old'],   'backup'
+
       config = least_config.merge('mode' => 'replace_backup', 'dataset_old' => 'backup')
-      assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
+      assert_nothing_raised { task = Bigquery.configure(config, schema, processor_count) }
+      assert_equal task['dataset_old'], 'backup'
+      assert_equal task['table_old'],   task['table']
     end
 
     def test_auth_method

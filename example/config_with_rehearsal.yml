@@ -24,6 +24,7 @@ out:
   dataset: your_dataset_name
   table: your_table_name
   source_format: NEWLINE_DELIMITED_JSON
+  auto_create_dataset: true
   auto_create_table: true
   schema_file: example/schema.json
   with_rehearsal: true

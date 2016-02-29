@@ -24,6 +24,7 @@ out:
   table: your_table_name
   compression: GZIP
   source_format: CSV
+  auto_create_dataset: true
   auto_create_table: true
   schema_file: example/schema.json
   delete_from_local_when_job_end: false

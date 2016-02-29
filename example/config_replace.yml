@@ -25,5 +25,6 @@ out:
   table: your_table_name
   source_format: NEWLINE_DELIMITED_JSON
   compression: NONE
+  auto_create_dataset: true
   auto_create_table: true
   schema_file: example/schema.json

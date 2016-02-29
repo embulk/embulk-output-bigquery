@@ -26,6 +26,7 @@ out:
   dataset_old: your_dataset_name_old
   table_old: your_table_name_old
   source_format: NEWLINE_DELIMITED_JSON
+  auto_create_dataset: true
   auto_create_table: true
   schema_file: example/schema.json
   skip_load: true # for debug

@@ -70,6 +70,19 @@ if ENV['CONNECT']
         end
       end
 
+      sub_test_case "get_dataset" do
+        def test_get_dataset
+          assert_nothing_raised { client.create_dataset }
+          assert_nothing_raised { client.get_dataset }
+        end
+
+        def test_get_dataset_not_found
+          assert_raise(NotFoundError) {
+            client.get_dataset('something_does_not_exist')
+          }
+        end
+      end
+
       sub_test_case "create_table" do
         def test_create_table
           client.delete_table('your_table_name')
