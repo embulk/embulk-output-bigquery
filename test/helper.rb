@@ -3,11 +3,10 @@
 require 'test/unit'
 require 'test/unit/rr'
 
-# ToDo: https://github.com/embulk/embulk/issues/406
 # require 'embulk/java/bootstrap'
-# require 'embulk'
-# Embulk.setup
-require_relative 'fake_embulk'
+require 'embulk'
+Embulk.setup
+Embulk.logger = Embulk::Logger.new('/dev/null')
 
 APP_ROOT = File.expand_path('../', __dir__)
 EXAMPLE_ROOT = File.expand_path('../example', __dir__)
