@@ -261,7 +261,10 @@ module Embulk
             end
           end
 
-          unless (_errors = _response.status.errors).empty?
+          # cf. http://www.rubydoc.info/github/google/google-api-ruby-client/Google/Apis/BigqueryV2/JobStatus#errors-instance_method
+          # `errors` returns Array<Google::Apis::BigqueryV2::ErrorProto> if any error exists.
+          # Otherwise, this returns nil.
+          if _errors = _response.status.errors
             Embulk.logger.error {
               "embulk-output-bigquery: get_job(#{@project}, #{job_id}), " \
               "errors:#{_errors.map(&:to_h)}"
