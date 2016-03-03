@@ -261,12 +261,12 @@ module Embulk
             end
           end
 
-          if error_result = _response.status.error_result
+          unless (_errors = _response.status.errors).empty?
             Embulk.logger.error {
               "embulk-output-bigquery: get_job(#{@project}, #{job_id}), " \
-              "error_result:#{error_result.to_h}"
+              "errors:#{_errors.map(&:to_h)}"
             }
-            raise Error, "failed during waiting a job, error_result:#{error_result.to_h}"
+            raise Error, "failed during waiting a job, errors:#{_errors.map(&:to_h)}"
           end
 
           _response
