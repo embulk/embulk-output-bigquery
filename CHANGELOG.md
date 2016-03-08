@@ -11,8 +11,10 @@ Big change is introduced. Now, embulk-output-bigquery is written in JRuby.
 * [new feature] Support continuing from file generation with `skip_file_generation` option.
 * [new feature] Guess BigQuery schema from Embulk schema. Fix [#1](https://github.com/embulk/embulk-output-bigquery/issues/1).
 * [new feature] Support automatically create dataset.
+* [new feature] Support transactional append mode.
 * [incompatibility change] Formatter plugin support is dropped. Formatter is done in this plugin for specified `source_format`.
 * [incompatibility change] Encoder plugin support is dropped. Encoding is done in this plugin for specified `compression`.
+* [incompatibility change] `append` mode now expresses a transactional append, and `append_direct` is one which is not transactional (this was `append` mode before)
 
 ## 0.2.3 - 2016-02-19
 

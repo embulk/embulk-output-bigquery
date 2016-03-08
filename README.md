@@ -104,11 +104,17 @@ out:
 
 ### mode
 
-4 modes are provided.
+5 modes are provided.
 
 ##### append
 
-default. When append mode, plugin will insert data into existing table.
+1. Load to temporary table.
+2. Copy temporary table to destination table. (WRITE_APPEND)
+
+##### append_direct
+
+Insert data into existing table directly. 
+This is not transactional, i.e., if fails, the target table could have some rows inserted.
 
 ##### replace
 

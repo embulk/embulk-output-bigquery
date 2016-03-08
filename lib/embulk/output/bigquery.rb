@@ -84,8 +84,8 @@ module Embulk
         now = Time.now
 
         task['mode'] = task['mode'].downcase
-        unless %w[append replace delete_in_advance replace_backup].include?(task['mode'])
-          raise ConfigError.new "`mode` must be one of append, replace, delete_in_advance, replace_backup"
+        unless %w[append append_direct replace delete_in_advance replace_backup].include?(task['mode'])
+          raise ConfigError.new "`mode` must be one of append, append_direct, replace, delete_in_advance, replace_backup"
         end
 
         if task['mode'] == 'replace_backup'
@@ -192,7 +192,7 @@ module Embulk
 
         unique_name = "%08x%08x%08x" % [Process.pid, now.tv_sec, now.tv_nsec]
 
-        if task['mode'] == 'replace' || task['mode'] == 'replace_backup'
+        if %w[replace replace_backup append].include?(task['mode'])
           task['temp_table'] ||= "#{task['table']}_LOAD_TEMP_#{unique_name}"
         end
 
@@ -256,9 +256,9 @@ module Embulk
         when 'delete_in_advance'
           bigquery.delete_table(task['table'])
           bigquery.create_table(task['table'])
-        when 'replace', 'replace_backup'
+        when 'replace', 'replace_backup', 'append'
           bigquery.create_table(task['temp_table'])
-        else # append
+        else # append_direct
           if task['auto_create_table']
             bigquery.create_table(task['table'])
           else
@@ -292,8 +292,14 @@ module Embulk
               bigquery.copy(task['table'], task['table_old'], task['dataset_old'])
             end
 
-            if task['temp_table'] # replace or replace_backup
-              bigquery.copy(task['temp_table'], task['table'])
+            if task['temp_table']
+              if task['mode'] == 'append'
+                bigquery.copy(task['temp_table'], task['table'],
+                              write_disposition: 'WRITE_APPEND')
+              else # replace or replace_backup
+                bigquery.copy(task['temp_table'], task['table'],
+                              write_disposition: 'WRITE_TRUNCATE')
+              end
             end
           end
         ensure

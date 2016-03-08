@@ -34,9 +34,21 @@ module Embulk
         Proc.new {|task| task_reports = [] }
       end
 
-      sub_test_case "append" do
-        def test_append
-          config = least_config.merge('mode' => 'append')
+      def test_append
+        config = least_config.merge('mode' => 'append', 'temp_table' => 'temp_table')
+        any_instance_of(BigqueryClient) do |obj|
+          mock(obj).get_dataset(config['dataset'])
+          mock(obj).create_table(config['temp_table'])
+          mock(obj).load_in_parallel(anything, config['temp_table']) { [] }
+          mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_APPEND')
+          mock(obj).delete_table(config['temp_table'])
+        end
+        Bigquery.transaction(config, schema, processor_count, &control)
+      end
+
+      sub_test_case "append_direct" do
+        def test_append_direct
+          config = least_config.merge('mode' => 'append_direct')
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
             mock(obj).get_table(config['table'])
@@ -45,8 +57,8 @@ module Embulk
           Bigquery.transaction(config, schema, processor_count, &control)
         end
 
-        def test_append_with_auto_create
-          config = least_config.merge('mode' => 'append', 'auto_create_dataset' => true, 'auto_create_table' => true)
+        def test_append_direct_with_auto_create
+          config = least_config.merge('mode' => 'append_direct', 'auto_create_dataset' => true, 'auto_create_table' => true)
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).create_dataset(config['dataset'])
             mock(obj).create_table(config['table'])
@@ -73,7 +85,7 @@ module Embulk
           mock(obj).get_dataset(config['dataset'])
           mock(obj).create_table(config['temp_table'])
           mock(obj).load_in_parallel(anything, config['temp_table']) { [] }
-          mock(obj).copy(config['temp_table'], config['table'])
+          mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_TRUNCATE')
           mock(obj).delete_table(config['temp_table'])
         end
         Bigquery.transaction(config, schema, processor_count, &control)
@@ -90,7 +102,7 @@ module Embulk
 
             mock(obj).copy(config['table'], config['table_old'], config['dataset_old'])
 
-            mock(obj).copy(config['temp_table'], config['table'])
+            mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_TRUNCATE')
             mock(obj).delete_table(config['temp_table'])
           end
           Bigquery.transaction(config, schema, processor_count, &control)
@@ -106,7 +118,7 @@ module Embulk
 
             mock(obj).copy(config['table'], config['table_old'], config['dataset_old'])
 
-            mock(obj).copy(config['temp_table'], config['table'])
+            mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_TRUNCATE')
             mock(obj).delete_table(config['temp_table'])
           end
           Bigquery.transaction(config, schema, processor_count, &control)

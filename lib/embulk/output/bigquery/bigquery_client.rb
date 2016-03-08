@@ -193,7 +193,7 @@ module Embulk
           end
         end
 
-        def copy(source_table, destination_table, destination_dataset = nil)
+        def copy(source_table, destination_table, destination_dataset = nil, write_disposition: 'WRITE_TRUNCATE')
           begin
             destination_dataset ||= @dataset
             Embulk.logger.info {
@@ -204,7 +204,7 @@ module Embulk
               configuration: {
                 copy: {
                   create_deposition: 'CREATE_IF_NEEDED',
-                  write_disposition: 'WRITE_TRUNCATE',
+                  write_disposition: write_disposition,
                   source_table: {
                     project_id: @project,
                     dataset_id: @dataset,
