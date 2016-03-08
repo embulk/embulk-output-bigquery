@@ -49,7 +49,6 @@ OAuth flow for installed applications.
 |  default_timezone                    | string      | optional   | UTC                      | |
 |  default_timestamp_format            | string      | optional   | %Y-%m-%d %H:%M:%S.%6N    | |
 |  payload_column                      | string      | optional   | nil                      | [See below](#formatter-performance-issue) |
-|  max_load_parallels                  | integer     | optional   | nil                      | Number of concurrency to LOAD files. Default is the same with number of local files (which depends on number of tasks or number of scatters) |
 
 Client or request options
 

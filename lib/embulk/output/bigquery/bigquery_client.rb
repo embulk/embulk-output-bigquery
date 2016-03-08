@@ -104,7 +104,10 @@ module Embulk
           # loadings drastically shortened waiting time. It looks one jobs.insert takes about 50 sec.
           # NOTICE: parallel uploadings of files consumes network traffic. With 24 concurrencies
           # with 100MB files consumed about 500Mbps in the experimented environment at a peak.
-          max_load_parallels = @task['max_load_parallels'] || paths.size
+          #
+          # We before had a `max_load_parallels` option, but this was not extensible for map reduce executor
+          # So, we dropped it. See https://github.com/embulk/embulk-output-bigquery/pull/35
+          max_load_parallels = paths.size # @task['max_load_parallels'] || paths.size
           responses = []
           paths.each_with_index.each_slice(max_load_parallels) do |paths_group|
             Embulk.logger.debug { "embulk-output-bigquery: LOAD IN PARALLEL #{paths_group}" }

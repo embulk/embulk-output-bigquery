@@ -60,7 +60,6 @@ module Embulk
           'open_timeout_sec'               => config.param('open_timeout_sec',               :integer, :default => 300),
           'retries'                        => config.param('retries',                        :integer, :default => 5),
           'application_name'               => config.param('application_name',               :string,  :default => 'Embulk BigQuery plugin'),
-          'max_load_parallels'             => config.param('max_load_parallels',             :integer, :default => nil),
 
           'path_prefix'                    => config.param('path_prefix',                    :string,  :default => nil),
           'sequence_format'                => config.param('sequence_format',                :string,  :default => '.%d.%03d'),
