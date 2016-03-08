@@ -48,7 +48,7 @@ OAuth flow for installed applications.
 |  column_options                      | hash        | optional   |                          | [See below](#column-options) |
 |  default_timezone                    | string      | optional   | UTC                      | |
 |  default_timestamp_format            | string      | optional   | %Y-%m-%d %H:%M:%S.%6N    | |
-|  payload_column                      | string      | optional   | nil                      | [See below](#formatter-performance-issue) |
+|  payload_column                      | boolean     | optional   | false                    | [See below](#formatter-performance-issue) |
 
 Client or request options
 
@@ -293,7 +293,7 @@ filters:
     default_format: %Y-%m-%d %H:%M:%S.%6N
 out:
   type: bigquery
-  payload_column: payload
+  payload_column: true
 ```
 
 Furtheremore, if your files are originally jsonl or csv files, you can even skip a parser with [embulk-parser-none](https://github.com/sonots/embulk-parser-none) as:
@@ -304,10 +304,9 @@ in:
   path_prefix: example/example.jsonl
   parser:
     type: none
-    column_name: payload
 out:
   type: bigquery
-  payload_column: payload
+  payload_column: true
 ```
 
 ### Data Consistency

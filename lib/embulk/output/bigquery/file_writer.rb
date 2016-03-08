@@ -20,10 +20,7 @@ module Embulk
           @previous_num_input_rows = 0
 
           if @task['payload_column']
-            @payload_column_index = @schema.find_index {|c| c[:name] == @task['payload_column'] }
-            if @payload_column_index.nil?
-              raise ConfigError.new "`embulk-output-bigquery: payload_column #{@task['payload_column']}` does not exist in schema"
-            end
+            @payload_column_index = 0 # first column
             @formatter_proc = self.method(:to_payload)
           else
             case @task['source_format'].downcase

@@ -54,7 +54,7 @@ module Embulk
           'column_options'                 => config.param('column_options',                 :array,   :default => []),
           'default_timezone'               => config.param('default_timezone',               :string,  :default => ValueConverterFactory::DEFAULT_TIMEZONE),
           'default_timestamp_format'       => config.param('default_timestamp_format',       :string,  :default => ValueConverterFactory::DEFAULT_TIMESTAMP_FORMAT),
-          'payload_column'                 => config.param('payload_column',                 :string,  :default => nil),
+          'payload_column'                 => config.param('payload_column',                 :bool,    :default => false),
           
           'timeout_sec'                    => config.param('timeout_sec',                    :integer, :default => 300),
           'open_timeout_sec'               => config.param('open_timeout_sec',               :integer, :default => 300),

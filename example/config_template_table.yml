@@ -4,7 +4,6 @@ in:
   path_prefix: example/example.jsonl
   parser:
     type: none
-    column_name: payload
 out:
   type: bigquery
   mode: replace
@@ -17,5 +16,5 @@ out:
   auto_create_dataset: true
   auto_create_table: true
   template_table: your_table_name
-  payload_column: payload
+  payload_column: true
   skip_load: true # for debug
