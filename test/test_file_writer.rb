@@ -55,13 +55,13 @@ module Embulk
           [true, 1, 1.1, 'foo', Time.parse("2016-02-26 00:00:00 +09:00"), {"foo"=>"foo"}]
         end
 
-        def test_payload_column
-          task = default_task.merge('payload_column' => 'string')
+        def test_payload_column_index
+          task = default_task.merge('payload_column_index' => 0)
           file_writer = FileWriter.new(task, schema, 0, converters)
           formatter_proc = file_writer.instance_variable_get(:@formatter_proc)
           assert_equal :to_payload, formatter_proc.name
 
-          assert_equal %Q[foo\n], formatter_proc.call(record)
+          assert_equal %Q[true\n], formatter_proc.call(record)
         end
 
         def test_csv

@@ -68,6 +68,7 @@ module Embulk
         assert_equal "UTC", task['default_timezone']
         assert_equal "%Y-%m-%d %H:%M:%S.%6N", task['default_timestamp_format']
         assert_equal nil, task['payload_column']
+        assert_equal nil, task['payload_column_index']
         assert_equal 300, task['timeout_sec']
         assert_equal 300, task['open_timeout_sec']
         assert_equal 5, task['retries']
@@ -148,14 +149,45 @@ module Embulk
         assert_raise { Bigquery.configure(config, schema, processor_count) }
       end
 
-      def test_auto_create_table_with_payload_column
-        config = least_config.merge('auto_create_table' => true, 'payload_column' => 'foo')
-        assert_raise { Bigquery.configure(config, schema, processor_count) }
+      def test_payload_column
+        config = least_config.merge('payload_column' => schema.first.name)
+        task = Bigquery.configure(config, schema, processor_count)
+        assert_equal task['payload_column_index'], 0
 
-        config = least_config.merge('auto_create_table' => true, 'payload_column' => 'foo', 'schema_file' => "#{EXAMPLE_ROOT}/schema.json")
+        config = least_config.merge('payload_column' => 'not_exist')
+        assert_raise { Bigquery.configure(config, schema, processor_count) }
+      end
+
+      def test_payload_column_index
+        config = least_config.merge('payload_column_index' => 0)
         assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
 
-        config = least_config.merge('auto_create_table' => true, 'payload_column' => 'foo', 'template_table' => 'foo')
+        config = least_config.merge('payload_column_index' => -1)
+        assert_raise { Bigquery.configure(config, schema, processor_count) }
+
+        config = least_config.merge('payload_column_index' => schema.size)
+        assert_raise { Bigquery.configure(config, schema, processor_count) }
+      end
+
+      def test_auto_create_table_with_payload_column
+        config = least_config.merge('auto_create_table' => true, 'payload_column' => 'json')
+        assert_raise { Bigquery.configure(config, schema, processor_count) }
+
+        config = least_config.merge('auto_create_table' => true, 'payload_column' => 'json', 'schema_file' => "#{EXAMPLE_ROOT}/schema.json")
+        assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
+
+        config = least_config.merge('auto_create_table' => true, 'payload_column' => 'json', 'template_table' => 'foo')
+        assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
+      end
+
+      def test_auto_create_table_with_payload_column_index
+        config = least_config.merge('auto_create_table' => true, 'payload_column_index' => 0)
+        assert_raise { Bigquery.configure(config, schema, processor_count) }
+
+        config = least_config.merge('auto_create_table' => true, 'payload_column_index' => 0, 'schema_file' => "#{EXAMPLE_ROOT}/schema.json")
+        assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
+
+        config = least_config.merge('auto_create_table' => true, 'payload_column_index' => 0, 'template_table' => 'foo')
         assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
       end
 

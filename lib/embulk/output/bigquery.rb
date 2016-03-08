@@ -55,6 +55,7 @@ module Embulk
           'default_timezone'               => config.param('default_timezone',               :string,  :default => ValueConverterFactory::DEFAULT_TIMEZONE),
           'default_timestamp_format'       => config.param('default_timestamp_format',       :string,  :default => ValueConverterFactory::DEFAULT_TIMESTAMP_FORMAT),
           'payload_column'                 => config.param('payload_column',                 :string,  :default => nil),
+          'payload_column_index'           => config.param('payload_column_index',           :integer, :default => nil),
           
           'timeout_sec'                    => config.param('timeout_sec',                    :integer, :default => 300),
           'open_timeout_sec'               => config.param('open_timeout_sec',               :integer, :default => 300),
@@ -130,9 +131,20 @@ module Embulk
           raise ConfigError.new "Required field \"project\" is not set"
         end
 
-        if task['payload_column'] and task['auto_create_table']
+        if (task['payload_column'] or task['payload_column_index']) and task['auto_create_table']
           if task['schema_file'].nil? and task['template_table'].nil?
-            raise ConfigError.new "Cannot guess table schema from Embulk schema with `payload_column`. Either of `schema_file` or `template_table` is required for auto_create_table true"
+            raise ConfigError.new "Cannot guess table schema from Embulk schema with `payload_column` or `payload_column_index`. Either of `schema_file` or `template_table` is required for auto_create_table true"
+          end
+        end
+
+        if task['payload_column_index']
+          if task['payload_column_index'] < 0 || schema.size <= task['payload_column_index']
+            raise ConfigError.new "payload_column_index #{task['payload_column_index']} is out of schema size"
+          end
+        elsif task['payload_column']
+          task['payload_column_index'] = schema.find_index {|c| c[:name] == task['payload_column'] }
+          if task['payload_column_index'].nil?
+            raise ConfigError.new "payload_column #{task['payload_column']} does not exist in schema"
           end
         end
 
