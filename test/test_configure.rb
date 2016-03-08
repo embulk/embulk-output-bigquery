@@ -67,7 +67,7 @@ module Embulk
         assert_equal [], task['column_options']
         assert_equal "UTC", task['default_timezone']
         assert_equal "%Y-%m-%d %H:%M:%S.%6N", task['default_timestamp_format']
-        assert_equal false, task['payload_column']
+        assert_equal nil, task['payload_column']
         assert_equal 300, task['timeout_sec']
         assert_equal 300, task['open_timeout_sec']
         assert_equal 5, task['retries']
@@ -149,13 +149,13 @@ module Embulk
       end
 
       def test_auto_create_table_with_payload_column
-        config = least_config.merge('auto_create_table' => true, 'payload_column' => true)
+        config = least_config.merge('auto_create_table' => true, 'payload_column' => 'foo')
         assert_raise { Bigquery.configure(config, schema, processor_count) }
 
-        config = least_config.merge('auto_create_table' => true, 'payload_column' => true, 'schema_file' => "#{EXAMPLE_ROOT}/schema.json")
+        config = least_config.merge('auto_create_table' => true, 'payload_column' => 'foo', 'schema_file' => "#{EXAMPLE_ROOT}/schema.json")
         assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
 
-        config = least_config.merge('auto_create_table' => true, 'payload_column' => true, 'template_table' => 'foo')
+        config = least_config.merge('auto_create_table' => true, 'payload_column' => 'foo', 'template_table' => 'foo')
         assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
       end
 
