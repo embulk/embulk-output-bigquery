@@ -1,0 +1,30 @@
+[
+  {
+    "name":"date",
+    "type":"STRING"
+  },
+  {
+    "name":"timestamp",
+    "type":"TIMESTAMP"
+  },
+  {
+    "name":"null",
+    "type":"STRING"
+  },
+  {
+    "name":"long",
+    "type":"INTEGER"
+  },
+  {
+    "name":"string",
+    "type":"STRING"
+  },
+  {
+    "name":"double",
+    "type":"FLOAT"
+  },
+  {
+    "name":"boolean",
+    "type":"BOOLEAN"
+  }
+]

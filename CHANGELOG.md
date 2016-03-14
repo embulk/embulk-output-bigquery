@@ -1,3 +1,21 @@
+## 0.3.0 - YYYY-MM-DD
+
+Big change is introduced. Now, embulk-output-bigquery is written in JRuby.
+
+* [new feature] Support parallel loads. Fix [#28](https://github.com/embulk/embulk-output-bigquery/issues/28).
+* [new feature] Create table first. Fix [#29](https://github.com/embulk/embulk-output-bigquery/issues/29).
+* [new feature] Introduce rehearsal mode. Fix [#30](https://github.com/embulk/embulk-output-bigquery/issues/30).
+* [new feature] Support `dataset_old` option for `replace_backup`. Fix [#31](https://github.com/embulk/embulk-output-bigquery/issues/31).
+* [maintenance] Fix default timestamp format to `%Y-%m-%d %H:%M:%S.%6`. Fix [#32](https://github.com/embulk/embulk-output-bigquery/issues/32).
+* [new feature] Support request options such as `timeout_sec`, `open_timeout_sec`, `retries`. Fix [#33](https://github.com/embulk/embulk-output-bigquery/issues/33).
+* [new feature] Support continuing from file generation with `skip_file_generation` option.
+* [new feature] Guess BigQuery schema from Embulk schema. Fix [#1](https://github.com/embulk/embulk-output-bigquery/issues/1).
+* [new feature] Support automatically create dataset.
+* [new feature] Support transactional append mode.
+* [incompatibility change] Formatter plugin support is dropped. Formatter is done in this plugin for specified `source_format`.
+* [incompatibility change] Encoder plugin support is dropped. Encoding is done in this plugin for specified `compression`.
+* [incompatibility change] `append` mode now expresses a transactional append, and `append_direct` is one which is not transactional (this was `append` mode before)
+
 ## 0.2.3 - 2016-02-19
 
 * [maintenance] Fix detect logic of delete_in_advance mode. [#26](https://github.com/embulk/embulk-output-bigquery/issues/26). @sonots thanks!
