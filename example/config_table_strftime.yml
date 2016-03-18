@@ -20,7 +20,7 @@ out:
   type: bigquery
   mode: replace
   auth_method: json_key
-  json_keyfile: /tmp/your-project-000.json
+  json_keyfile: example/your-project-000.json
   dataset: your_dataset_name
   table: your_table_name_%Y%m%d
   source_format: NEWLINE_DELIMITED_JSON

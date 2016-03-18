@@ -337,7 +337,7 @@ out:
 
 ### Run example:
 
-Prepare a json\_keyfile at /tmp/your-project-000.json, then
+Prepare a json\_keyfile at example/your-project-000.json, then
 
 ```
 $ embulk bundle install --path vendor/bundle
@@ -351,7 +351,7 @@ $ bundle exec rake test
 ```
 
 To run tests which actually connects to BigQuery such as test/test\_bigquery\_client.rb,
-prepare a json\_keyfile at /tmp/your-project-000.json, then
+prepare a json\_keyfile at example/your-project-000.json, then
 
 ```
 $ CONNECT=1 bundle exec ruby test/test_bigquery_client.rb
