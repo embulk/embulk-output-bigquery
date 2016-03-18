@@ -193,11 +193,11 @@ module Embulk
         unique_name = "%08x%08x%08x" % [Process.pid, now.tv_sec, now.tv_nsec]
 
         if %w[replace replace_backup append].include?(task['mode'])
-          task['temp_table'] ||= "#{task['table']}_LOAD_TEMP_#{unique_name}"
+          task['temp_table'] ||= "LOAD_TEMP_#{unique_name}_#{task['table']}"
         end
 
         if task['with_rehearsal']
-          task['rehearsal_table'] ||= "#{task['table']}_LOAD_REHEARSAL_#{unique_name}"
+          task['rehearsal_table'] ||= "LOAD_REHEARSAL_#{unique_name}_#{task['table']}"
         end
 
         task
