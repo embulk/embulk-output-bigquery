@@ -26,7 +26,7 @@ module Embulk
         end
       end
 
-      def self.configure(config, schema, processor_count)
+      def self.configure(config, schema, task_count)
         task = {
           'mode'                           => config.param('mode',                           :string,  :default => 'append'),
           'auth_method'                    => config.param('auth_method',                    :string,  :default => 'private_key'),
@@ -230,8 +230,8 @@ module Embulk
         transaction_report
       end
 
-      def self.transaction(config, schema, processor_count, &control)
-        task = self.configure(config, schema, processor_count)
+      def self.transaction(config, schema, task_count, &control)
+        task = self.configure(config, schema, task_count)
 
         @task = task
         @schema = schema
