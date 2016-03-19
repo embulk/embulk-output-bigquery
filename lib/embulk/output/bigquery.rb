@@ -63,7 +63,7 @@ module Embulk
           'application_name'               => config.param('application_name',               :string,  :default => 'Embulk BigQuery plugin'),
 
           'path_prefix'                    => config.param('path_prefix',                    :string,  :default => nil),
-          'sequence_format'                => config.param('sequence_format',                :string,  :default => '.%d.%03d'),
+          'sequence_format'                => config.param('sequence_format',                :string,  :default => '.%d.%d'),
           'file_ext'                       => config.param('file_ext',                       :string,  :default => nil),
           'skip_file_generation'           => config.param('skip_file_generation',           :bool,    :default => false),
           'compression'                    => config.param('compression',                    :string,  :default => 'NONE'),
@@ -277,7 +277,10 @@ module Embulk
           else
             task_reports = yield(task) # generates local files
             Embulk.logger.info { "embulk-output-bigquery: task_reports: #{task_reports.to_json}" }
-            paths = task_reports.map {|report| report['path'] }
+            paths = task_reports.map {|report| report['path'] }.uniq
+            task_reports.map {|report| report['io'] }.uniq.each do |io|
+              io.close rescue nil
+            end
           end
 
           if task['skip_load'] # only for debug
@@ -294,11 +297,9 @@ module Embulk
 
             if task['temp_table']
               if task['mode'] == 'append'
-                bigquery.copy(task['temp_table'], task['table'],
-                              write_disposition: 'WRITE_APPEND')
+                bigquery.copy(task['temp_table'], task['table'], write_disposition: 'WRITE_APPEND')
               else # replace or replace_backup
-                bigquery.copy(task['temp_table'], task['table'],
-                              write_disposition: 'WRITE_TRUNCATE')
+                bigquery.copy(task['temp_table'], task['table'], write_disposition: 'WRITE_TRUNCATE')
               end
             end
           end

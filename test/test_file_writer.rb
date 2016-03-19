@@ -16,6 +16,10 @@ module Embulk
         end
       end
 
+      def setup
+        Thread.current[FileWriter::THREAD_LOCAL_IO_KEY] = nil
+      end
+
       def default_task
         {
           'compression' => 'GZIP',
@@ -103,7 +107,7 @@ module Embulk
           begin
             file_writer.add(page)
           ensure
-            file_writer.commit
+            io.close rescue nil
           end
           assert_true File.exist?(file_writer.path)
           assert_nothing_raised { Zlib::GzipReader.open(file_writer.path) {|gz| } }
@@ -118,7 +122,7 @@ module Embulk
           begin
             file_writer.add(page)
           ensure
-            file_writer.commit
+            io.close rescue nil
           end
           assert_true File.exist?(file_writer.path)
           assert_raise { Zlib::GzipReader.open(file_writer.path) {|gz| } }

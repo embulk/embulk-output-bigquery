@@ -31,20 +31,35 @@ module Embulk
             end
           end
 
-          @path = sprintf("#{@task['path_prefix']}#{@task['sequence_format']}#{@task['file_ext']}", Process.pid, index)
-          Embulk.logger.info { "embulk-output-bigquery: will create #{@path}" }
-          if File.exist?(@path)
-            Embulk.logger.warn { "embulk-output-bigquery: unlink already existing #{@path}" }
-            File.unlink(@path) rescue nil
+          @io = create_io
+          @path = @io.path
+        end
+
+        THREAD_LOCAL_IO_KEY = :embulk_output_bigquery_file_writer_io
+
+        # Create one io object for one thread, that is, share among tasks
+        # Close theses shared io objects in transaction
+        def create_io
+          return Thread.current[THREAD_LOCAL_IO_KEY] if Thread.current[THREAD_LOCAL_IO_KEY]
+
+          path = sprintf(
+            "#{@task['path_prefix']}#{@task['sequence_format']}#{@task['file_ext']}",
+            Process.pid, Thread.current.object_id
+          )
+          if File.exist?(path)
+            Embulk.logger.warn { "embulk-output-bigquery: unlink already existing #{path}" }
+            File.unlink(path) rescue nil
           end
-          @file_io = File.open(@path, 'w')
+          Embulk.logger.info { "embulk-output-bigquery: create #{path}" }
+          file_io = File.open(path, 'w')
 
           case @task['compression'].downcase
           when 'gzip'
-            @io = Zlib::GzipWriter.new(@file_io)
+            io = Zlib::GzipWriter.new(file_io)
           else
-            @io = @file_io
+            io = file_io
           end
+          Thread.current[THREAD_LOCAL_IO_KEY] = io
         end
 
         def to_payload(record)
@@ -91,10 +106,10 @@ module Embulk
         end
 
         def commit
-          @io.close rescue nil
           task_report = {
             'num_input_rows' => @num_input_rows,
             'path' => @path,
+            'io' => @io,
           }
         end
       end
