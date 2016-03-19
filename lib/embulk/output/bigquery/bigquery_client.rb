@@ -245,7 +245,7 @@ module Embulk
             status = _response.status.state
             if status == "DONE"
               Embulk.logger.info {
-                "embulk-output-bigquery: #{kind} job completed successfully... " \
+                "embulk-output-bigquery: #{kind} job completed... " \
                 "job id:[#{job_id}] elapsed_time:#{elapsed.to_f}sec status:[#{status}]"
               }
               break
