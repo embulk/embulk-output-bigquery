@@ -1,6 +1,6 @@
 in:
   type: file
-  path_prefix: example/example4_
+  path_prefix: example/example2_
   parser:
     type: csv
     charset: UTF-8
@@ -24,11 +24,11 @@ out:
   dataset: your_dataset_name
   table: your_table_name
   source_format: NEWLINE_DELIMITED_JSON
-  compression: NONE
+  compression: GZIP
   auto_create_dataset: true
   auto_create_table: true
   schema_file: example/schema.json
 exec:
   type: local
-  min_output_tasks: 2
-  max_threads: 2
+  min_output_tasks: 8
+  max_threads: 4

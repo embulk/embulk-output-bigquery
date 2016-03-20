@@ -46,19 +46,30 @@ module Embulk
         @converters ||= ValueConverterFactory.create_converters(default_task, schema)
       end
 
+      def record
+        [true, 1, 1.1, 'foo', Time.parse("2016-02-26 00:00:00 +09:00"), {"foo"=>"foo"}]
+      end
+
+      def page
+        [record]
+      end
+
       sub_test_case "path" do
         def test_path
           task = default_task.merge('path_prefix' => 'tmp/foo', 'sequence_format' => '', 'file_ext' => '.1')
           file_writer = FileWriter.new(task, schema, 0, converters)
-          assert_equal 'tmp/foo.1', file_writer.instance_variable_get(:@path)
+
+          begin
+            file_writer.add(page)
+            path = file_writer.path
+            assert_equal 'tmp/foo.1', path
+          ensure
+            io.close rescue nil
+          end
         end
       end
 
       sub_test_case "formatter" do
-        def record
-          [true, 1, 1.1, 'foo', Time.parse("2016-02-26 00:00:00 +09:00"), {"foo"=>"foo"}]
-        end
-
         def test_payload_column_index
           task = default_task.merge('payload_column_index' => 0)
           file_writer = FileWriter.new(task, schema, 0, converters)
@@ -90,22 +101,14 @@ module Embulk
       end
 
       sub_test_case "compression" do
-        def record
-          [true, 1, 1.1, 'foo', Time.parse("2016-02-26 00:00:00 +09:00"), {"foo"=>"foo"}]
-        end
-
-        def page
-          [record]
-        end
-
         def test_gzip
           task = default_task.merge('compression' => 'GZIP')
           file_writer = FileWriter.new(task, schema, 0, converters)
-          io = file_writer.instance_variable_get(:@io)
-          assert_equal Zlib::GzipWriter, io.class
 
           begin
             file_writer.add(page)
+            io = file_writer.instance_variable_get(:@io)
+            assert_equal Zlib::GzipWriter, io.class
           ensure
             io.close rescue nil
           end
@@ -116,11 +119,11 @@ module Embulk
         def test_uncompressed
           task = default_task.merge('compression' => 'NONE')
           file_writer = FileWriter.new(task, schema, 0, converters)
-          io = file_writer.instance_variable_get(:@io)
-          assert_equal File, io.class
 
           begin
             file_writer.add(page)
+            io = file_writer.instance_variable_get(:@io)
+            assert_equal File, io.class
           ensure
             io.close rescue nil
           end

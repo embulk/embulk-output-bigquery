@@ -7,8 +7,6 @@ module Embulk
   module Output
     class Bigquery < OutputPlugin
       class FileWriter
-        attr_reader :path
-
         def initialize(task, schema, index, converters = nil)
           @task = task
           @schema = schema
@@ -30,16 +28,16 @@ module Embulk
               @formatter_proc = self.method(:to_jsonl)
             end
           end
-
-          @io = create_io
-          @path = @io.path
         end
 
         THREAD_LOCAL_IO_KEY = :embulk_output_bigquery_file_writer_io
 
-        # Create one io object for one thread, that is, share among tasks
+        # Create one io object for one output thread, that is, share among tasks
         # Close theses shared io objects in transaction
-        def create_io
+        #
+        # Thread IO must be created at #add because threads in #initialize or #commit
+        # are different (called from non-output threads)
+        def thread_io
           return Thread.current[THREAD_LOCAL_IO_KEY] if Thread.current[THREAD_LOCAL_IO_KEY]
 
           path = sprintf(
@@ -60,6 +58,11 @@ module Embulk
             io = file_io
           end
           Thread.current[THREAD_LOCAL_IO_KEY] = io
+        end
+
+        # NOTE: path is created on first call of #add, not #initialize
+        def path
+          @io.path
         end
 
         def to_payload(record)
@@ -87,6 +90,7 @@ module Embulk
         end
 
         def add(page)
+          @io ||= thread_io
           # I once tried to split IO writing into another IO thread using SizedQueue
           # However, it resulted in worse performance, so I removed the codes.
           page.each do |record|
@@ -108,7 +112,7 @@ module Embulk
         def commit
           task_report = {
             'num_input_rows' => @num_input_rows,
-            'path' => @path,
+            'path' => path,
             'io' => @io,
           }
         end
