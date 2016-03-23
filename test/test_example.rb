@@ -20,6 +20,7 @@ if ENV['CONNECT']
     files = files.reject {|file| File.symlink?(file) }
     # files.shift
     files.each do |config_path|
+      next if File.basename(config_path) == 'config_expose_errors.yml'
       define_method(:"test_#{File.basename(config_path, ".yml")}") do
         success = Bundler.with_clean_env do
           cmd = "#{embulk_path} run -X page_size=1 -b . -l trace #{config_path}"
