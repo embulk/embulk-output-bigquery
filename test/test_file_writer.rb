@@ -18,6 +18,7 @@ module Embulk
 
       def setup
         Thread.current[FileWriter::THREAD_LOCAL_IO_KEY] = nil
+        FileWriter.reset_ios
       end
 
       def default_task
@@ -61,11 +62,11 @@ module Embulk
 
           begin
             file_writer.add(page)
-            path = file_writer.path
-            assert_equal 'tmp/foo.1', path
           ensure
             io.close rescue nil
           end
+          path = FileWriter.paths.first
+          assert_equal 'tmp/foo.1', path
         end
       end
 
@@ -107,13 +108,14 @@ module Embulk
 
           begin
             file_writer.add(page)
-            io = file_writer.instance_variable_get(:@io)
+            io = FileWriter.ios.first
             assert_equal Zlib::GzipWriter, io.class
           ensure
             io.close rescue nil
           end
-          assert_true File.exist?(file_writer.path)
-          assert_nothing_raised { Zlib::GzipReader.open(file_writer.path) {|gz| } }
+          path = FileWriter.paths.first
+          assert_true File.exist?(path)
+          assert_nothing_raised { Zlib::GzipReader.open(path) {|gz| } }
         end
 
         def test_uncompressed
@@ -122,13 +124,14 @@ module Embulk
 
           begin
             file_writer.add(page)
-            io = file_writer.instance_variable_get(:@io)
+            io = FileWriter.ios.first
             assert_equal File, io.class
           ensure
             io.close rescue nil
           end
-          assert_true File.exist?(file_writer.path)
-          assert_raise { Zlib::GzipReader.open(file_writer.path) {|gz| } }
+          path = FileWriter.paths.first
+          assert_true File.exist?(path)
+          assert_raise { Zlib::GzipReader.open(path) {|gz| } }
         end
       end
     end

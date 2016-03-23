@@ -273,14 +273,12 @@ module Embulk
             path_pattern = "#{task['path_prefix']}*#{task['file_ext']}"
             Embulk.logger.info { "embulk-output-bigquery: Skip file generation. Get paths from `#{path_pattern}`" }
             paths = Dir.glob(path_pattern)
-            task_reports = paths.map {|path| { 'path' => path, 'num_input_rows' => 0 } }
+            task_reports = paths.map {|path| { 'num_input_rows' => 0 } }
           else
             task_reports = yield(task) # generates local files
             Embulk.logger.info { "embulk-output-bigquery: task_reports: #{task_reports.to_json}" }
-            paths = task_reports.map {|report| report['path'] }.uniq
-            task_reports.map {|report| report['io'] }.uniq.each do |io|
-              io.close rescue nil
-            end
+            paths = FileWriter.paths
+            FileWriter.ios.each {|io| io.close rescue nil }
           end
 
           if task['skip_load'] # only for debug
@@ -352,11 +350,11 @@ module Embulk
       def add(page)
         if task['with_rehearsal'] and @index == 0 and !@rehearsaled
           page = page.to_a # to avoid https://github.com/embulk/embulk/issues/403
-          if @num_rows > task['rehearsal_counts']
+          if @num_rows >= task['rehearsal_counts']
             Embulk.logger.info { "embulk-output-bigquery: Rehearsal started" }
             begin
               @bigquery.create_table(task['rehearsal_table'])
-              @bigquery.load(@file_writer.path, task['rehearsal_table'])
+              @bigquery.load(FileWriter.paths.first, task['rehearsal_table'])
             ensure
               @bigquery.delete_table(task['rehearsal_table'])
             end

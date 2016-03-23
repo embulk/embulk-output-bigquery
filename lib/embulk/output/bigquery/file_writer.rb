@@ -30,13 +30,26 @@ module Embulk
           end
         end
 
+        def self.reset_ios
+          @ios = Set.new
+        end
+
+        def self.ios
+          @ios ||= Set.new
+        end
+
+        def self.paths
+          ios.map {|io| io.path }
+        end
+
         THREAD_LOCAL_IO_KEY = :embulk_output_bigquery_file_writer_io
 
         # Create one io object for one output thread, that is, share among tasks
         # Close theses shared io objects in transaction
         #
         # Thread IO must be created at #add because threads in #initialize or #commit
-        # are different (called from non-output threads)
+        # are different (called from non-output threads). Note also that #add of the
+        # same instance would be called in different output threads
         def thread_io
           return Thread.current[THREAD_LOCAL_IO_KEY] if Thread.current[THREAD_LOCAL_IO_KEY]
 
@@ -58,11 +71,6 @@ module Embulk
             io = file_io
           end
           Thread.current[THREAD_LOCAL_IO_KEY] = io
-        end
-
-        # NOTE: path is created on first call of #add, not #initialize
-        def path
-          @io.path
         end
 
         def to_payload(record)
@@ -90,14 +98,15 @@ module Embulk
         end
 
         def add(page)
-          @io ||= thread_io
+          io = thread_io
+          self.class.ios.add(io)
           # I once tried to split IO writing into another IO thread using SizedQueue
           # However, it resulted in worse performance, so I removed the codes.
           page.each do |record|
             Embulk.logger.trace { "embulk-output-bigquery: record #{record}" }
             formatted_record = @formatter_proc.call(record)
             Embulk.logger.trace { "embulk-output-bigquery: formatted_record #{formatted_record.chomp}" }
-            @io.write formatted_record
+            io.write formatted_record
             @num_input_rows += 1
           end
           now = Time.now
@@ -112,8 +121,6 @@ module Embulk
         def commit
           task_report = {
             'num_input_rows' => @num_input_rows,
-            'path' => path,
-            'io' => @io,
           }
         end
       end
