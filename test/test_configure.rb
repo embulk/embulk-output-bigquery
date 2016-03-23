@@ -74,7 +74,7 @@ module Embulk
         assert_equal 5, task['retries']
         assert_equal "Embulk BigQuery plugin", task['application_name']
         # assert_equal "/tmp/embulk_output_bigquery_20160228-27184-pubcn0", task['path_prefix']
-        assert_equal ".%d.%03d", task['sequence_format']
+        assert_equal ".%d.%d", task['sequence_format']
         assert_equal ".csv", task['file_ext']
         assert_equal false, task['skip_file_generation']
         assert_equal "NONE", task['compression']

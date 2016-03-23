@@ -65,7 +65,7 @@ Options for intermediate local files
 | name                                 | type        | required?  | default                  | description            |  
 |:-------------------------------------|:------------|:-----------|:-------------------------|:-----------------------|
 |  path_prefix                         | string      | optional   |                          | Path prefix of local files such as "/tmp/prefix_". Default randomly generates with [tempfile](http://ruby-doc.org/stdlib-2.2.3/libdoc/tempfile/rdoc/Tempfile.html) |
-|  sequence_format                     | string      | optional   | .%d.%03d                 | Sequence format for pid, task index |
+|  sequence_format                     | string      | optional   | .%d.%d                   | Sequence format for pid, thread id |
 |  file_ext                            | string      | optional   |                          | The file extension of local files such as ".csv.gz" ".json.gz". Default automatically generates from `source_format` and `compression`|
 |  skip_file_generation                | boolean     | optional   |                          | Load already generated local files into BigQuery if available. Specify correct path_prefix and file_ext. |
 |  delete_from_local_when_job_end      | boolean     | optional   | false                    | If set to true, delete glocal file when job is end |

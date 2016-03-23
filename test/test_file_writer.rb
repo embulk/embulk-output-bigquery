@@ -16,6 +16,11 @@ module Embulk
         end
       end
 
+      def setup
+        Thread.current[FileWriter::THREAD_LOCAL_IO_KEY] = nil
+        FileWriter.reset_ios
+      end
+
       def default_task
         {
           'compression' => 'GZIP',
@@ -42,19 +47,30 @@ module Embulk
         @converters ||= ValueConverterFactory.create_converters(default_task, schema)
       end
 
+      def record
+        [true, 1, 1.1, 'foo', Time.parse("2016-02-26 00:00:00 +09:00"), {"foo"=>"foo"}]
+      end
+
+      def page
+        [record]
+      end
+
       sub_test_case "path" do
         def test_path
           task = default_task.merge('path_prefix' => 'tmp/foo', 'sequence_format' => '', 'file_ext' => '.1')
           file_writer = FileWriter.new(task, schema, 0, converters)
-          assert_equal 'tmp/foo.1', file_writer.instance_variable_get(:@path)
+
+          begin
+            file_writer.add(page)
+          ensure
+            io.close rescue nil
+          end
+          path = FileWriter.paths.first
+          assert_equal 'tmp/foo.1', path
         end
       end
 
       sub_test_case "formatter" do
-        def record
-          [true, 1, 1.1, 'foo', Time.parse("2016-02-26 00:00:00 +09:00"), {"foo"=>"foo"}]
-        end
-
         def test_payload_column_index
           task = default_task.merge('payload_column_index' => 0)
           file_writer = FileWriter.new(task, schema, 0, converters)
@@ -86,42 +102,36 @@ module Embulk
       end
 
       sub_test_case "compression" do
-        def record
-          [true, 1, 1.1, 'foo', Time.parse("2016-02-26 00:00:00 +09:00"), {"foo"=>"foo"}]
-        end
-
-        def page
-          [record]
-        end
-
         def test_gzip
           task = default_task.merge('compression' => 'GZIP')
           file_writer = FileWriter.new(task, schema, 0, converters)
-          io = file_writer.instance_variable_get(:@io)
-          assert_equal Zlib::GzipWriter, io.class
 
           begin
             file_writer.add(page)
+            io = FileWriter.ios.first
+            assert_equal Zlib::GzipWriter, io.class
           ensure
-            file_writer.commit
+            io.close rescue nil
           end
-          assert_true File.exist?(file_writer.path)
-          assert_nothing_raised { Zlib::GzipReader.open(file_writer.path) {|gz| } }
+          path = FileWriter.paths.first
+          assert_true File.exist?(path)
+          assert_nothing_raised { Zlib::GzipReader.open(path) {|gz| } }
         end
 
         def test_uncompressed
           task = default_task.merge('compression' => 'NONE')
           file_writer = FileWriter.new(task, schema, 0, converters)
-          io = file_writer.instance_variable_get(:@io)
-          assert_equal File, io.class
 
           begin
             file_writer.add(page)
+            io = FileWriter.ios.first
+            assert_equal File, io.class
           ensure
-            file_writer.commit
+            io.close rescue nil
           end
-          assert_true File.exist?(file_writer.path)
-          assert_raise { Zlib::GzipReader.open(file_writer.path) {|gz| } }
+          path = FileWriter.paths.first
+          assert_true File.exist?(path)
+          assert_raise { Zlib::GzipReader.open(path) {|gz| } }
         end
       end
     end
