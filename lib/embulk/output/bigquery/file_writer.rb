@@ -30,12 +30,19 @@ module Embulk
           end
         end
 
+        @mutex = Mutex.new
+        @ios = Set.new
+
+        def self.mutex
+          @mutex
+        end
+
         def self.reset_ios
           @ios = Set.new
         end
 
         def self.ios
-          @ios ||= Set.new
+          @ios
         end
 
         def self.paths
@@ -71,8 +78,9 @@ module Embulk
             io = file_io
           end
 
-          ios = self.class.ios
-          ios.add(io)
+          self.class.mutex.synchronize do
+            self.class.ios.add(io)
+          end
 
           Thread.current[THREAD_LOCAL_IO_KEY] = io
         end
