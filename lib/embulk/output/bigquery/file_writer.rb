@@ -70,6 +70,10 @@ module Embulk
           else
             io = file_io
           end
+
+          ios = self.class.ios
+          ios.add(io)
+
           Thread.current[THREAD_LOCAL_IO_KEY] = io
         end
 
@@ -99,7 +103,6 @@ module Embulk
 
         def add(page)
           io = thread_io
-          self.class.ios.add(io)
           # I once tried to split IO writing into another IO thread using SizedQueue
           # However, it resulted in worse performance, so I removed the codes.
           page.each do |record|
