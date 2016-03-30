@@ -31,14 +31,14 @@ module Embulk
         end
 
         @mutex = Mutex.new
-        @ios = Set.new
+        @ios = Hash.new
 
         def self.mutex
           @mutex
         end
 
         def self.reset_ios
-          @ios = Set.new
+          @ios = Hash.new
         end
 
         def self.ios
@@ -46,7 +46,7 @@ module Embulk
         end
 
         def self.paths
-          ios.map {|io| io.path }
+          @ios.keys
         end
 
         THREAD_LOCAL_IO_KEY = :embulk_output_bigquery_file_writer_io
@@ -69,20 +69,33 @@ module Embulk
             File.unlink(path) rescue nil
           end
           Embulk.logger.info { "embulk-output-bigquery: create #{path}" }
-          file_io = File.open(path, 'w')
 
+          open(path, 'w')
+        end
+
+        def open(path, mode = 'w')
+          file_io = File.open(path, mode)
           case @task['compression'].downcase
           when 'gzip'
             io = Zlib::GzipWriter.new(file_io)
           else
             io = file_io
           end
-
           self.class.mutex.synchronize do
-            self.class.ios.add(io)
+            self.class.ios[path] = io
           end
-
           Thread.current[THREAD_LOCAL_IO_KEY] = io
+        end
+
+        def close
+          io = thread_io
+          io.close rescue nil
+          io
+        end
+
+        def reopen
+          io = thread_io
+          open(io.path, 'a')
         end
 
         def to_payload(record)
