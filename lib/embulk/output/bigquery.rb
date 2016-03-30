@@ -1,5 +1,6 @@
 require 'json'
 require 'tempfile'
+require 'fileutils'
 require_relative 'bigquery/bigquery_client'
 require_relative 'bigquery/file_writer'
 require_relative 'bigquery/value_converter_factory'
@@ -211,23 +212,27 @@ module Embulk
         @converters
       end
 
+      def self.rehearsal_thread
+        @rehearsal_thread
+      end
+
+      def self.rehearsal_thread=(rehearsal_thread)
+        @rehearsal_thread = rehearsal_thread
+      end
+
       def self.transaction_report(task_reports, responses)
-        transaction_report = {
-          'num_input_rows' => 0,
-          'num_output_rows' => 0,
-          'num_rejected_rows' => 0,
-        }
-        (0...task_reports.size).each do |idx|
-          task_report       = task_reports[idx]
-          response          = responses[idx]
-          num_input_rows    = task_report['num_input_rows']
-          num_output_rows   = response ? response.statistics.load.output_rows.to_i : 0
-          num_rejected_rows = num_input_rows - num_output_rows
-          transaction_report['num_input_rows']    += num_input_rows
-          transaction_report['num_output_rows']   += num_output_rows
-          transaction_report['num_rejected_rows'] += num_rejected_rows
+        num_input_rows = task_reports.inject(0) do |sum, task_report|
+          sum + task_report['num_input_rows']
         end
-        transaction_report
+        num_output_rows = responses.inject(0) do |sum, response|
+          sum + (response ? response.statistics.load.output_rows.to_i : 0)
+        end
+        num_rejected_rows = num_input_rows - num_output_rows
+        transaction_report = {
+          'num_input_rows' => num_input_rows,
+          'num_output_rows' => num_output_rows,
+          'num_rejected_rows' => num_rejected_rows,
+        }
       end
 
       def self.transaction(config, schema, task_count, &control)
@@ -278,7 +283,14 @@ module Embulk
             task_reports = yield(task) # generates local files
             Embulk.logger.info { "embulk-output-bigquery: task_reports: #{task_reports.to_json}" }
             paths = FileWriter.paths
-            FileWriter.ios.each {|io| io.close rescue nil }
+            FileWriter.ios.values.each do |io|
+              Embulk.logger.debug { "close #{io.path}" }
+              io.close rescue nil
+            end
+          end
+
+          if rehearsal_thread
+            rehearsal_thread.join
           end
 
           if task['skip_load'] # only for debug
@@ -332,7 +344,6 @@ module Embulk
         super
 
         if task['with_rehearsal'] and @index == 0
-          @bigquery = self.class.bigquery
           @rehearsaled = false
           @num_rows = 0
         end
@@ -351,13 +362,7 @@ module Embulk
         if task['with_rehearsal'] and @index == 0 and !@rehearsaled
           page = page.to_a # to avoid https://github.com/embulk/embulk/issues/403
           if @num_rows >= task['rehearsal_counts']
-            Embulk.logger.info { "embulk-output-bigquery: Rehearsal started" }
-            begin
-              @bigquery.create_table(task['rehearsal_table'])
-              @bigquery.load(FileWriter.paths.first, task['rehearsal_table'])
-            ensure
-              @bigquery.delete_table(task['rehearsal_table'])
-            end
+            load_rehearsal
             @rehearsaled = true
           end
           @num_rows += page.to_a.size
@@ -365,6 +370,30 @@ module Embulk
 
         unless task['skip_file_generation']
           @file_writer.add(page)
+        end
+      end
+
+      def load_rehearsal
+        bigquery = self.class.bigquery
+        Embulk.logger.info { "embulk-output-bigquery: Rehearsal started" }
+
+        io = @file_writer.close # need to close once for gzip
+        rehearsal_path = "#{io.path}.rehearsal"
+        Embulk.logger.debug { "embulk_output_bigquery: cp #{io.path} #{rehearsal_path}" }
+        FileUtils.cp(io.path, rehearsal_path)
+        @file_writer.reopen
+
+        self.class.rehearsal_thread = Thread.new do
+          begin
+            bigquery.create_table(task['rehearsal_table'])
+            response = bigquery.load(rehearsal_path, task['rehearsal_table'])
+            num_output_rows = response ? response.statistics.load.output_rows.to_i : 0
+            Embulk.logger.info { "embulk-output-bigquery: Loaded rehearsal #{num_output_rows}" }
+          ensure
+            Embulk.logger.debug { "embulk_output_bigquery: delete #{rehearsal_path}" }
+            File.unlink(rehearsal_path) rescue nil
+            bigquery.delete_table(task['rehearsal_table'])
+          end
         end
       end
 

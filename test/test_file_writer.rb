@@ -108,7 +108,7 @@ module Embulk
 
           begin
             file_writer.add(page)
-            io = FileWriter.ios.first
+            io = FileWriter.ios.values.first
             assert_equal Zlib::GzipWriter, io.class
           ensure
             io.close rescue nil
@@ -124,7 +124,7 @@ module Embulk
 
           begin
             file_writer.add(page)
-            io = FileWriter.ios.first
+            io = FileWriter.ios.values.first
             assert_equal File, io.class
           ensure
             io.close rescue nil

@@ -30,3 +30,4 @@ out:
   with_rehearsal: true
   rehearsal_counts: 1
   skip_load: true # for debug
+  compression: GZIP
