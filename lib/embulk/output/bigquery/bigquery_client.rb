@@ -272,7 +272,7 @@ module Embulk
               "embulk-output-bigquery: get_job(#{@project}, #{job_id}), " \
               "errors:#{_errors.map(&:to_h)}"
             }
-            raise Error, "failed during waiting a job, errors:#{_errors.map(&:to_h)}"
+            raise Error, "failed during waiting a #{kind} job, errors:#{_errors.map(&:to_h)}"
           end
 
           _response
