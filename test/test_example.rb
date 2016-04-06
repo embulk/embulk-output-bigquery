@@ -1,10 +1,12 @@
 require_relative './helper'
 
-# 1. Prepare /tmp/your-project-000.json
+# 1. Prepare example/your-project-000.json
 # 2. embulk bundle
-# 3. CONNECT=1 bundle exec ruby test/test_example.rb
+# 3. bundle exec ruby test/test_example.rb
 
-if ENV['CONNECT']
+unless File.exist?(JSON_KEYFILE)
+  puts "#{JSON_KEYFILE} is not found. Skip test/test_example.rb"
+else
   class TestExample < Test::Unit::TestCase
     def embulk_path
       if File.exist?("#{ENV['PATH']}/.embulk/bin/embulk")

@@ -2,10 +2,12 @@ require_relative './helper'
 require 'embulk/output/bigquery/bigquery_client'
 require 'csv'
 
-# 1. Prepare /tmp/your-project-000.json
-# 2. CONNECT=1 bunlde exec ruby test/test_bigquery_client.rb
+# 1. Prepare example/your-project-000.json
+# 2. bunlde exec ruby test/test_bigquery_client.rb
 
-if ENV['CONNECT']
+unless File.exist?(JSON_KEYFILE)
+  puts "#{JSON_KEYFILE} is not found. Skip test/test_bigquery_client.rb"
+else
   module Embulk
     class Output::Bigquery
       class TestBigqueryClient < Test::Unit::TestCase
@@ -26,11 +28,11 @@ if ENV['CONNECT']
 
         def least_task
           {
-            'project'          => JSON.parse(File.read('/tmp/your-project-000.json'))['project_id'],
+            'project'          => JSON.parse(File.read(JSON_KEYFILE))['project_id'],
             'dataset'          => 'your_dataset_name',
             'table'            => 'your_table_name',
             'auth_method'      => 'json_key',
-            'json_keyfile'     => '/tmp/your-project-000.json',
+            'json_keyfile'     => JSON_KEYFILE,
             'retries'          => 3,
             'timeout_sec'      => 300,
             'open_timeout_sec' => 300,

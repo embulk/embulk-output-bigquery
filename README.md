@@ -354,8 +354,8 @@ To run tests which actually connects to BigQuery such as test/test\_bigquery\_cl
 prepare a json\_keyfile at example/your-project-000.json, then
 
 ```
-$ CONNECT=1 bundle exec ruby test/test_bigquery_client.rb
-$ CONNECT=1 bundle exec ruby test/test_example.rb
+$ bundle exec ruby test/test_bigquery_client.rb
+$ bundle exec ruby test/test_example.rb
 ```
 
 ### Release gem:
