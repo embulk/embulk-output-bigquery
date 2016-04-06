@@ -68,7 +68,7 @@ Options for intermediate local files
 |  sequence_format                     | string      | optional   | .%d.%d                   | Sequence format for pid, thread id |
 |  file_ext                            | string      | optional   |                          | The file extension of local files such as ".csv.gz" ".json.gz". Default automatically generates from `source_format` and `compression`|
 |  skip_file_generation                | boolean     | optional   |                          | Load already generated local files into BigQuery if available. Specify correct path_prefix and file_ext. |
-|  delete_from_local_when_job_end      | boolean     | optional   | false                    | If set to true, delete glocal file when job is end |
+|  delete_from_local_when_job_end      | boolean     | optional   | true                     | If set to true, delete generate local files when job is end |
 |  compression                         | string      | optional   | "NONE"                   | Compression of local files (`GZIP` or `NONE`) |
 
 `source_format` is also used to determine formatter (csv or jsonl).
