@@ -321,13 +321,13 @@ module Embulk
           ensure
             if task['delete_from_local_when_job_end']
               paths.each do |path|
-                Embulk.logger.info { "delete #{path}" }
+                Embulk.logger.info { "embulk-output-bigquery: delete #{path}" }
                 File.unlink(path) rescue nil
               end
             else
               paths.each do |path|
                 if File.exist?(path)
-                  Embulk.logger.info { "#{path} is left" }
+                  Embulk.logger.info { "embulk-output-bigquery: keep #{path}" }
                 end
               end
             end
