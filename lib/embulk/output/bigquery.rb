@@ -12,7 +12,7 @@ module Embulk
 
       class Error < StandardError; end
 
-      # To support configuration like below as org.embulk.spi.unit.LoalFile
+      # To support configuration like below as org.embulk.spi.unit.LocalFile
       #
       # json_keyfile:
       #   content: |
