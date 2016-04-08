@@ -1,4 +1,4 @@
-## 0.3.0 - YYYY-MM-DD
+## 0.3.0 - 2016-04-08
 
 Big change is introduced. Now, embulk-output-bigquery is written in JRuby.
 
