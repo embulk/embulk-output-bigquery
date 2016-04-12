@@ -182,7 +182,7 @@ module Embulk
             Embulk.logger.debug { "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts})" }
             response = client.insert_job(@project, body, opts)
             unless @task['is_skip_job_result_check']
-              wait_load('Load', response)
+              response = wait_load('Load', response)
             end
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             response = {status_code: e.status_code, message: e.message, error_class: e.class}
@@ -246,18 +246,18 @@ module Embulk
             if status == "DONE"
               Embulk.logger.info {
                 "embulk-output-bigquery: #{kind} job completed... " \
-                "job id:[#{job_id}] elapsed_time:#{elapsed.to_f}sec status:[#{status}]"
+                "job_id:[#{job_id}] elapsed_time:#{elapsed.to_f}sec status:[#{status}]"
               }
               break
             elsif elapsed.to_i > max_polling_time
               message = "embulk-output-bigquery: Checking #{kind} job status... " \
-                "job id:[#{job_id}] elapsed_time:#{elapsed.to_f}sec status:[TIMEOUT]"
+                "job_id:[#{job_id}] elapsed_time:#{elapsed.to_f}sec status:[TIMEOUT]"
               Embulk.logger.info { message }
               raise JobTimeoutError.new(message)
             else
               Embulk.logger.info {
                 "embulk-output-bigquery: Checking #{kind} job status... " \
-                "job id:[#{job_id}] elapsed_time:#{elapsed.to_f}sec status:[#{status}]"
+                "job_id:[#{job_id}] elapsed_time:#{elapsed.to_f}sec status:[#{status}]"
               }
               sleep wait_interval
               _response = client.get_job(@project, job_id)
@@ -274,6 +274,8 @@ module Embulk
             }
             raise Error, "failed during waiting a #{kind} job, errors:#{_errors.map(&:to_h)}"
           end
+
+          Embulk.logger.info { "embulk-output-bigquery: #{kind} job response... job_id:[#{job_id}] response.statistics:#{_response.statistics.to_h}" }
 
           _response
         end
