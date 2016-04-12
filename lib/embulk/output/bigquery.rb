@@ -339,7 +339,7 @@ module Embulk
         return next_config_diff
       end
 
-      # instance is created on each thread
+      # instance is created on each task
       def initialize(task, schema, index)
         super
 
@@ -353,11 +353,11 @@ module Embulk
         end
       end
 
-      # called for each page in each thread
+      # called for each page in each task
       def close
       end
 
-      # called for each page in each thread
+      # called for each page in each task
       def add(page)
         if task['with_rehearsal'] and @index == 0 and !@rehearsaled
           page = page.to_a # to avoid https://github.com/embulk/embulk/issues/403
@@ -403,7 +403,7 @@ module Embulk
       def abort
       end
 
-      # called after processing all pages in each thread, returns a task_report
+      # called after processing all pages in each task, returns a task_report
       def commit
         unless task['skip_file_generation']
           @file_writer.commit
