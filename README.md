@@ -39,7 +39,7 @@ OAuth flow for installed applications.
 |  auto_create_table                   | boolean     | optional   | false                    | [See below](#dynamic-table-creating) |
 |  schema_file                         | string      | optional   |                          | /path/to/schema.json |
 |  template_table                      | string      | optional   |                          | template table name [See below](#dynamic-table-creating) |
-|  prevent_duplicate_insert            | boolean     | optional   | false                    | [See below](#data-consistency) |
+|  prevent_duplicate_insert            | boolean     | optional   | true                     | [See below](#prevent-duplication) |
 |  job_status_max_polling_time         | int         | optional   | 3600 sec                 | Max job status polling time |
 |  job_status_polling_interval         | int         | optional   | 10 sec                   | Job status polling interval |
 |  is_skip_job_result_check            | boolean     | optional   | false                    | Skip waiting Load job finishes. Available for append, or delete_in_advance mode | 
@@ -317,15 +317,19 @@ out:
   payload_column_index: 0 # or, payload_column: payload
 ```
 
-### Data Consistency
+### Prevent Duplication
 
-When `prevent_duplicate_insert` is set to true, embulk-output-bigquery generate job ID from md5 hash of file  and other options to prevent duplicate data insertion.
+Generating job ID in the client code is highly recommended by google as [Generating a job ID](https://cloud.google.com/bigquery/docs/managing_jobs_datasets_projects#managingjobs) says.
+
+> As a best practice, you should generate a job ID using your client code and send that job ID when you call jobs.insert.
+
+Without generating job ID in the client code, retrying (would be caused by network issue) will cause data duplication.
+
+When `prevent_duplicate_insert` is set to true (default: true), embulk-output-bigquery generate job ID from md5 hash of file and other options.
 
 `job ID = md5(md5(file) + dataset + table + schema + source_format + file_delimiter + max_bad_records + encoding + ignore_unknown_values + allow_quoted_newlines)`
 
-[job ID must be unique(including failures)](https://cloud.google.com/bigquery/loading-data-into-bigquery#consistency). So same data can't insert with same settings.
-
-In other words, you can retry as many times as you like, in case something bad error(like network error) happens before job insertion.
+[job ID must be unique(including failures)](https://cloud.google.com/bigquery/loading-data-into-bigquery#consistency) so that same data can't be inserted with same settings repeatedly.
 
 ```yaml
 out:

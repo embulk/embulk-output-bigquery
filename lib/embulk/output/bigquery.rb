@@ -48,7 +48,7 @@ module Embulk
           'job_status_max_polling_time'    => config.param('job_status_max_polling_time',    :integer, :default => 3600),
           'job_status_polling_interval'    => config.param('job_status_polling_interval',    :integer, :default => 10),
           'is_skip_job_result_check'       => config.param('is_skip_job_result_check',       :bool,    :default => false),
-          'prevent_duplicate_insert'       => config.param('prevent_duplicate_insert',       :bool,    :default => false),
+          'prevent_duplicate_insert'       => config.param('prevent_duplicate_insert',       :bool,    :default => true),
           'with_rehearsal'                 => config.param('with_rehearsal',                 :bool,    :default => false),
           'rehearsal_counts'               => config.param('rehearsal_counts',               :integer, :default => 1000),
 
