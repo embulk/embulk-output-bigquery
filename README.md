@@ -59,6 +59,7 @@ Client or request options
 |  open_timeout_sec                    | integer     | optional   | 300                      | Seconds to wait for the connection to open |
 |  retries                             | integer     | optional   | 5                        | Number of retries |
 |  application_name                    | string      | optional   | "Embulk BigQuery plugin" | User-Agent |
+|  sdk_log_level                       | string      | optional   | nil (WARN)               | Log level of google api client library |
 
 Options for intermediate local files
 

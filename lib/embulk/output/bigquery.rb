@@ -44,6 +44,7 @@ module Embulk
           'auto_create_table'              => config.param('auto_create_table',              :bool,    :default => false),
           'schema_file'                    => config.param('schema_file',                    :string,  :default => nil),
           'template_table'                 => config.param('template_table',                 :string,  :default => nil),
+
           'delete_from_local_when_job_end' => config.param('delete_from_local_when_job_end', :bool,    :default => true),
           'job_status_max_polling_time'    => config.param('job_status_max_polling_time',    :integer, :default => 3600),
           'job_status_polling_interval'    => config.param('job_status_polling_interval',    :integer, :default => 10),
@@ -62,6 +63,7 @@ module Embulk
           'open_timeout_sec'               => config.param('open_timeout_sec',               :integer, :default => 300),
           'retries'                        => config.param('retries',                        :integer, :default => 5),
           'application_name'               => config.param('application_name',               :string,  :default => 'Embulk BigQuery plugin'),
+          'sdk_log_level'                  => config.param('sdk_log_level',                  :string,  :default => nil),
 
           'path_prefix'                    => config.param('path_prefix',                    :string,  :default => nil),
           'sequence_format'                => config.param('sequence_format',                :string,  :default => '.%d.%d'),
@@ -199,6 +201,10 @@ module Embulk
 
         if task['with_rehearsal']
           task['rehearsal_table'] ||= "LOAD_REHEARSAL_#{unique_name}_#{task['table']}"
+        end
+
+        if task['sdk_log_level']
+          Google::Apis.logger.level = eval("::Logger::#{task['sdk_log_level'].upcase}")
         end
 
         task
