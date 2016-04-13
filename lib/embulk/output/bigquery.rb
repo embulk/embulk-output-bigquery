@@ -220,16 +220,18 @@ module Embulk
         @rehearsal_thread = rehearsal_thread
       end
 
-      def self.transaction_report(task_reports, responses)
+      def self.transaction_report(task_reports, responses, target_table)
         num_input_rows = task_reports.inject(0) do |sum, task_report|
           sum + task_report['num_input_rows']
         end
-        num_output_rows = responses.inject(0) do |sum, response|
+        num_response_rows = responses.inject(0) do |sum, response|
           sum + (response ? response.statistics.load.output_rows.to_i : 0)
         end
+        num_output_rows = bigquery.get_table(target_table).num_rows.to_i
         num_rejected_rows = num_input_rows - num_output_rows
         transaction_report = {
           'num_input_rows' => num_input_rows,
+          'num_response_rows' => num_response_rows,
           'num_output_rows' => num_output_rows,
           'num_rejected_rows' => num_rejected_rows,
         }
@@ -298,7 +300,7 @@ module Embulk
           else
             target_table = task['temp_table'] ? task['temp_table'] : task['table']
             responses = bigquery.load_in_parallel(paths, target_table)
-            transaction_report = self.transaction_report(task_reports, responses)
+            transaction_report = self.transaction_report(task_reports, responses, target_table)
             Embulk.logger.info { "embulk-output-bigquery: transaction_report: #{transaction_report.to_json}" }
 
             if task['mode'] == 'replace_backup'
