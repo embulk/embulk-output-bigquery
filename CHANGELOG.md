@@ -1,3 +1,11 @@
+## 0.3.1 - 2016-XX-XX
+
+* [new feature] Add `sdk_log_level` option to show log of google-api-client
+* [maintenance] Fix `prevent_duplicate_insert` was not working correctly
+* [maintenance] Change default of `prevent_duplicate_insert` to `true`
+* [maintenance] Change to get `num_output_rows` of `transaction_report` from `get_table` API
+* [maintenance] Log response.statistics of load jobs
+
 ## 0.3.0 - 2016-04-08
 
 Big change is introduced. Now, embulk-output-bigquery is written in JRuby.
