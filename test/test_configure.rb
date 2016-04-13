@@ -61,7 +61,7 @@ module Embulk
         assert_equal 3600, task['job_status_max_polling_time']
         assert_equal 10, task['job_status_polling_interval']
         assert_equal false, task['is_skip_job_result_check']
-        assert_equal false, task['prevent_duplicate_insert']
+        assert_equal true, task['prevent_duplicate_insert']
         assert_equal false, task['with_rehearsal']
         assert_equal 1000, task['rehearsal_counts']
         assert_equal [], task['column_options']
