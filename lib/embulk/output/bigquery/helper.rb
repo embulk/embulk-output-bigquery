@@ -1,4 +1,5 @@
 require 'digest/md5'
+require 'securerandom'
 
 module Embulk
   module Output
@@ -52,7 +53,7 @@ module Embulk
           end
         end
 
-        def self.create_job_id(task, path, table, fields)
+        def self.create_load_job_id(task, path, table, fields)
           elements = [
             Digest::MD5.file(path).hexdigest,
             task['dataset'],
@@ -68,8 +69,14 @@ module Embulk
 
           str = elements.map(&:to_s).join('')
           md5 = Digest::MD5.hexdigest(str)
-          job_id = "embulk_job_#{md5}"
-          Embulk.logger.debug { "embulk-output-bigquery: create_job_id(#{path}, #{table}) #=> #{job_id}" }
+          job_id = "embulk_load_job_#{md5}"
+          Embulk.logger.debug { "embulk-output-bigquery: create_load_job_id(#{path}, #{table}) #=> #{job_id}" }
+          job_id
+        end
+
+        def self.create_copy_job_id
+          job_id = "embulk_copy_job_#{SecureRandom.uuid}"
+          Embulk.logger.debug { "embulk-output-bigquery: create_copy_job_id #=> #{job_id}" }
           job_id
         end
       end

@@ -142,7 +142,7 @@ module Embulk
               job_reference = {
                 job_reference: {
                   project_id: @project,
-                  job_id: Helper.create_job_id(@task, path, table, fields),
+                  job_id: Helper.create_load_job_id(@task, path, table, fields),
                 }
               }
             else
@@ -168,8 +168,8 @@ module Embulk
                   ignore_unknown_values: @task['ignore_unknown_values'],
                   allow_quoted_newlines: @task['allow_quoted_newlines'],
                 }
-              }.merge!(job_reference)
-            }
+              }
+            }.merge!(job_reference)
             opts = {
               upload_source: path,
               content_type: "application/octet-stream",
@@ -200,6 +200,18 @@ module Embulk
               "embulk-output-bigquery: Copy job starting... " \
               "#{@project}:#{@dataset}.#{source_table} => #{@project}:#{destination_dataset}.#{destination_table}"
             }
+
+            if @task['prevent_duplicate_insert']
+              job_reference = {
+                job_reference: {
+                  project_id: @project,
+                  job_id: Helper.create_copy_job_id,
+                }
+              }
+            else
+              job_reference = {}
+            end
+
             body = {
               configuration: {
                 copy: {
@@ -217,7 +229,8 @@ module Embulk
                   },
                 }
               }
-            }
+            }.merge!(job_reference)
+
             opts = {}
             Embulk.logger.debug { "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts})" }
             response = client.insert_job(@project, body, opts)
