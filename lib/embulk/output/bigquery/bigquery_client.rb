@@ -132,24 +132,24 @@ module Embulk
         def load(path, table)
           begin
             if File.exist?(path)
-              Embulk.logger.info { "embulk-output-bigquery: Load job starting... #{path} => #{@project}:#{@dataset}.#{table}" }
+              # As https://cloud.google.com/bigquery/docs/managing_jobs_datasets_projects#managingjobs says,
+              # we should generate job_id in client code, otherwise, retrying would cause duplication
+              if @task['prevent_duplicate_insert'] and (@task['mode'] == 'append' or @task['mode'] == 'append_direct')
+                job_id = Helper.create_load_job_id(@task, path, fields)
+              else
+                job_id = "embulk_load_job_#{SecureRandom.uuid}"
+              end
+              Embulk.logger.info { "embulk-output-bigquery: Load job starting... job_id:[#{job_id}] #{path} => #{@project}:#{@dataset}.#{table}" }
             else
               Embulk.logger.info { "embulk-output-bigquery: Load job starting... #{path} does not exist, skipped" }
               return
             end
 
-            if @task['prevent_duplicate_insert']
-              job_reference = {
-                job_reference: {
-                  project_id: @project,
-                  job_id: Helper.create_load_job_id(@task, path, table, fields),
-                }
-              }
-            else
-              job_reference = {}
-            end
-
             body = {
+              job_reference: {
+                project_id: @project,
+                job_id: job_id,
+              },
               configuration: {
                 load: {
                   destination_table: {
@@ -169,7 +169,8 @@ module Embulk
                   allow_quoted_newlines: @task['allow_quoted_newlines'],
                 }
               }
-            }.merge!(job_reference)
+            }
+
             opts = {
               upload_source: path,
               content_type: "application/octet-stream",
@@ -196,23 +197,18 @@ module Embulk
         def copy(source_table, destination_table, destination_dataset = nil, write_disposition: 'WRITE_TRUNCATE')
           begin
             destination_dataset ||= @dataset
+            job_id = "embulk_copy_job_#{SecureRandom.uuid}"
+
             Embulk.logger.info {
-              "embulk-output-bigquery: Copy job starting... " \
+              "embulk-output-bigquery: Copy job starting... job_id:[#{job_id}] " \
               "#{@project}:#{@dataset}.#{source_table} => #{@project}:#{destination_dataset}.#{destination_table}"
             }
 
-            if @task['prevent_duplicate_insert']
-              job_reference = {
-                job_reference: {
-                  project_id: @project,
-                  job_id: Helper.create_copy_job_id,
-                }
-              }
-            else
-              job_reference = {}
-            end
-
             body = {
+              job_reference: {
+                project_id: @project,
+                job_id: job_id,
+              },
               configuration: {
                 copy: {
                   create_deposition: 'CREATE_IF_NEEDED',
@@ -229,7 +225,7 @@ module Embulk
                   },
                 }
               }
-            }.merge!(job_reference)
+            }
 
             opts = {}
             Embulk.logger.debug { "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts})" }
@@ -263,13 +259,13 @@ module Embulk
               }
               break
             elsif elapsed.to_i > max_polling_time
-              message = "embulk-output-bigquery: Checking #{kind} job status... " \
+              message = "embulk-output-bigquery: #{kind} job checking... " \
                 "job_id:[#{job_id}] elapsed_time:#{elapsed.to_f}sec status:[TIMEOUT]"
               Embulk.logger.info { message }
               raise JobTimeoutError.new(message)
             else
               Embulk.logger.info {
-                "embulk-output-bigquery: Checking #{kind} job status... " \
+                "embulk-output-bigquery: #{kind} job checking... " \
                 "job_id:[#{job_id}] elapsed_time:#{elapsed.to_f}sec status:[#{status}]"
               }
               sleep wait_interval
