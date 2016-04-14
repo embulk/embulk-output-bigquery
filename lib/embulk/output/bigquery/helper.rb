@@ -55,6 +55,7 @@ module Embulk
 
         def self.create_load_job_id(task, path, table, fields)
           elements = [
+            path,
             Digest::MD5.file(path).hexdigest,
             task['dataset'],
             table,

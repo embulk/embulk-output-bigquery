@@ -328,7 +328,7 @@ Without generating job ID in the client code, retrying (would be caused by netwo
 
 When `prevent_duplicate_insert` is set to true (default: true), embulk-output-bigquery generate job ID from md5 hash of file and other options.
 
-`job ID = md5(md5(file) + dataset + table + schema + source_format + file_delimiter + max_bad_records + encoding + ignore_unknown_values + allow_quoted_newlines)`
+`job ID = md5(file + md5(file) + dataset + table + schema + source_format + file_delimiter + max_bad_records + encoding + ignore_unknown_values + allow_quoted_newlines)`
 
 [job ID must be unique(including failures)](https://cloud.google.com/bigquery/loading-data-into-bigquery#consistency) so that same data can't be inserted with same settings repeatedly.
 
