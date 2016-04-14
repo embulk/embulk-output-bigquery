@@ -84,6 +84,7 @@ module Embulk
       def test_create_load_job_id
         task = {
           'dataset' => 'your_dataset_name',
+          'table' => 'your_table_name',
           'source_format' => 'CSV',
           'max_bad_records' => nil,
           'field_delimiter' => ',',
@@ -95,12 +96,7 @@ module Embulk
           name: 'a', type: 'STRING',
         }
         File.write("tmp/your_file_name", "foobarbaz")
-        job_id = Helper.create_load_job_id(task, 'tmp/your_file_name', 'your_table_name', fields)
-        assert job_id.is_a?(String)
-      end
-
-      def test_create_copy_job_id
-        job_id = Helper.create_copy_job_id
+        job_id = Helper.create_load_job_id(task, 'tmp/your_file_name', fields)
         assert job_id.is_a?(String)
       end
     end

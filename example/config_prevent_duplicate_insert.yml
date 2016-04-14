@@ -18,7 +18,7 @@ in:
       - {name: boolean,     type: boolean}
 out:
   type: bigquery
-  mode: replace
+  mode: append
   auth_method: json_key
   json_keyfile: example/your-project-000.json
   dataset: your_dataset_name
