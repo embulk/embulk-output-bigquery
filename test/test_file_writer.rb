@@ -16,11 +16,6 @@ module Embulk
         end
       end
 
-      def setup
-        Thread.current[FileWriter::THREAD_LOCAL_IO_KEY] = nil
-        FileWriter.reset_ios
-      end
-
       def default_task
         {
           'compression' => 'GZIP',
@@ -65,7 +60,7 @@ module Embulk
           ensure
             io.close rescue nil
           end
-          path = FileWriter.paths.first
+          path = file_writer.io.path
           assert_equal 'tmp/foo.1', path
         end
       end
@@ -108,12 +103,12 @@ module Embulk
 
           begin
             file_writer.add(page)
-            io = FileWriter.ios.values.first
+            io = file_writer.io
             assert_equal Zlib::GzipWriter, io.class
           ensure
             io.close rescue nil
           end
-          path = FileWriter.paths.first
+          path = file_writer.io.path
           assert_true File.exist?(path)
           assert_nothing_raised { Zlib::GzipReader.open(path) {|gz| } }
         end
@@ -124,12 +119,12 @@ module Embulk
 
           begin
             file_writer.add(page)
-            io = FileWriter.ios.values.first
+            io = file_writer.io
             assert_equal File, io.class
           ensure
             io.close rescue nil
           end
-          path = FileWriter.paths.first
+          path = file_writer.io.path
           assert_true File.exist?(path)
           assert_raise { Zlib::GzipReader.open(path) {|gz| } }
         end

@@ -226,10 +226,8 @@ module Embulk
         @rehearsal_thread = rehearsal_thread
       end
 
-      def self.transaction_report(task_reports, responses, target_table)
-        num_input_rows = task_reports.inject(0) do |sum, task_report|
-          sum + task_report['num_input_rows']
-        end
+      def self.transaction_report(file_writers, responses, target_table)
+        num_input_rows = file_writers.empty? ? 0 : file_writers.map(&:num_rows).inject(:+)
         num_response_rows = responses.inject(0) do |sum, response|
           sum + (response ? response.statistics.load.output_rows.to_i : 0)
         end
@@ -286,12 +284,12 @@ module Embulk
             path_pattern = "#{task['path_prefix']}*#{task['file_ext']}"
             Embulk.logger.info { "embulk-output-bigquery: Skip file generation. Get paths from `#{path_pattern}`" }
             paths = Dir.glob(path_pattern)
-            task_reports = paths.map {|path| { 'num_input_rows' => 0 } }
           else
             task_reports = yield(task) # generates local files
-            Embulk.logger.info { "embulk-output-bigquery: task_reports: #{task_reports.to_json}" }
-            paths = FileWriter.paths
-            FileWriter.ios.values.each do |io|
+
+            ios = file_writers.map(&:io)
+            paths = ios.map(&:path)
+            ios.each do |io|
               Embulk.logger.debug { "close #{io.path}" }
               io.close rescue nil
             end
@@ -306,7 +304,7 @@ module Embulk
           else
             target_table = task['temp_table'] ? task['temp_table'] : task['table']
             responses = bigquery.load_in_parallel(paths, target_table)
-            transaction_report = self.transaction_report(task_reports, responses, target_table)
+            transaction_report = self.transaction_report(file_writers, responses, target_table)
             Embulk.logger.info { "embulk-output-bigquery: transaction_report: #{transaction_report.to_json}" }
 
             if task['mode'] == 'replace_backup'
@@ -347,17 +345,46 @@ module Embulk
         return next_config_diff
       end
 
+      @file_writers_mutex = Mutex.new
+      @file_writers = Array.new
+
+      def self.reset_file_writers
+        @file_writers = Array.new
+      end
+
+      def self.file_writers
+        @file_writers
+      end
+
+      def self.add_file_writer(file_writer)
+        @file_writers_mutex.synchronize do
+          @file_writers << file_writer
+        end
+      end
+
+      FILE_WRITER_KEY = :embulk_output_bigquery_file_writer
+
+      # Create one FileWriter object for one output thread, that is, share among tasks.
+      # Close theses shared objects in transaction.
+      # This is mainly to suppress (or control by -X max_threads) number of files, which
+      # equals to number of concurrency to load in parallel, when number of input tasks is many
+      #
+      # #file_writer must be called at only #add because threads in other methods
+      # are different (called from non-output threads). Note also that #add method
+      # of the same task instance would be called in different output threads
+      def file_writer
+        return Thread.current[FILE_WRITER_KEY] if Thread.current[FILE_WRITER_KEY]
+        file_writer = FileWriter.new(@task, @schema, @index, self.class.converters)
+        self.class.add_file_writer(file_writer)
+        Thread.current[FILE_WRITER_KEY] = file_writer
+      end
+
       # instance is created on each task
       def initialize(task, schema, index)
         super
 
         if task['with_rehearsal'] and @index == 0
           @rehearsaled = false
-          @num_rows = 0
-        end
-
-        unless task['skip_file_generation']
-          @file_writer = FileWriter.new(task, schema, index, self.class.converters)
         end
       end
 
@@ -367,17 +394,14 @@ module Embulk
 
       # called for each page in each task
       def add(page)
+        return if task['skip_file_generation']
+        num_rows = file_writer.add(page)
+
         if task['with_rehearsal'] and @index == 0 and !@rehearsaled
-          page = page.to_a # to avoid https://github.com/embulk/embulk/issues/403
-          if @num_rows >= task['rehearsal_counts']
+          if num_rows >= task['rehearsal_counts']
             load_rehearsal
             @rehearsaled = true
           end
-          @num_rows += page.to_a.size
-        end
-
-        unless task['skip_file_generation']
-          @file_writer.add(page)
         end
       end
 
@@ -385,11 +409,11 @@ module Embulk
         bigquery = self.class.bigquery
         Embulk.logger.info { "embulk-output-bigquery: Rehearsal started" }
 
-        io = @file_writer.close # need to close once for gzip
+        io = file_writer.close # need to close once for gzip
         rehearsal_path = "#{io.path}.rehearsal"
         Embulk.logger.debug { "embulk_output_bigquery: cp #{io.path} #{rehearsal_path}" }
         FileUtils.cp(io.path, rehearsal_path)
-        @file_writer.reopen
+        file_writer.reopen
 
         self.class.rehearsal_thread = Thread.new do
           begin
@@ -413,11 +437,7 @@ module Embulk
 
       # called after processing all pages in each task, returns a task_report
       def commit
-        unless task['skip_file_generation']
-          @file_writer.commit
-        else
-          {}
-        end
+        {}
       end
     end
   end

@@ -107,24 +107,21 @@ module Embulk
           #
           # We before had a `max_load_parallels` option, but this was not extensible for map reduce executor
           # So, we dropped it. See https://github.com/embulk/embulk-output-bigquery/pull/35
-          max_load_parallels = paths.size # @task['max_load_parallels'] || paths.size
           responses = []
-          paths.each_with_index.each_slice(max_load_parallels) do |paths_group|
-            Embulk.logger.debug { "embulk-output-bigquery: LOAD IN PARALLEL #{paths_group}" }
-            threads = []
-            paths_group.each do |path, idx|
-              threads << Thread.new do
-                # I am not sure whether google-api-ruby-client is thread-safe,
-                # so let me create new instances for each thread for safe
-                bigquery = self.class.new(@task, @schema, fields)
-                response = bigquery.load(path, table)
-                [idx, response]
-              end
+          threads = []
+          Embulk.logger.debug { "embulk-output-bigquery: LOAD IN PARALLEL #{paths}" }
+          paths.each_with_index do |path, idx|
+            threads << Thread.new do
+              # I am not sure whether google-api-ruby-client is thread-safe,
+              # so let me create new instances for each thread for safe
+              bigquery = self.class.new(@task, @schema, fields)
+              response = bigquery.load(path, table)
+              [idx, response]
             end
-            ThreadsWait.all_waits(*threads) do |th|
-              idx, response = th.value # raise errors occurred in threads
-              responses[idx] = response
-            end
+          end
+          ThreadsWait.all_waits(*threads) do |th|
+            idx, response = th.value # raise errors occurred in threads
+            responses[idx] = response
           end
           responses
         end
