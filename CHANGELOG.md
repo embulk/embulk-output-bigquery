@@ -1,10 +1,11 @@
-## 0.3.1 - 2016-XX-XX
+## 0.3.1 - 2016-04-15
 
 * [new feature] Add `sdk_log_level` option to show log of google-api-client
 * [maintenance] Fix `prevent_duplicate_insert` was not working correctly
 * [maintenance] Change to get `num_output_rows` of `transaction_report` from `get_table` API
 * [maintenance] Log response.statistics of load jobs
 * [maintenance] Always create job_id on client side as [google recommends](https://cloud.google.com/bigquery/docs/managing_jobs_datasets_projects#managingjobs) so that duplication not to be occurred
+* [maintenance] Fix a possibility which rehearsal would load 0 rows file
 
 ## 0.3.0 - 2016-04-08
 
