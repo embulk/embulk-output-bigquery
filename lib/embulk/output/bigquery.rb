@@ -52,6 +52,7 @@ module Embulk
           'prevent_duplicate_insert'       => config.param('prevent_duplicate_insert',       :bool,    :default => false),
           'with_rehearsal'                 => config.param('with_rehearsal',                 :bool,    :default => false),
           'rehearsal_counts'               => config.param('rehearsal_counts',               :integer, :default => 1000),
+          'abort_on_error'                 => config.param('abort_on_error',                 :bool,    :default => nil),
 
           'column_options'                 => config.param('column_options',                 :array,   :default => []),
           'default_timezone'               => config.param('default_timezone',               :string,  :default => ValueConverterFactory::DEFAULT_TIMEZONE),
@@ -207,6 +208,10 @@ module Embulk
           Google::Apis.logger.level = eval("::Logger::#{task['sdk_log_level'].upcase}")
         end
 
+        if task['abort_on_error'].nil?
+          task['abort_on_error'] = (task['max_bad_records'] == 0)
+        end
+
         task
       end
 
@@ -306,6 +311,13 @@ module Embulk
             responses = bigquery.load_in_parallel(paths, target_table)
             transaction_report = self.transaction_report(file_writers, responses, target_table)
             Embulk.logger.info { "embulk-output-bigquery: transaction_report: #{transaction_report.to_json}" }
+
+            if task['abort_on_error']
+              if transaction_report['num_input_rows'] != transaction_report['num_output_rows']
+                raise Error, "ABORT: `num_input_rows (#{transaction_report['num_input_rows']})` and " \
+                  "`num_output_rows (#{transaction_report['num_output_rows']})` does not match"
+              end
+            end
 
             if task['mode'] == 'replace_backup'
               bigquery.copy(task['table'], task['table_old'], task['dataset_old'])
