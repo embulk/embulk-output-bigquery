@@ -45,6 +45,7 @@ OAuth flow for installed applications.
 |  is_skip_job_result_check            | boolean     | optional   | false                    | Skip waiting Load job finishes. Available for append, or delete_in_advance mode | 
 |  with_rehearsal                      | boolean     | optional   | false                    | Load `rehearsal_counts` records as a rehearsal. Rehearsal loads into REHEARSAL temporary table, and delete finally. You may use this option to investigate data errors as early stage as possible |
 |  rehearsal_counts                    | integer     | optional   | 1000                     | Specify number of records to load in a rehearsal |
+|  abort_on_error                      | boolean     | optional   | true if max_bad_records is 0, otherwise false | Raise an error if number of input rows and number onf output rows does not match |
 |  column_options                      | hash        | optional   |                          | [See below](#column-options) |
 |  default_timezone                    | string      | optional   | UTC                      | |
 |  default_timestamp_format            | string      | optional   | %Y-%m-%d %H:%M:%S.%6N    | |
