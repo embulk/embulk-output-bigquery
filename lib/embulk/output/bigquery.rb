@@ -1,6 +1,7 @@
 require 'json'
 require 'tempfile'
 require 'fileutils'
+require 'securerandom'
 require_relative 'bigquery/bigquery_client'
 require_relative 'bigquery/file_writer'
 require_relative 'bigquery/value_converter_factory'
@@ -194,7 +195,7 @@ module Embulk
           task['file_ext'] = file_ext
         end
 
-        unique_name = "%08x%08x%08x" % [Process.pid, now.tv_sec, now.tv_nsec]
+        unique_name = SecureRandom.uuid.gsub('-', '_')
 
         if %w[replace replace_backup append].include?(task['mode'])
           task['temp_table'] ||= "LOAD_TEMP_#{unique_name}_#{task['table']}"
