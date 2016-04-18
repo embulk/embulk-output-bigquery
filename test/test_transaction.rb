@@ -34,13 +34,16 @@ module Embulk
         Proc.new {|task| task_reports = [] }
       end
 
+      def setup
+        stub(Bigquery).transaction_report { {'num_input_rows' => 1, 'num_output_rows' => 1, 'num_rejected_rows' => 0} }
+      end
+
       def test_append
         config = least_config.merge('mode' => 'append', 'temp_table' => 'temp_table')
         any_instance_of(BigqueryClient) do |obj|
           mock(obj).get_dataset(config['dataset'])
           mock(obj).create_table(config['temp_table'])
           mock(obj).load_in_parallel(anything, config['temp_table']) { [] }
-          mock(obj).get_table(config['temp_table']) { OpenStruct.new(num_rows: 1) }
           mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_APPEND')
           mock(obj).delete_table(config['temp_table'])
         end
@@ -54,7 +57,6 @@ module Embulk
             mock(obj).get_dataset(config['dataset'])
             mock(obj).get_table(config['table'])
             mock(obj).load_in_parallel(anything, config['table']) { [] }
-            mock(obj).get_table(config['table']) { OpenStruct.new(num_rows: 1) }
           end
           Bigquery.transaction(config, schema, processor_count, &control)
         end
@@ -65,7 +67,6 @@ module Embulk
             mock(obj).create_dataset(config['dataset'])
             mock(obj).create_table(config['table'])
             mock(obj).load_in_parallel(anything, config['table']) { [] }
-            mock(obj).get_table(config['table']) { OpenStruct.new(num_rows: 1) }
           end
           Bigquery.transaction(config, schema, processor_count, &control)
         end
@@ -78,7 +79,6 @@ module Embulk
           mock(obj).delete_table(config['table'])
           mock(obj).create_table(config['table'])
           mock(obj).load_in_parallel(anything, config['table']) { [] }
-          mock(obj).get_table(config['table']) { OpenStruct.new(num_rows: 1) }
         end
         Bigquery.transaction(config, schema, processor_count, &control)
       end
@@ -89,7 +89,6 @@ module Embulk
           mock(obj).get_dataset(config['dataset'])
           mock(obj).create_table(config['temp_table'])
           mock(obj).load_in_parallel(anything, config['temp_table']) { [] }
-          mock(obj).get_table(config['temp_table']) { OpenStruct.new(num_rows: 1) }
           mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_TRUNCATE')
           mock(obj).delete_table(config['temp_table'])
         end
@@ -104,7 +103,6 @@ module Embulk
             mock(obj).get_dataset(config['dataset_old'])
             mock(obj).create_table(config['temp_table'])
             mock(obj).load_in_parallel(anything, config['temp_table']) { [] }
-            mock(obj).get_table(config['temp_table']) { OpenStruct.new(num_rows: 1) }
 
             mock(obj).copy(config['table'], config['table_old'], config['dataset_old'])
 
@@ -121,7 +119,6 @@ module Embulk
             mock(obj).create_dataset(config['dataset_old'], reference: config['dataset'])
             mock(obj).create_table(config['temp_table'])
             mock(obj).load_in_parallel(anything, config['temp_table']) { [] }
-            mock(obj).get_table(config['temp_table']) { OpenStruct.new(num_rows: 1) }
 
             mock(obj).copy(config['table'], config['table_old'], config['dataset_old'])
 
