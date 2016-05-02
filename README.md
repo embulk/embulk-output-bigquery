@@ -21,6 +21,14 @@ https://developers.google.com/bigquery/loading-data-into-bigquery
 Current version of this plugin supports Google API with Service Account Authentication, but does not support
 OAuth flow for installed applications.
 
+### INCOMPATIBILITY CHANGES
+
+v0.3.x has incompatibility changes with v0.2.x. Please see [CHANGELOG.md](CHANGELOG.md) for details.
+
+* `formatter` option (formatter plugin support) is dropped. Use `source_format` option instead. (it already exists in v0.2.x too)
+* `encoders` option (encoder plugin support) is dropped. Use `compression` option instead (it already exists in v0.2.x too).
+* `mode: append` mode now expresses a transactional append, and `mode: append_direct` is one which is not transactional.
+
 ## Configuration
 
 #### Original options
