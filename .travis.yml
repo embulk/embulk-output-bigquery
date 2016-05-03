@@ -1,8 +1,10 @@
 language: ruby
 cache: bundler
 rvm:
+  - jruby-9.0.5.0
   - jruby-head
 jdk:
   - openjdk7
 before_install:
+  - gem install bundler
   - gem update bundler
