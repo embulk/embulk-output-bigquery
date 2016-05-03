@@ -7,4 +7,6 @@ jdk:
   - openjdk7
 before_install:
   - gem install bundler
-  - gem update bundler
+matrix:
+  allow_failures:
+    - rvm: jruby-head
