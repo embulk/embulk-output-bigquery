@@ -1,8 +1,8 @@
 language: ruby
 cache: bundler
 rvm:
-  - jruby-19mode
+  - jruby-head
 jdk:
-  - oraclejdk8
+  - openjdk7
 before_install:
   - gem update bundler
