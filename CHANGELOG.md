@@ -1,3 +1,8 @@
+## 0.3.2 - 2016-05-03
+
+* [new feature] Add `abort_on_error` option
+* [maintenance] Use uuid instead of current time for temp_table name
+
 ## 0.3.1 - 2016-04-15
 
 * [new feature] Add `sdk_log_level` option to show log of google-api-client
