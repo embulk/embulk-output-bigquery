@@ -16,11 +16,6 @@ module Embulk
           @task = task
           @schema = schema
 
-          @auth_method = task['auth_method']
-          @private_key_path = task['p12_keyfile']
-          @private_key_passphrase = 'notasecret'
-          @json_key = task['json_keyfile']
-
           @project = task['project']
           @dataset = task['dataset']
 
@@ -40,26 +35,28 @@ module Embulk
 
           scope = "https://www.googleapis.com/auth/bigquery"
 
-          case @auth_method
+          case @task['auth_method']
           when 'private_key'
-            key = Google::APIClient::KeyUtils.load_from_pkcs12(@private_key_path, @private_key_passphrase)
+            private_key_passphrase = 'notasecret'
+            key = Google::APIClient::KeyUtils.load_from_pkcs12(@task['p12_keyfile'], private_key_passphrase)
             auth = Signet::OAuth2::Client.new(
               token_credential_uri: "https://accounts.google.com/o/oauth2/token",
               audience: "https://accounts.google.com/o/oauth2/token",
               scope: scope,
-              issuer: @email,
+              issuer: @task['service_account_email'],
               signing_key: key)
 
           when 'compute_engine'
             auth = Google::Auth::GCECredentials.new
 
           when 'json_key'
-            if File.exist?(@json_key)
-              auth = File.open(@json_key) do |f|
+            json_key = @task['json_keyfile']
+            if File.exist?(json_key)
+              auth = File.open(json_key) do |f|
                 Google::Auth::ServiceAccountCredentials.make_creds(json_key_io: f, scope: scope)
               end
             else
-              key = StringIO.new(@json_key)
+              key = StringIO.new(json_key)
               auth = Google::Auth::ServiceAccountCredentials.make_creds(json_key_io: key, scope: scope)
             end
 
@@ -67,7 +64,7 @@ module Embulk
             auth = Google::Auth.get_application_default([scope])
 
           else
-            raise ConfigError, "Unknown auth method: #{@auth_method}"
+            raise ConfigError, "Unknown auth method: #{@task['auth_method']}"
           end
 
           client.authorization = auth
