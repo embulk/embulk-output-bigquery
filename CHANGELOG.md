@@ -1,3 +1,7 @@
+## 0.3.3 - 2016-05-24
+
+* [maintenance] Fix `private_key` auth is not working
+
 ## 0.3.2 - 2016-05-03
 
 * [new feature] Add `abort_on_error` option
