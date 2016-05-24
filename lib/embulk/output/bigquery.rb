@@ -1,8 +1,10 @@
+require 'uri'
 require 'json'
 require 'tempfile'
 require 'fileutils'
 require 'securerandom'
 require_relative 'bigquery/bigquery_client'
+require_relative 'bigquery/gcs_client'
 require_relative 'bigquery/file_writer'
 require_relative 'bigquery/value_converter_factory'
 
@@ -72,6 +74,9 @@ module Embulk
           'file_ext'                       => config.param('file_ext',                       :string,  :default => nil),
           'skip_file_generation'           => config.param('skip_file_generation',           :bool,    :default => false),
           'compression'                    => config.param('compression',                    :string,  :default => 'NONE'),
+
+          'gcs_bucket'                     => config.param('gcs_bucket',                     :string,  :default => nil),
+          'auto_create_gcs_bucket'         => config.param('auto_create_gcs_bucket',         :bool,    :default => false),
 
           'source_format'                  => config.param('source_format',                  :string,  :default => 'CSV'),
           'max_bad_records'                => config.param('max_bad_records',                :integer, :default => 0),
@@ -313,7 +318,17 @@ module Embulk
             Embulk.logger.info { "embulk-output-bigquery: Skip load" }
           else
             target_table = task['temp_table'] ? task['temp_table'] : task['table']
-            responses = bigquery.load_in_parallel(paths, target_table)
+            if bucket = task['gcs_bucket']
+              gcs = GcsClient.new(task)
+              gcs.insert_bucket(bucket) if task['auto_create_gcs_bucket']
+              objects = paths.size.times.map { SecureRandom.uuid.to_s }
+              gcs.insert_objects_in_parallel(paths, objects: objects, bucket: bucket)
+              object_uris = objects.map {|object| URI.join("gs://#{bucket}", object).to_s }
+              responses = bigquery.load_from_gcs(object_uris, target_table)
+              objects.each {|object| gcs.delete_object(object, bucket: bucket) }
+            else
+              responses = bigquery.load_in_parallel(paths, target_table)
+            end
             transaction_report = self.transaction_report(task, responses)
             Embulk.logger.info { "embulk-output-bigquery: transaction_report: #{transaction_report.to_json}" }
 
