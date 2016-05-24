@@ -37,7 +37,7 @@ v0.3.x has incompatibility changes with v0.2.x. Please see [CHANGELOG.md](CHANGE
 
 | name                                 | type        | required?  | default                  | description            |  
 |:-------------------------------------|:------------|:-----------|:-------------------------|:-----------------------|
-|  mode                                | string      | optional   | "append"                 | [See below](#mode)     |
+|  mode                                | string      | optional   | "append"                 | See [Mode](#mode)     |
 |  auth_method                         | string      | optional   | "private_key"            | `private_key` , `json_key` or `compute_engine`
 |  service_account_email               | string      | required when auth_method is private_key  |   | Your Google service account email
 |  p12_keyfile                         | string      | required when auth_method is private_key  |   | Fullpath of private key in P12(PKCS12) format |
@@ -46,21 +46,21 @@ v0.3.x has incompatibility changes with v0.2.x. Please see [CHANGELOG.md](CHANGE
 |  dataset                             | string      | required   |                          | dataset |
 |  table                               | string      | required   |                          | table name |
 |  auto_create_dataset                 | boolean     | optional   | false                    | automatically create dataset |
-|  auto_create_table                   | boolean     | optional   | false                    | [See below](#dynamic-table-creating) |
+|  auto_create_table                   | boolean     | optional   | false                    | See [Dynamic Table Creating](#dynamic-table-creating) |
 |  schema_file                         | string      | optional   |                          | /path/to/schema.json |
-|  template_table                      | string      | optional   |                          | template table name [See below](#dynamic-table-creating) |
-|  prevent_duplicate_insert            | boolean     | optional   | false                    | [See below](#prevent-duplication) |
+|  template_table                      | string      | optional   |                          | template table name. See [Dynamic Table Creating](#dynamic-table-creating) |
+|  prevent_duplicate_insert            | boolean     | optional   | false                    | See [Prevent Duplication] (#prevent-duplication) |
 |  job_status_max_polling_time         | int         | optional   | 3600 sec                 | Max job status polling time |
 |  job_status_polling_interval         | int         | optional   | 10 sec                   | Job status polling interval |
 |  is_skip_job_result_check            | boolean     | optional   | false                    | Skip waiting Load job finishes. Available for append, or delete_in_advance mode | 
 |  with_rehearsal                      | boolean     | optional   | false                    | Load `rehearsal_counts` records as a rehearsal. Rehearsal loads into REHEARSAL temporary table, and delete finally. You may use this option to investigate data errors as early stage as possible |
 |  rehearsal_counts                    | integer     | optional   | 1000                     | Specify number of records to load in a rehearsal |
 |  abort_on_error                      | boolean     | optional   | true if max_bad_records is 0, otherwise false | Raise an error if number of input rows and number of output rows does not match |
-|  column_options                      | hash        | optional   |                          | [See below](#column-options) |
+|  column_options                      | hash        | optional   |                          | See [Column Options](#column-options) |
 |  default_timezone                    | string      | optional   | UTC                      | |
 |  default_timestamp_format            | string      | optional   | %Y-%m-%d %H:%M:%S.%6N    | |
-|  payload_column                      | string      | optional   | nil                      | [See below](#formatter-performance-issue) |
-|  payload_column_index                | integer     | optional   | nil                      | [See below](#formatter-performance-issue) |
+|  payload_column                      | string      | optional   | nil                      | See [Formatter Performance Issue](#formatter-performance-issue) |
+|  payload_column_index                | integer     | optional   | nil                      | See [Formatter Performance Issue](#formatter-performance-issue) |
 
 Client or request options
 
