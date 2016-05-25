@@ -1,4 +1,6 @@
 require 'uri'
+require 'digest/md5'
+require 'base64'
 require 'google/apis/storage_v1'
 require_relative 'google_client'
 require_relative 'helper'
@@ -48,6 +50,7 @@ module Embulk
           object = object.start_with?('/') ? object[1..-1] : object
           object_uri = URI.join("gs://#{bucket}", object).to_s
 
+          started = Time.now
           begin
             Embulk.logger.info { "embulk-output-bigquery: Insert object... #{path} => #{@project}:#{object_uri}" }
             body = {
@@ -66,6 +69,49 @@ module Embulk
               "embulk-output-bigquery: insert_object(#{bucket}, #{body}, #{opts}), response:#{response}"
             }
             raise Error, "failed to insert object #{@project}:#{object_uri}, response:#{response}"
+          end
+
+          wait_insert_object(path, object: object, bucket: nil, started: started)
+        end
+
+        # GCS is eventually consistent. Make sure file was writtern surely
+        private def wait_insert_object(path, object: nil, bucket: nil, started: nil)
+          bucket ||= @bucket
+          object ||= path
+          started ||= Time.now
+
+          gcs_path = "gs://#{File.join(bucket, object)}"
+          wait_interval = @task['job_status_polling_interval']
+          max_polling_time = @task['job_status_max_polling_time']
+
+          md5_hash = Base64.encode64(Digest::MD5.file(path).digest).chomp
+          log_head = "embulk-output-bigquery: Insert object checking... path:[#{gcs_path}]"
+          while true
+            begin
+              elapsed = Time.now - started
+              response = client.get_object(bucket, object, {})
+              if response.md5_hash.to_s == md5_hash
+                Embulk.logger.info { "#{log_head} elapsed_time:#{elapsed.to_f}sec status:[DONE]" }
+                break
+              elsif elapsed.to_i > max_polling_time
+                message = "#{log_head} elapsed_time:#{elapsed.to_f}sec status:[TIMEOUT]"
+                Embulk.logger.info { message }
+                raise JobTimeoutError.new(message)
+              else
+                Embulk.logger.info { "#{log_head} elapsed_time:#{elapsed.to_f}sec status:[PROCESSING]" }
+                sleep wait_interval
+              end
+            rescue Google::Apis::ClientError => e
+              if e.status_code == 404
+                Embulk.logger.info { "#{log_head} elapsed_time:#{elapsed.to_f}sec status:[PROCESSING]" }
+                sleep wait_interval
+              else
+                raise e
+              end
+            rescue Google::Apis::ServerError => e
+              Embulk.logger.info { "#{log_head} elapsed_time:#{elapsed.to_f}sec status:[SERVER_ERROR]" }
+              sleep wait_interval
+            end
           end
         end
 

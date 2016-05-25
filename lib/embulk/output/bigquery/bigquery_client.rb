@@ -7,10 +7,6 @@ require_relative 'helper'
 module Embulk
   module Output
     class Bigquery < OutputPlugin
-      class Error < StandardError; end
-      class JobTimeoutError < Error; end
-      class NotFoundError < Error; end
-
       class BigqueryClient < GoogleClient
         def initialize(task, schema, fields = nil)
           scope = "https://www.googleapis.com/auth/bigquery"
