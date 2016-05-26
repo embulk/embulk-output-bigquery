@@ -317,17 +317,21 @@ module Embulk
           if task['skip_load'] # only for debug
             Embulk.logger.info { "embulk-output-bigquery: Skip load" }
           else
-            target_table = task['temp_table'] ? task['temp_table'] : task['table']
-            if bucket = task['gcs_bucket']
-              gcs = GcsClient.new(task)
-              gcs.insert_bucket(bucket) if task['auto_create_gcs_bucket']
-              objects = paths.size.times.map { SecureRandom.uuid.to_s }
-              gcs.insert_objects_in_parallel(paths, objects: objects, bucket: bucket)
-              object_uris = objects.map {|object| URI.join("gs://#{bucket}", object).to_s }
-              responses = bigquery.load_from_gcs(object_uris, target_table)
-              objects.each {|object| gcs.delete_object(object, bucket: bucket) }
+            if !paths.empty?
+              target_table = task['temp_table'] ? task['temp_table'] : task['table']
+              if bucket = task['gcs_bucket']
+                gcs = GcsClient.new(task)
+                gcs.insert_bucket(bucket) if task['auto_create_gcs_bucket']
+                objects = paths.size.times.map { SecureRandom.uuid.to_s }
+                gcs.insert_objects_in_parallel(paths, objects: objects, bucket: bucket)
+                object_uris = objects.map {|object| URI.join("gs://#{bucket}", object).to_s }
+                responses = bigquery.load_from_gcs(object_uris, target_table)
+                objects.each {|object| gcs.delete_object(object, bucket: bucket) }
+              else
+                responses = bigquery.load_in_parallel(paths, target_table)
+              end
             else
-              responses = bigquery.load_in_parallel(paths, target_table)
+              responses = []
             end
             transaction_report = self.transaction_report(task, responses)
             Embulk.logger.info { "embulk-output-bigquery: transaction_report: #{transaction_report.to_json}" }
