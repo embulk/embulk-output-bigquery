@@ -120,7 +120,7 @@ module Embulk
           end
           ThreadsWait.all_waits(*threads) do |th|
             idx, response = th.value # raise errors occurred in threads
-            responses[idx] = response
+            responses[idx] = response if idx
           end
           responses
         end
