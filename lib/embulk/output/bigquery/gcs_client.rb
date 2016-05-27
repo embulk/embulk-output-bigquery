@@ -40,7 +40,7 @@ module Embulk
             Embulk.logger.error {
               "embulk-output-bigquery: insert_bucket(#{@project}, #{body}, #{opts}), response:#{response}"
             }
-            raise Error, "failed to create bucket #{@project}:#{bucket}, response:#{response}"
+            raise Error, "failed to insert bucket #{@project}:#{bucket}, response:#{response}"
           end
         end
 
@@ -115,28 +115,16 @@ module Embulk
           end
         end
 
-        def insert_objects_in_parallel(paths, objects: nil, bucket: nil)
+        def insert_objects(paths, objects: nil, bucket: nil)
           return [] if paths.empty?
           bucket ||= @bucket
           objects ||= paths
           raise "number of paths and objects are different" if paths.size != objects.size
 
           responses = []
-          threads = []
-          Embulk.logger.debug { "embulk-output-bigquery: INSERT OBJECTS IN PARALLEL #{paths}" }
           paths.each_with_index do |path, idx|
             object = objects[idx]
-            threads << Thread.new do
-              # I am not sure whether google-api-ruby-client is thread-safe,
-              # so let me create new instances for each thread for safe
-              gcs = self.class.new(@task)
-              response = gcs.insert_object(path, object: object, bucket: bucket)
-              [idx, response]
-            end
-          end
-          ThreadsWait.all_waits(*threads) do |th|
-            idx, response = th.value # raise errors occurred in threads
-            responses[idx] = response if idx
+            responses << insert_object(path, object: object, bucket: bucket)
           end
           responses
         end

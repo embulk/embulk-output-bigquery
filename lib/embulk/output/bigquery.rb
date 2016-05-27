@@ -323,7 +323,7 @@ module Embulk
                 gcs = GcsClient.new(task)
                 gcs.insert_bucket(bucket) if task['auto_create_gcs_bucket']
                 objects = paths.size.times.map { SecureRandom.uuid.to_s }
-                gcs.insert_objects_in_parallel(paths, objects: objects, bucket: bucket)
+                gcs.insert_objects(paths, objects: objects, bucket: bucket)
                 object_uris = objects.map {|object| URI.join("gs://#{bucket}", object).to_s }
                 responses = bigquery.load_from_gcs(object_uris, target_table)
                 objects.each {|object| gcs.delete_object(object, bucket: bucket) }
