@@ -1,3 +1,7 @@
+## 0.3.4 - 2016-06-01
+
+* [new feature] Add `gcs_bucket` option to load multiple files from a GCS bucket with one load job
+
 ## 0.3.3 - 2016-05-24
 
 * [maintenance] Fix `private_key` auth is not working
