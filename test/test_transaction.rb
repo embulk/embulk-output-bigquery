@@ -43,7 +43,6 @@ module Embulk
         any_instance_of(BigqueryClient) do |obj|
           mock(obj).get_dataset(config['dataset'])
           mock(obj).create_table(config['temp_table'])
-          mock(obj).load_in_parallel(anything, config['temp_table']) { [] }
           mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_APPEND')
           mock(obj).delete_table(config['temp_table'])
         end
@@ -56,7 +55,6 @@ module Embulk
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
             mock(obj).get_table(config['table'])
-            mock(obj).load_in_parallel(anything, config['table']) { [] }
           end
           Bigquery.transaction(config, schema, processor_count, &control)
         end
@@ -66,7 +64,6 @@ module Embulk
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).create_dataset(config['dataset'])
             mock(obj).create_table(config['table'])
-            mock(obj).load_in_parallel(anything, config['table']) { [] }
           end
           Bigquery.transaction(config, schema, processor_count, &control)
         end
@@ -78,7 +75,6 @@ module Embulk
           mock(obj).get_dataset(config['dataset'])
           mock(obj).delete_table(config['table'])
           mock(obj).create_table(config['table'])
-          mock(obj).load_in_parallel(anything, config['table']) { [] }
         end
         Bigquery.transaction(config, schema, processor_count, &control)
       end
@@ -88,7 +84,6 @@ module Embulk
         any_instance_of(BigqueryClient) do |obj|
           mock(obj).get_dataset(config['dataset'])
           mock(obj).create_table(config['temp_table'])
-          mock(obj).load_in_parallel(anything, config['temp_table']) { [] }
           mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_TRUNCATE')
           mock(obj).delete_table(config['temp_table'])
         end
@@ -102,7 +97,6 @@ module Embulk
             mock(obj).get_dataset(config['dataset'])
             mock(obj).get_dataset(config['dataset_old'])
             mock(obj).create_table(config['temp_table'])
-            mock(obj).load_in_parallel(anything, config['temp_table']) { [] }
 
             mock(obj).copy(config['table'], config['table_old'], config['dataset_old'])
 
@@ -118,7 +112,6 @@ module Embulk
             mock(obj).create_dataset(config['dataset'])
             mock(obj).create_dataset(config['dataset_old'], reference: config['dataset'])
             mock(obj).create_table(config['temp_table'])
-            mock(obj).load_in_parallel(anything, config['temp_table']) { [] }
 
             mock(obj).copy(config['table'], config['table_old'], config['dataset_old'])
 

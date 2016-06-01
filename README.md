@@ -61,6 +61,8 @@ v0.3.x has incompatibility changes with v0.2.x. Please see [CHANGELOG.md](CHANGE
 |  default_timestamp_format            | string      | optional   | %Y-%m-%d %H:%M:%S.%6N    | |
 |  payload_column                      | string      | optional   | nil                      | See [Formatter Performance Issue](#formatter-performance-issue) |
 |  payload_column_index                | integer     | optional   | nil                      | See [Formatter Performance Issue](#formatter-performance-issue) |
+|  gcs_bucket                          | stringr     | optional   | nil                      | See [GCS Bucket](#gcs-bucket) |
+|  auto_create_gcs_bucket              | boolean     | optional   | false                    | See [GCS Bucket](#gcs-bucket) |
 
 Client or request options
 
@@ -344,6 +346,25 @@ out:
   type: bigquery
   prevent_duplicate_insert: true
 ```
+
+### GCS Bucket
+
+This is useful to reduce number of consumed jobs, which is limited by [10,000 jobs per project per day](https://cloud.google.com/bigquery/quota-policy#import).
+
+This plugin originally loads local files into BigQuery in parallel, that is, consumes a number of jobs, say 24 jobs on 24 CPU core machine for example (this depends on embulk parameters such as `min_output_tasks` and `max_threads`).
+
+BigQuery supports loading multiple files from GCS with one job (but not from local files, sigh), therefore, uploading local files to GCS and then loading from GCS into BigQuery reduces number of consumed jobs.
+
+Using `gcs_bucket` option, such strategy is enabled. You may also use `auto_create_gcs_bucket` to create the specified GCS bucket automatically.
+
+```yaml
+out:
+  type: bigquery
+  gcs_bucket: bucket_name
+  auto_create_gcs_bucket: false
+```
+
+ToDo: Use https://cloud.google.com/storage/docs/streaming if google-api-ruby-client supports streaming transfers into GCS.
 
 ## Development
 
