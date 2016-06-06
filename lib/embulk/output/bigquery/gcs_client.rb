@@ -71,9 +71,9 @@ module Embulk
             }
             raise Error, "failed to insert object #{@project}:#{object_uri}, response:#{response}"
           rescue ::Java::Java.net.SocketException => e
-            # I encountered `java.net.SocketException: Broken pipe` serveral times
+            # I encountered `java.net.SocketException: Broken pipe` and `Connection reset` serveral times
             # google-api-ruby-client itself has a retry feature, but it does not retry with SocketException
-            if e.message == 'Broken pipe'
+            if e.message == 'Broken pipe' || e.message == 'Connection reset'
               if retries < @task['retries']
                 response = {message: e.message, error_class: e.class}
                 Embulk.logger.warn {
