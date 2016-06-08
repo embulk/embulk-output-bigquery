@@ -40,59 +40,77 @@ module Embulk
           self.fields
         end
 
+        def with_retry_job(&block)
+          retries = 0
+          begin
+            yield
+          rescue BackendError => e
+            if retries < @task['retries']
+              retries += 1
+              Embulk.logger.warn { "embulk-output-bigquery: retry #{e.class} (#{retries}), #{e.message}" }
+              retry
+            else
+              Embulk.logger.error { "embulk-output-bigquery: retry exhausted #{e.class} (#{retries}), #{e.message}" }
+              raise e
+            end
+          end
+        end
+
         # @params gcs_patsh [Array] arary of gcs paths such as gs://bucket/path
         # @return [Array] responses
         def load_from_gcs(object_uris, table)
-          begin
-            # As https://cloud.google.com/bigquery/docs/managing_jobs_datasets_projects#managingjobs says,
-            # we should generate job_id in client code, otherwise, retrying would cause duplication
-            if @task['prevent_duplicate_insert'] and (@task['mode'] == 'append' or @task['mode'] == 'append_direct')
-              job_id = Helper.create_load_job_id(@task, path, fields)
-            else
-              job_id = "embulk_load_job_#{SecureRandom.uuid}"
-            end
-            Embulk.logger.info { "embulk-output-bigquery: Load job starting... job_id:[#{job_id}] #{object_uris} => #{@project}:#{@dataset}.#{table}" }
+          with_retry_job do
+            begin
+              # As https://cloud.google.com/bigquery/docs/managing_jobs_datasets_projects#managingjobs says,
+              # we should generate job_id in client code, otherwise, retrying would cause duplication
+              if @task['prevent_duplicate_insert'] and (@task['mode'] == 'append' or @task['mode'] == 'append_direct')
+                job_id = Helper.create_load_job_id(@task, path, fields)
+              else
+                job_id = "embulk_load_job_#{SecureRandom.uuid}"
+              end
+              Embulk.logger.info { "embulk-output-bigquery: Load job starting... job_id:[#{job_id}] #{object_uris} => #{@project}:#{@dataset}.#{table}" }
 
-            body = {
-              job_reference: {
-                project_id: @project,
-                job_id: job_id,
-              },
-              configuration: {
-                load: {
-                  destination_table: {
-                    project_id: @project,
-                    dataset_id: @dataset,
-                    table_id: table,
-                  },
-                  schema: {
-                    fields: fields,
-                  },
-                  write_disposition: 'WRITE_APPEND',
-                  source_format:         @task['source_format'],
-                  max_bad_records:       @task['max_bad_records'],
-                  field_delimiter:       @task['source_format'] == 'CSV' ? @task['field_delimiter'] : nil,
-                  encoding:              @task['encoding'],
-                  ignore_unknown_values: @task['ignore_unknown_values'],
-                  allow_quoted_newlines: @task['allow_quoted_newlines'],
-                  source_uris: object_uris,
+              body = {
+                job_reference: {
+                  project_id: @project,
+                  job_id: job_id,
+                },
+                configuration: {
+                  load: {
+                    destination_table: {
+                      project_id: @project,
+                      dataset_id: @dataset,
+                      table_id: table,
+                    },
+                    schema: {
+                      fields: fields,
+                    },
+                    write_disposition: 'WRITE_APPEND',
+                    source_format:         @task['source_format'],
+                    max_bad_records:       @task['max_bad_records'],
+                    field_delimiter:       @task['source_format'] == 'CSV' ? @task['field_delimiter'] : nil,
+                    encoding:              @task['encoding'],
+                    ignore_unknown_values: @task['ignore_unknown_values'],
+                    allow_quoted_newlines: @task['allow_quoted_newlines'],
+                    source_uris: object_uris,
+                  }
                 }
               }
-            }
-            opts = {}
+              opts = {}
 
-            Embulk.logger.debug { "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts})" }
-            response = client.insert_job(@project, body, opts)
-            unless @task['is_skip_job_result_check']
-              response = wait_load('Load', response)
+              Embulk.logger.debug { "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts})" }
+              response = client.insert_job(@project, body, opts)
+              unless @task['is_skip_job_result_check']
+                response = wait_load('Load', response)
+              end
+              [response]
+            rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
+              response = {status_code: e.status_code, message: e.message, error_class: e.class}
+              Embulk.logger.error {
+                "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts}), response:#{response}"
+              }
+              raise Error, "failed to load #{object_uris} to #{@project}:#{@dataset}.#{table}, response:#{response}"
             end
-            [response]
-          rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
-            response = {status_code: e.status_code, message: e.message, error_class: e.class}
-            Embulk.logger.error {
-              "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts}), response:#{response}"
-            }
-            raise Error, "failed to load #{object_uris} to #{@project}:#{@dataset}.#{table}, response:#{response}"
           end
         end
 
@@ -126,90 +144,93 @@ module Embulk
         end
 
         def load(path, table)
-          begin
-            if File.exist?(path)
-              # As https://cloud.google.com/bigquery/docs/managing_jobs_datasets_projects#managingjobs says,
-              # we should generate job_id in client code, otherwise, retrying would cause duplication
-              if @task['prevent_duplicate_insert'] and (@task['mode'] == 'append' or @task['mode'] == 'append_direct')
-                job_id = Helper.create_load_job_id(@task, path, fields)
+          with_retry_job do
+            begin
+              if File.exist?(path)
+                # As https://cloud.google.com/bigquery/docs/managing_jobs_datasets_projects#managingjobs says,
+                # we should generate job_id in client code, otherwise, retrying would cause duplication
+                if @task['prevent_duplicate_insert'] and (@task['mode'] == 'append' or @task['mode'] == 'append_direct')
+                  job_id = Helper.create_load_job_id(@task, path, fields)
+                else
+                  job_id = "embulk_load_job_#{SecureRandom.uuid}"
+                end
+                Embulk.logger.info { "embulk-output-bigquery: Load job starting... job_id:[#{job_id}] #{path} => #{@project}:#{@dataset}.#{table}" }
               else
-                job_id = "embulk_load_job_#{SecureRandom.uuid}"
+                Embulk.logger.info { "embulk-output-bigquery: Load job starting... #{path} does not exist, skipped" }
+                return
               end
-              Embulk.logger.info { "embulk-output-bigquery: Load job starting... job_id:[#{job_id}] #{path} => #{@project}:#{@dataset}.#{table}" }
-            else
-              Embulk.logger.info { "embulk-output-bigquery: Load job starting... #{path} does not exist, skipped" }
-              return
-            end
 
-            body = {
-              job_reference: {
-                project_id: @project,
-                job_id: job_id,
-              },
-              configuration: {
-                load: {
-                  destination_table: {
-                    project_id: @project,
-                    dataset_id: @dataset,
-                    table_id: table,
-                  },
-                  schema: {
-                    fields: fields,
-                  },
-                  write_disposition: 'WRITE_APPEND',
-                  source_format:         @task['source_format'],
-                  max_bad_records:       @task['max_bad_records'],
-                  field_delimiter:       @task['source_format'] == 'CSV' ? @task['field_delimiter'] : nil,
-                  encoding:              @task['encoding'],
-                  ignore_unknown_values: @task['ignore_unknown_values'],
-                  allow_quoted_newlines: @task['allow_quoted_newlines'],
+              body = {
+                job_reference: {
+                  project_id: @project,
+                  job_id: job_id,
+                },
+                configuration: {
+                  load: {
+                    destination_table: {
+                      project_id: @project,
+                      dataset_id: @dataset,
+                      table_id: table,
+                    },
+                    schema: {
+                      fields: fields,
+                    },
+                    write_disposition: 'WRITE_APPEND',
+                    source_format:         @task['source_format'],
+                    max_bad_records:       @task['max_bad_records'],
+                    field_delimiter:       @task['source_format'] == 'CSV' ? @task['field_delimiter'] : nil,
+                    encoding:              @task['encoding'],
+                    ignore_unknown_values: @task['ignore_unknown_values'],
+                    allow_quoted_newlines: @task['allow_quoted_newlines'],
+                  }
                 }
               }
-            }
 
-            opts = {
-              upload_source: path,
-              content_type: "application/octet-stream",
-              # options: {
-              #   retries: @task['retries'],
-              #   timeout_sec: @task['timeout_sec'],
-              #   open_timeout_sec: @task['open_timeout_sec']
-              # },
-            }
-            Embulk.logger.debug { "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts})" }
-            response = client.insert_job(@project, body, opts)
-            unless @task['is_skip_job_result_check']
-              response = wait_load('Load', response)
+              opts = {
+                upload_source: path,
+                content_type: "application/octet-stream",
+                # options: {
+                #   retries: @task['retries'],
+                #   timeout_sec: @task['timeout_sec'],
+                #   open_timeout_sec: @task['open_timeout_sec']
+                # },
+              }
+              Embulk.logger.debug { "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts})" }
+              response = client.insert_job(@project, body, opts)
+              unless @task['is_skip_job_result_check']
+                response = wait_load('Load', response)
+              end
+            rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
+              response = {status_code: e.status_code, message: e.message, error_class: e.class}
+              Embulk.logger.error {
+                "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts}), response:#{response}"
+              }
+              raise Error, "failed to load #{path} to #{@project}:#{@dataset}.#{table}, response:#{response}"
             end
-          rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
-            response = {status_code: e.status_code, message: e.message, error_class: e.class}
-            Embulk.logger.error {
-              "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts}), response:#{response}"
-            }
-            raise Error, "failed to load #{path} to #{@project}:#{@dataset}.#{table}, response:#{response}"
           end
         end
 
         def copy(source_table, destination_table, destination_dataset = nil, write_disposition: 'WRITE_TRUNCATE')
-          begin
-            destination_dataset ||= @dataset
-            job_id = "embulk_copy_job_#{SecureRandom.uuid}"
+          with_retry_job do
+            begin
+              destination_dataset ||= @dataset
+              job_id = "embulk_copy_job_#{SecureRandom.uuid}"
 
-            Embulk.logger.info {
-              "embulk-output-bigquery: Copy job starting... job_id:[#{job_id}] " \
-              "#{@project}:#{@dataset}.#{source_table} => #{@project}:#{destination_dataset}.#{destination_table}"
-            }
+              Embulk.logger.info {
+                "embulk-output-bigquery: Copy job starting... job_id:[#{job_id}] " \
+                "#{@project}:#{@dataset}.#{source_table} => #{@project}:#{destination_dataset}.#{destination_table}"
+              }
 
-            body = {
-              job_reference: {
-                project_id: @project,
-                job_id: job_id,
-              },
-              configuration: {
-                copy: {
-                  create_deposition: 'CREATE_IF_NEEDED',
-                  write_disposition: write_disposition,
-                  source_table: {
+              body = {
+                job_reference: {
+                  project_id: @project,
+                  job_id: job_id,
+                },
+                configuration: {
+                  copy: {
+                    create_deposition: 'CREATE_IF_NEEDED',
+                    write_disposition: write_disposition,
+                    source_table: {
                     project_id: @project,
                     dataset_id: @dataset,
                     table_id: source_table,
@@ -219,21 +240,22 @@ module Embulk
                     dataset_id: destination_dataset,
                     table_id: destination_table,
                   },
+                  }
                 }
               }
-            }
 
-            opts = {}
-            Embulk.logger.debug { "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts})" }
-            response = client.insert_job(@project, body, opts)
-            wait_load('Copy', response)
-          rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
-            response = {status_code: e.status_code, message: e.message, error_class: e.class}
-            Embulk.logger.error {
-              "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts}), response:#{response}"
-            }
-            raise Error, "failed to copy #{@project}:#{@dataset}.#{source_table} " \
-              "to #{@project}:#{destination_dataset}.#{destination_table}, response:#{response}"
+              opts = {}
+              Embulk.logger.debug { "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts})" }
+              response = client.insert_job(@project, body, opts)
+              wait_load('Copy', response)
+            rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
+              response = {status_code: e.status_code, message: e.message, error_class: e.class}
+              Embulk.logger.error {
+                "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts}), response:#{response}"
+              }
+              raise Error, "failed to copy #{@project}:#{@dataset}.#{source_table} " \
+                "to #{@project}:#{destination_dataset}.#{destination_table}, response:#{response}"
+            end
           end
         end
 
@@ -273,11 +295,13 @@ module Embulk
           # `errors` returns Array<Google::Apis::BigqueryV2::ErrorProto> if any error exists.
           # Otherwise, this returns nil.
           if _errors = _response.status.errors
-            Embulk.logger.error {
-              "embulk-output-bigquery: get_job(#{@project}, #{job_id}), " \
-              "errors:#{_errors.map(&:to_h)}"
-            }
-            raise Error, "failed during waiting a #{kind} job, errors:#{_errors.map(&:to_h)}"
+            msg = "failed during waiting a #{kind} job, get_job(#{@project}, #{job_id}), errors:#{_errors.map(&:to_h)}"
+            if _errors.any? {|error| error.reason == 'backendError' }
+              raise BackendError, msg
+            else
+              Embulk.logger.error { "embulk-output-bigquery: #{msg}" }
+              raise Error, msg
+            end
           end
 
           Embulk.logger.info { "embulk-output-bigquery: #{kind} job response... job_id:[#{job_id}] response.statistics:#{_response.statistics.to_h}" }
