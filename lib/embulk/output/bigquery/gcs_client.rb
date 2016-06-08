@@ -1,4 +1,5 @@
 require 'uri'
+require 'java'
 require 'google/apis/storage_v1'
 require_relative 'google_client'
 require_relative 'helper'
@@ -49,6 +50,7 @@ module Embulk
           object_uri = URI.join("gs://#{bucket}", object).to_s
 
           started = Time.now
+          retries = 0
           begin
             Embulk.logger.info { "embulk-output-bigquery: Insert object... #{path} => #{@project}:#{object_uri}" }
             body = {
@@ -68,6 +70,21 @@ module Embulk
               "embulk-output-bigquery: insert_object(#{bucket}, #{body}, #{opts}), response:#{response}"
             }
             raise Error, "failed to insert object #{@project}:#{object_uri}, response:#{response}"
+          rescue ::Java::Java.net.SocketException => e
+            # I encountered `java.net.SocketException: Broken pipe` and `Connection reset` serveral times
+            # I am doubting as this is caused by Google's unstable network
+            # google-api-ruby-client itself has a retry feature, but it does not retry with SocketException
+            if e.message == 'Broken pipe' || e.message == 'Connection reset'
+              if retries < @task['retries']
+                response = {message: e.message, error_class: e.class}
+                Embulk.logger.warn {
+                  "embulk-output-bigquery: RETRY: insert_object(#{bucket}, #{body}, #{opts}), response:#{response}"
+                }
+                retries += 1 # want to share with google-api-ruby-client, but it is difficult
+                retry
+              end
+            end
+            raise e
           end
         end
 
