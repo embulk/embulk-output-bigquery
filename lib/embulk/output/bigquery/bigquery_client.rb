@@ -44,13 +44,13 @@ module Embulk
           retries = 0
           begin
             yield
-          rescue BackendError => e
+          rescue BackendError, InternalError => e
             if retries < @task['retries']
               retries += 1
-              Embulk.logger.warn { "embulk-output-bigquery: retry #{e.class} (#{retries}), #{e.message}" }
+              Embulk.logger.warn { "embulk-output-bigquery: retry \##{retries}, #{e.message}" }
               retry
             else
-              Embulk.logger.error { "embulk-output-bigquery: retry exhausted #{e.class} (#{retries}), #{e.message}" }
+              Embulk.logger.error { "embulk-output-bigquery: retry exhausted \##{retries}, #{e.message}" }
               raise e
             end
           end
@@ -298,6 +298,8 @@ module Embulk
             msg = "failed during waiting a #{kind} job, get_job(#{@project}, #{job_id}), errors:#{_errors.map(&:to_h)}"
             if _errors.any? {|error| error.reason == 'backendError' }
               raise BackendError, msg
+            elsif _errors.any? {|error| error.reason == 'internalError' }
+              raise InternalError, msg
             else
               Embulk.logger.error { "embulk-output-bigquery: #{msg}" }
               raise Error, msg
