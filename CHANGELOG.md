@@ -1,3 +1,8 @@
+## 0.3.5 - 2016-06-13
+
+* [enhancement] retry backendError and internalError in waiting load job
+* [enhancement] retry Broken pipe and Connection reset in inserting object to GCS
+
 ## 0.3.4 - 2016-06-01
 
 * [new feature] Add `gcs_bucket` option to load multiple files from a GCS bucket with one load job
