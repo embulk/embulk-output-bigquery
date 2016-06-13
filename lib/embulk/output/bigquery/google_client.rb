@@ -6,6 +6,8 @@ module Embulk
       class Error < StandardError; end
       class JobTimeoutError < Error; end
       class NotFoundError < Error; end
+      class BackendError < Error; end
+      class InternalError < Error; end
 
       class GoogleClient
         def initialize(task, scope, client_class)
