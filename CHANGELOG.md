@@ -1,3 +1,7 @@
+## 0.3.6 - 2016-06-15
+
+* [maintenance] if `is_skip_job_result_check` is true, skip output_rows checking (thanks to @joker1007)
+
 ## 0.3.5 - 2016-06-13
 
 * [enhancement] retry backendError and internalError in waiting load job
