@@ -239,6 +239,8 @@ module Embulk
 
       def self.transaction_report(task, responses)
         num_input_rows = file_writers.empty? ? 0 : file_writers.map(&:num_rows).inject(:+)
+        return {'num_input_rows' => num_input_rows} if task['is_skip_job_result_check']
+
         num_response_rows = responses.inject(0) do |sum, response|
           sum + (response ? response.statistics.load.output_rows.to_i : 0)
         end
@@ -336,7 +338,7 @@ module Embulk
             transaction_report = self.transaction_report(task, responses)
             Embulk.logger.info { "embulk-output-bigquery: transaction_report: #{transaction_report.to_json}" }
 
-            if task['abort_on_error']
+            if task['abort_on_error'] && !task['is_skip_job_result_check']
               if transaction_report['num_input_rows'] != transaction_report['num_output_rows']
                 raise Error, "ABORT: `num_input_rows (#{transaction_report['num_input_rows']})` and " \
                   "`num_output_rows (#{transaction_report['num_output_rows']})` does not match"

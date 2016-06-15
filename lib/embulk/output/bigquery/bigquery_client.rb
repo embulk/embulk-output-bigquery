@@ -197,7 +197,9 @@ module Embulk
               }
               Embulk.logger.debug { "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts})" }
               response = client.insert_job(@project, body, opts)
-              unless @task['is_skip_job_result_check']
+              if @task['is_skip_job_result_check']
+                response
+              else
                 response = wait_load('Load', response)
               end
             rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
