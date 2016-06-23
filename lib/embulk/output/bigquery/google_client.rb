@@ -64,6 +64,27 @@ module Embulk
           @cached_client_expiration = Time.now + 1800
           @cached_client = client
         end
+
+        # google-api-ruby-client itself has a retry feature, but it does not retry with SocketException
+        def with_network_retry(&block)
+          retries = 0
+          begin
+            yield
+          rescue ::Java::Java.net.SocketException, ::Java::Java.net.ConnectException => e
+            if ['Broken pipe', 'Connection reset', 'Connection timed out'].include?(e.message)
+              if retries < @task['retries']
+                retries += 1
+                Embulk.logger.warn { "embulk-output-bigquery: retry \##{retries}, #{e.class} #{e.message}" }
+                retry
+              else
+                Embulk.logger.error { "embulk-output-bigquery: retry exhausted \##{retries}, #{e.class} #{e.message}" }
+                raise e
+              end
+            else
+              raise e
+            end
+          end
+        end
       end
     end
   end
