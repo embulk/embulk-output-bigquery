@@ -40,7 +40,7 @@ module Embulk
           self.fields
         end
 
-        def with_retry_job(&block)
+        def with_job_retry(&block)
           retries = 0
           begin
             yield
@@ -59,7 +59,7 @@ module Embulk
         # @params gcs_patsh [Array] arary of gcs paths such as gs://bucket/path
         # @return [Array] responses
         def load_from_gcs(object_uris, table)
-          with_retry_job do
+          with_job_retry do
             begin
               # As https://cloud.google.com/bigquery/docs/managing_jobs_datasets_projects#managingjobs says,
               # we should generate job_id in client code, otherwise, retrying would cause duplication
@@ -99,7 +99,7 @@ module Embulk
               opts = {}
 
               Embulk.logger.debug { "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts})" }
-              response = client.insert_job(@project, body, opts)
+              response = with_network_retry { client.insert_job(@project, body, opts) }
               unless @task['is_skip_job_result_check']
                 response = wait_load('Load', response)
               end
@@ -144,7 +144,7 @@ module Embulk
         end
 
         def load(path, table)
-          with_retry_job do
+          with_job_retry do
             begin
               if File.exist?(path)
                 # As https://cloud.google.com/bigquery/docs/managing_jobs_datasets_projects#managingjobs says,
@@ -196,7 +196,7 @@ module Embulk
                 # },
               }
               Embulk.logger.debug { "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts})" }
-              response = client.insert_job(@project, body, opts)
+              response = with_network_retry { client.insert_job(@project, body, opts) }
               if @task['is_skip_job_result_check']
                 response
               else
@@ -213,7 +213,7 @@ module Embulk
         end
 
         def copy(source_table, destination_table, destination_dataset = nil, write_disposition: 'WRITE_TRUNCATE')
-          with_retry_job do
+          with_job_retry do
             begin
               destination_dataset ||= @dataset
               job_id = "embulk_copy_job_#{SecureRandom.uuid}"
@@ -248,7 +248,7 @@ module Embulk
 
               opts = {}
               Embulk.logger.debug { "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts})" }
-              response = client.insert_job(@project, body, opts)
+              response = with_network_retry { client.insert_job(@project, body, opts) }
               wait_load('Copy', response)
             rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
               response = {status_code: e.status_code, message: e.message, error_class: e.class}
@@ -289,7 +289,7 @@ module Embulk
                 "job_id:[#{job_id}] elapsed_time:#{elapsed.to_f}sec status:[#{status}]"
               }
               sleep wait_interval
-              _response = client.get_job(@project, job_id)
+              _response = with_network_retry { client.get_job(@project, job_id) }
             end
           end
 
@@ -330,7 +330,7 @@ module Embulk
             }.merge(hint)
             opts = {}
             Embulk.logger.debug { "embulk-output-bigquery: insert_dataset(#{@project}, #{dataset}, #{body}, #{opts})" }
-            client.insert_dataset(@project, body, opts)
+            with_network_retry { client.insert_dataset(@project, body, opts) }
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             if e.status_code == 409 && /Already Exists:/ =~ e.message
               # ignore 'Already Exists' error
@@ -349,7 +349,7 @@ module Embulk
           dataset ||= @dataset
           begin
             Embulk.logger.info { "embulk-output-bigquery: Get dataset... #{@project}:#{@dataset}" }
-            client.get_dataset(@project, dataset)
+            with_network_retry { client.get_dataset(@project, dataset) }
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             if e.status_code == 404
               raise NotFoundError, "Dataset #{@project}:#{dataset} is not found"
@@ -376,7 +376,7 @@ module Embulk
             }
             opts = {}
             Embulk.logger.debug { "embulk-output-bigquery: insert_table(#{@project}, #{@dataset}, #{body}, #{opts})" }
-            client.insert_table(@project, @dataset, body, opts)
+            with_network_retry { client.insert_table(@project, @dataset, body, opts) }
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             if e.status_code == 409 && /Already Exists:/ =~ e.message
               # ignore 'Already Exists' error
@@ -394,7 +394,7 @@ module Embulk
         def delete_table(table)
           begin
             Embulk.logger.info { "embulk-output-bigquery: Delete table... #{@project}:#{@dataset}.#{table}" }
-            client.delete_table(@project, @dataset, table)
+            with_network_retry { client.delete_table(@project, @dataset, table) }
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             if e.status_code == 404 && /Not found:/ =~ e.message
               # ignore 'Not Found' error
@@ -412,7 +412,7 @@ module Embulk
         def get_table(table)
           begin
             Embulk.logger.info { "embulk-output-bigquery: Get table... #{@project}:#{@dataset}.#{table}" }
-            client.get_table(@project, @dataset, table)
+            with_network_retry { client.get_table(@project, @dataset, table) }
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             if e.status_code == 404
               raise NotFoundError, "Table #{@project}:#{@dataset}.#{table} is not found"
