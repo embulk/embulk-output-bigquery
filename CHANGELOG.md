@@ -1,3 +1,7 @@
+## 0.3.7 - 2016-08-03
+
+* [maintenance] Fix Thread.new to use thread local variables to avoid nil idx error (thanks to @shyouhei and @umisora)
+
 ## 0.3.6 - 2016-06-15
 
 * [maintenance] if `is_skip_job_result_check` is true, skip output_rows checking (thanks to @joker1007)
