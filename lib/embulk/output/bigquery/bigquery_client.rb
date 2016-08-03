@@ -128,7 +128,7 @@ module Embulk
           threads = []
           Embulk.logger.debug { "embulk-output-bigquery: LOAD IN PARALLEL #{paths}" }
           paths.each_with_index do |path, idx|
-            threads << Thread.new do
+            threads << Thread.new(path, idx) do |path, idx|
               # I am not sure whether google-api-ruby-client is thread-safe,
               # so let me create new instances for each thread for safe
               bigquery = self.class.new(@task, @schema, fields)
@@ -138,7 +138,7 @@ module Embulk
           end
           ThreadsWait.all_waits(*threads) do |th|
             idx, response = th.value # raise errors occurred in threads
-            responses[idx] = response if idx
+            responses[idx] = response
           end
           responses
         end
