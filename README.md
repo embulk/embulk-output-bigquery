@@ -63,6 +63,7 @@ v0.3.x has incompatibility changes with v0.2.x. Please see [CHANGELOG.md](CHANGE
 |  payload_column_index                | integer     | optional   | nil                      | See [Formatter Performance Issue](#formatter-performance-issue) |
 |  gcs_bucket                          | stringr     | optional   | nil                      | See [GCS Bucket](#gcs-bucket) |
 |  auto_create_gcs_bucket              | boolean     | optional   | false                    | See [GCS Bucket](#gcs-bucket) |
+|  show_progress_log                   | boolean     | optional   | false                    | Show progress as INFO log (this option may be removed in the future because a filter plugin can achieve the same goal) |
 
 Client or request options
 

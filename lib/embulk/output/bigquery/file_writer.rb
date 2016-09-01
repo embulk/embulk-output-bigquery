@@ -16,8 +16,10 @@ module Embulk
           @converters = converters || ValueConverterFactory.create_converters(task, schema)
 
           @num_rows = 0
-          @progress_log_timer = Time.now
-          @previous_num_rows = 0
+          if @task['show_progress_log']
+            @progress_log_timer = Time.now
+            @previous_num_rows = 0
+          end
 
           if @task['payload_column_index']
             @payload_column_index = @task['payload_column_index']
@@ -103,6 +105,13 @@ module Embulk
             _io.write formatted_record
             @num_rows += 1
           end
+          show_progress if @task['show_progress_log']
+          @num_rows
+        end
+
+        private
+
+        def show_progress
           now = Time.now
           if @progress_log_timer < now - 10 # once in 10 seconds
             speed = ((@num_rows - @previous_num_rows) / (now - @progress_log_timer).to_f).round(1)
@@ -110,7 +119,6 @@ module Embulk
             @previous_num_rows = @num_rows
             Embulk.logger.info { "embulk-output-bigquery: num_rows #{num_format(@num_rows)} (#{num_format(speed)} rows/sec)" }
           end
-          @num_rows
         end
       end
     end

@@ -56,6 +56,7 @@ module Embulk
           'with_rehearsal'                 => config.param('with_rehearsal',                 :bool,    :default => false),
           'rehearsal_counts'               => config.param('rehearsal_counts',               :integer, :default => 1000),
           'abort_on_error'                 => config.param('abort_on_error',                 :bool,    :default => nil),
+          'show_progress_log'              => config.param('show_progress_log',              :bool,    :default => false),
 
           'column_options'                 => config.param('column_options',                 :array,   :default => []),
           'default_timezone'               => config.param('default_timezone',               :string,  :default => ValueConverterFactory::DEFAULT_TIMEZONE),
