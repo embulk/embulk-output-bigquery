@@ -16,7 +16,8 @@ module Embulk
           @converters = converters || ValueConverterFactory.create_converters(task, schema)
 
           @num_rows = 0
-          if @task['show_progress_log']
+          if @task['progress_log_interval']
+            @progress_log_interval = @task['progress_log_interval']
             @progress_log_timer = Time.now
             @previous_num_rows = 0
           end
@@ -105,7 +106,7 @@ module Embulk
             _io.write formatted_record
             @num_rows += 1
           end
-          show_progress if @task['show_progress_log']
+          show_progress if @task['progress_log_interval']
           @num_rows
         end
 
@@ -113,7 +114,7 @@ module Embulk
 
         def show_progress
           now = Time.now
-          if @progress_log_timer < now - 10 # once in 10 seconds
+          if @progress_log_timer < now - @progress_log_interval
             speed = ((@num_rows - @previous_num_rows) / (now - @progress_log_timer).to_f).round(1)
             @progress_log_timer = now
             @previous_num_rows = @num_rows
