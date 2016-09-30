@@ -233,15 +233,15 @@ module Embulk
                     create_deposition: 'CREATE_IF_NEEDED',
                     write_disposition: write_disposition,
                     source_table: {
-                    project_id: @project,
-                    dataset_id: @dataset,
-                    table_id: source_table,
-                  },
-                  destination_table: {
-                    project_id: @project,
-                    dataset_id: destination_dataset,
-                    table_id: destination_table,
-                  },
+                      project_id: @project,
+                      dataset_id: @dataset,
+                      table_id: source_table,
+                    },
+                    destination_table: {
+                      project_id: @project,
+                      dataset_id: destination_dataset,
+                      table_id: destination_table,
+                    },
                   }
                 }
               }
