@@ -5,6 +5,16 @@ module Embulk
   module Output
     class Bigquery < OutputPlugin
       class Helper
+        PARTITION_DECORATOR_REGEXP = /\$.+\z/
+
+        def self.has_partition_decorator?(table)
+          !!(table =~ PARTITION_DECORATOR_REGEXP)
+        end
+
+        def self.chomp_partition_decorator(table)
+          table.sub(PARTITION_DECORATOR_REGEXP, '')
+        end
+
         def self.bq_type_from_embulk_type(embulk_type)
           case embulk_type
           when :boolean then 'BOOLEAN'

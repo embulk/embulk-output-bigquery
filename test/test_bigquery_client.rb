@@ -105,6 +105,15 @@ else
           def test_create_table_already_exists
             assert_nothing_raised { client.create_table('your_table_name') }
           end
+
+          def test_create_partitioned_table
+            client.delete_table('your_table_name')
+            assert_nothing_raised do
+              client.create_table('your_table_name$20160929', options:{
+                'time_partitioning' => {'type'=>'DAY'}
+              })
+            end
+          end
         end
 
         sub_test_case "delete_table" do
@@ -115,6 +124,11 @@ else
 
           def test_delete_table_not_found
             assert_nothing_raised { client.delete_table('your_table_name') }
+          end
+
+          def test_delete_partitioned_table
+            client.create_table('your_table_name')
+            assert_nothing_raised { client.delete_table('your_table_name$20160929') }
           end
         end
 
@@ -129,6 +143,33 @@ else
             assert_raise(NotFoundError) {
               client.get_table('your_table_name')
             }
+          end
+
+          def test_get_partitioned_table
+            client.create_table('your_table_name')
+            assert_nothing_raised { client.get_table('your_table_name$20160929') }
+          end
+        end
+
+        sub_test_case "delete_partition" do
+          def test_delete_partition
+            client.create_table('your_table_name$20160929', options:{
+              'time_partitioning' => {'type'=>'DAY'}
+            })
+            assert_nothing_raised { client.delete_partition('your_table_name$20160929') }
+          ensure
+            client.delete_table('your_table_name')
+          end
+
+          def test_delete_partition_of_non_partitioned_table
+            client.create_table('your_table_name')
+            assert_raise { client.delete_partition('your_table_name$20160929') }
+          ensure
+            client.delete_table('your_table_name')
+          end
+
+          def test_delete_partition_table_not_found
+            assert_nothing_raised { client.delete_partition('your_table_name$20160929') }
           end
         end
 
