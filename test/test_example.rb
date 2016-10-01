@@ -18,19 +18,28 @@ else
       end
     end
 
-    files = Dir.glob("#{APP_ROOT}/example/config_*.yml").sort
-    files = files.reject {|file| File.symlink?(file) }
-    # files.shift
+    def embulk_run(config_path)
+      Bundler.with_clean_env do
+        cmd = "#{embulk_path} run -X page_size=1 -b . -l trace #{config_path}"
+        puts "=" * 64
+        puts cmd
+        system(cmd)
+      end
+    end
+
+    files = Dir.glob("#{APP_ROOT}/example/config_*.yml").reject {|file| File.symlink?(file) }.sort
     files.each do |config_path|
-      next if File.basename(config_path) == 'config_expose_errors.yml'
-      define_method(:"test_#{File.basename(config_path, ".yml")}") do
-        success = Bundler.with_clean_env do
-          cmd = "#{embulk_path} run -X page_size=1 -b . -l trace #{config_path}"
-          puts "=" * 64
-          puts cmd
-          system(cmd)
+      if %w[
+        config_expose_errors.yml
+        config_prevent_duplicate_insert.yml
+        ].include?(File.basename(config_path))
+        define_method(:"test_#{File.basename(config_path, ".yml")}") do
+          assert_false embulk_run(config_path)
         end
-        assert_true success
+      else
+        define_method(:"test_#{File.basename(config_path, ".yml")}") do
+          assert_true embulk_run(config_path)
+        end
       end
     end
   end
