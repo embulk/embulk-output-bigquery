@@ -365,7 +365,7 @@ Using `gcs_bucket` option, such strategy is enabled. You may also use `auto_crea
 out:
   type: bigquery
   gcs_bucket: bucket_name
-  auto_create_gcs_bucket: false
+  auto_create_gcs_bucket: true
 ```
 
 ToDo: Use https://cloud.google.com/storage/docs/streaming if google-api-ruby-client supports streaming transfers into GCS.
