@@ -1,3 +1,8 @@
+## 0.4.0 - 2016-10-01
+
+* [enhancement] Support partitioned table
+* [maintenance] Add `progress_log_interval` option to control the interval of showing progress log, and now showing progress log is off by default
+
 ## 0.3.7 - 2016-08-03
 
 * [maintenance] Fix Thread.new to use thread local variables to avoid nil idx error (thanks to @shyouhei and @umisora)
