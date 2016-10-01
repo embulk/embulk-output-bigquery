@@ -17,6 +17,14 @@ module Embulk
           reset_fields(fields) if fields
           @project = @task['project']
           @dataset = @task['dataset']
+
+          @task['source_format'] ||= 'CSV'
+          @task['max_bad_records'] ||= 0
+          @task['field_delimiter'] ||= ','
+          @task['source_format'] == 'CSV' ? @task['field_delimiter'] : nil
+          @task['encoding'] ||= 'UTF-8'
+          @task['ignore_unknown_values'] = false if @task['ignore_unknown_values'].nil?
+          @task['allow_quoted_newlines'] = false if @task['allow_quoted_newlines'].nil?
         end
 
         def fields
@@ -143,7 +151,7 @@ module Embulk
           responses
         end
 
-        def load(path, table)
+        def load(path, table, write_disposition: 'WRITE_APPEND')
           with_job_retry do
             begin
               if File.exist?(path)
@@ -175,7 +183,7 @@ module Embulk
                     schema: {
                       fields: fields,
                     },
-                    write_disposition: 'WRITE_APPEND',
+                    write_disposition:     write_disposition,
                     source_format:         @task['source_format'],
                     max_bad_records:       @task['max_bad_records'],
                     field_delimiter:       @task['source_format'] == 'CSV' ? @task['field_delimiter'] : nil,
@@ -363,9 +371,11 @@ module Embulk
           end
         end
 
-        def create_table(table)
+        def create_table(table, dataset: nil, options: {})
           begin
-            Embulk.logger.info { "embulk-output-bigquery: Create table... #{@project}:#{@dataset}.#{table}" }
+            table = Helper.chomp_partition_decorator(table)
+            dataset ||= @dataset
+            Embulk.logger.info { "embulk-output-bigquery: Create table... #{@project}:#{dataset}.#{table}" }
             body = {
               table_reference: {
                 table_id: table,
@@ -374,9 +384,15 @@ module Embulk
                 fields: fields,
               }
             }
+            if options['time_partitioning']
+              body[:time_partitioning] = {
+                type: options['time_partitioning']['type'],
+                expiration_ms: options['time_partitioning']['expiration_ms'],
+              }
+            end
             opts = {}
-            Embulk.logger.debug { "embulk-output-bigquery: insert_table(#{@project}, #{@dataset}, #{body}, #{opts})" }
-            with_network_retry { client.insert_table(@project, @dataset, body, opts) }
+            Embulk.logger.debug { "embulk-output-bigquery: insert_table(#{@project}, #{dataset}, #{body}, #{opts})" }
+            with_network_retry { client.insert_table(@project, dataset, body, opts) }
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             if e.status_code == 409 && /Already Exists:/ =~ e.message
               # ignore 'Already Exists' error
@@ -385,16 +401,18 @@ module Embulk
 
             response = {status_code: e.status_code, message: e.message, error_class: e.class}
             Embulk.logger.error {
-              "embulk-output-bigquery: insert_table(#{@project}, #{@dataset}, #{body}, #{opts}), response:#{response}"
+              "embulk-output-bigquery: insert_table(#{@project}, #{dataset}, #{body}, #{opts}), response:#{response}"
             }
-            raise Error, "failed to create table #{@project}:#{@dataset}.#{table}, response:#{response}"
+            raise Error, "failed to create table #{@project}:#{dataset}.#{table}, response:#{response}"
           end
         end
 
-        def delete_table(table)
+        def delete_table(table, dataset: nil)
           begin
-            Embulk.logger.info { "embulk-output-bigquery: Delete table... #{@project}:#{@dataset}.#{table}" }
-            with_network_retry { client.delete_table(@project, @dataset, table) }
+            table = Helper.chomp_partition_decorator(table)
+            dataset ||= @dataset
+            Embulk.logger.info { "embulk-output-bigquery: Delete table... #{@project}:#{dataset}.#{table}" }
+            with_network_retry { client.delete_table(@project, dataset, table) }
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             if e.status_code == 404 && /Not found:/ =~ e.message
               # ignore 'Not Found' error
@@ -403,26 +421,43 @@ module Embulk
 
             response = {status_code: e.status_code, message: e.message, error_class: e.class}
             Embulk.logger.error {
-              "embulk-output-bigquery: delete_table(#{@project}, #{@dataset}, #{table}), response:#{response}"
+              "embulk-output-bigquery: delete_table(#{@project}, #{dataset}, #{table}), response:#{response}"
             }
-            raise Error, "failed to delete table #{@project}:#{@dataset}.#{table}, response:#{response}"
+            raise Error, "failed to delete table #{@project}:#{dataset}.#{table}, response:#{response}"
           end
         end
 
-        def get_table(table)
+        def get_table(table, dataset: nil)
           begin
-            Embulk.logger.info { "embulk-output-bigquery: Get table... #{@project}:#{@dataset}.#{table}" }
-            with_network_retry { client.get_table(@project, @dataset, table) }
+            table = Helper.chomp_partition_decorator(table)
+            dataset ||= @dataset
+            Embulk.logger.info { "embulk-output-bigquery: Get table... #{@project}:#{dataset}.#{table}" }
+            with_network_retry { client.get_table(@project, dataset, table) }
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             if e.status_code == 404
-              raise NotFoundError, "Table #{@project}:#{@dataset}.#{table} is not found"
+              raise NotFoundError, "Table #{@project}:#{dataset}.#{table} is not found"
             end
 
             response = {status_code: e.status_code, message: e.message, error_class: e.class}
             Embulk.logger.error {
-              "embulk-output-bigquery: get_table(#{@project}, #{@dataset}, #{table}), response:#{response}"
+              "embulk-output-bigquery: get_table(#{@project}, #{dataset}, #{table}), response:#{response}"
             }
-            raise Error, "failed to get table #{@project}:#{@dataset}.#{table}, response:#{response}"
+            raise Error, "failed to get table #{@project}:#{dataset}.#{table}, response:#{response}"
+          end
+        end
+
+        # Is this only a way to drop partition?
+        def delete_partition(table_with_partition, dataset: nil)
+          dataset ||= @dataset
+          begin
+            table = Helper.chomp_partition_decorator(table_with_partition)
+            get_table(table, dataset: dataset)
+          rescue NotFoundError
+          else
+            Embulk.logger.info { "embulk-output-bigquery: Delete partition... #{@project}:#{dataset}.#{table_with_partition}" }
+            Tempfile.create('embulk_output_bigquery_empty_file_') do |fp|
+              load(fp.path, table_with_partition, write_disposition: 'WRITE_TRUNCATE')
+            end
           end
         end
       end

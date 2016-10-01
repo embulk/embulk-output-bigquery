@@ -84,6 +84,7 @@ module Embulk
           'encoding'                       => config.param('encoding',                       :string,  :default => 'UTF-8'),
           'ignore_unknown_values'          => config.param('ignore_unknown_values',          :bool,    :default => false),
           'allow_quoted_newlines'          => config.param('allow_quoted_newlines',          :bool,    :default => false),
+          'time_partitioning'              => config.param('time_partitioning',              :hash,    :default => nil),
 
           # for debug
           'skip_load'                      => config.param('skip_load',                      :bool,    :default => false),
@@ -204,6 +205,8 @@ module Embulk
 
         if %w[replace replace_backup append].include?(task['mode'])
           task['temp_table'] ||= "LOAD_TEMP_#{unique_name}_#{task['table']}"
+        else
+          task['temp_table'] = nil
         end
 
         if task['with_rehearsal']
@@ -216,6 +219,14 @@ module Embulk
 
         if task['abort_on_error'].nil?
           task['abort_on_error'] = (task['max_bad_records'] == 0)
+        end
+
+        if task['time_partitioning']
+          unless task['time_partitioning']['type']
+            raise ConfigError.new "`time_partitioning` must have `type` key"
+          end
+        elsif Helper.has_partition_decorator?(task['table'])
+          task['time_partitioning'] = {'type' => 'DAY'}
         end
 
         task
@@ -258,14 +269,7 @@ module Embulk
         }
       end
 
-      def self.transaction(config, schema, task_count, &control)
-        task = self.configure(config, schema, task_count)
-
-        @task = task
-        @schema = schema
-        @bigquery = BigqueryClient.new(task, schema)
-        @converters = ValueConverterFactory.create_converters(task, schema)
-
+      def self.auto_create(task, bigquery)
         if task['auto_create_dataset']
           bigquery.create_dataset(task['dataset'])
         else
@@ -282,17 +286,49 @@ module Embulk
 
         case task['mode']
         when 'delete_in_advance'
-          bigquery.delete_table(task['table'])
-          bigquery.create_table(task['table'])
+          if task['time_partitioning']
+            bigquery.delete_partition(task['table'])
+          else
+            bigquery.delete_table(task['table'])
+          end
+          bigquery.create_table(task['table'], options: task)
         when 'replace', 'replace_backup', 'append'
-          bigquery.create_table(task['temp_table'])
+          bigquery.create_table(task['temp_table'], options: task)
+          if task['time_partitioning']
+            if task['auto_create_table']
+              bigquery.create_table(task['table'], options: task)
+            else
+              bigquery.get_table(task['table']) # raises NotFoundError
+            end
+          end
         else # append_direct
           if task['auto_create_table']
-            bigquery.create_table(task['table'])
+            bigquery.create_table(task['table'], options: task)
           else
             bigquery.get_table(task['table']) # raises NotFoundError
           end
         end
+
+        if task['mode'] == 'replace_backup'
+          if task['time_partitioning'] and Helper.has_partition_decorator?(task['table_old'])
+            if task['auto_create_table']
+              bigquery.create_table(task['table_old'], dataset: task['dataset_old'], options: task)
+            else
+              bigquery.get_table(task['table_old'], dataset: task['dataset_old']) # raises NotFoundError
+            end
+          end
+        end
+      end
+
+      def self.transaction(config, schema, task_count, &control)
+        task = self.configure(config, schema, task_count)
+
+        @task = task
+        @schema = schema
+        @bigquery = BigqueryClient.new(task, schema)
+        @converters = ValueConverterFactory.create_converters(task, schema)
+
+        self.auto_create(@task, @bigquery)
 
         begin
           paths = []
@@ -346,7 +382,11 @@ module Embulk
             end
 
             if task['mode'] == 'replace_backup'
-              bigquery.copy(task['table'], task['table_old'], task['dataset_old'])
+              begin
+                bigquery.get_table(task['table'])
+                bigquery.copy(task['table'], task['table_old'], task['dataset_old'])
+              rescue NotFoundError
+              end
             end
 
             if task['temp_table']
@@ -359,7 +399,7 @@ module Embulk
           end
         ensure
           begin
-            if task['temp_table'] # replace or replace_backup
+            if task['temp_table'] # append or replace or replace_backup
               bigquery.delete_table(task['temp_table'])
             end
           ensure

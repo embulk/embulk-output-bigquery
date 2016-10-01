@@ -14,6 +14,16 @@ module Embulk
         end
       end
 
+      def has_partition_decorator?
+        assert_true Helper.has_partition_decorator?('table$20160929')
+        assert_false Helper.has_partition_decorator?('table')
+      end
+
+      def chomp_partition_decorator
+        assert_equal 'table', Helper.chomp_partition_decorator?('table$20160929')
+        assert_equal 'table', Helper.chomp_partition_decorator?('table')
+      end
+
       def bq_type_from_embulk_type
         assert_equal 'BOOLEAN',   Helper.bq_type_from_embulk_type(:boolean)
         assert_equal 'STRING',    Helper.bq_type_from_embulk_type(:string)

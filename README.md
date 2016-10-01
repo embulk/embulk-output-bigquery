@@ -97,8 +97,8 @@ Following options are same as [bq command-line tools](https://cloud.google.com/b
 |  max_bad_records          | int         | optional   | 0            | |
 |  field_delimiter          | char        | optional   | ","          |  |
 |  encoding                 | string      | optional   | "UTF-8"      | `UTF-8` or `ISO-8859-1` |
-|  ignore_unknown_values    | boolean     | optional   | 0            | |
-|  allow_quoted_newlines    | boolean     | optional   | 0            | Set true, if data contains newline characters. It may cause slow procsssing |
+|  ignore_unknown_values    | boolean     | optional   | false        | |
+|  allow_quoted_newlines    | boolean     | optional   | false        | Set true, if data contains newline characters. It may cause slow procsssing |
 
 ### Example
 
@@ -123,32 +123,32 @@ out:
 ##### append
 
 1. Load to temporary table.
-2. Copy temporary table to destination table. (WRITE_APPEND)
+2. Copy temporary table to destination table (or partition). (WRITE_APPEND)
 
 ##### append_direct
 
-Insert data into existing table directly. 
+Insert data into existing table (or partition) directly.
 This is not transactional, i.e., if fails, the target table could have some rows inserted.
 
 ##### replace
 
 1. Load to temporary table.
-2. Copy temporary table to destination table. (WRITE_TRUNCATE)
+2. Copy temporary table to destination table (or partition). (WRITE_TRUNCATE)
 
 ```is_skip_job_result_check``` must be false when replace mode
 
 ##### replace_backup
 
 1. Load to temporary table.
-2. Copy destination table to backup table. (dataset_old, table_old)
-3. Copy temporary table to destination table. (WRITE_TRUNCATE)
+2. Copy destination table (or partition) to backup table (or partition). (dataset_old, table_old)
+3. Copy temporary table to destination table (or partition). (WRITE_TRUNCATE)
 
 ```is_skip_job_result_check``` must be false when replace_backup mode.
 
 ##### delete_in_advance
 
-1. Delete destination table, if it exists.
-2. Load to destination table.
+1. Delete destination table (or partition), if it exists.
+2. Load to destination table (or partition).
 
 ### Authentication
 
