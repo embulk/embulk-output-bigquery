@@ -100,7 +100,7 @@ Following options are same as [bq command-line tools](https://cloud.google.com/b
 |  encoding                         | string   | optional  | "UTF-8" | `UTF-8` or `ISO-8859-1` |
 |  ignore_unknown_values            | boolean  | optional  | false   | |
 |  allow_quoted_newlines            | boolean  | optional  | false   | Set true, if data contains newline characters. It may cause slow procsssing |
-|  time_partitioning                | hash     | optional  | nil     | See [Time Partitioning](#time-partitioning) |
+|  time_partitioning                | hash     | optional  | `{"type":"DAY"}` if `table` parameter has a partition decorator, otherwise nil | See [Time Partitioning](#time-partitioning) |
 |  time_partitioning.type           | string   | required  | nil     | The only type supported is DAY, which will generate one partition per day based on data loading time. |
 |  time_partitioning.expiration__ms | int      | optional  | nil     | Number of milliseconds for which to keep the storage for a partition. partition |
 
@@ -391,7 +391,7 @@ out:
   type: bigquery
   table: table_name$20160929
   auto_create_table: true
-  time-partitioning:
+  time_partitioning:
     type: DAY
     expiration_ms: 259200000
 ```
