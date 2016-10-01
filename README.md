@@ -44,7 +44,7 @@ v0.3.x has incompatibility changes with v0.2.x. Please see [CHANGELOG.md](CHANGE
 |  json_keyfile                        | string      | required when auth_method is json_key     |   | Fullpath of json key |
 |  project                             | string      | required if json_keyfile is not given     |   | project_id |
 |  dataset                             | string      | required   |                          | dataset |
-|  table                               | string      | required   |                          | table name |
+|  table                               | string      | required   |                          | table name, or table name with a partition decorator such as `table_name$20160929`|
 |  auto_create_dataset                 | boolean     | optional   | false                    | automatically create dataset |
 |  auto_create_table                   | boolean     | optional   | false                    | See [Dynamic Table Creating](#dynamic-table-creating) |
 |  schema_file                         | string      | optional   |                          | /path/to/schema.json |
@@ -88,18 +88,21 @@ Options for intermediate local files
 
 `source_format` is also used to determine formatter (csv or jsonl).
 
-#### Same options of bq command-line tools or BigQuery job's propery
+#### Same options of bq command-line tools or BigQuery job's property
 
 Following options are same as [bq command-line tools](https://cloud.google.com/bigquery/bq-command-line-tool#creatingtablefromfile) or BigQuery [job's property](https://cloud.google.com/bigquery/docs/reference/v2/jobs#resource).
 
-| name                      | type        | required?  | default      | description            |  
-|:--------------------------|:------------|:-----------|:-------------|:-----------------------|
-|  source_format            | string      | required   | "CSV"        |   File type (`NEWLINE_DELIMITED_JSON` or `CSV`) |
-|  max_bad_records          | int         | optional   | 0            | |
-|  field_delimiter          | char        | optional   | ","          |  |
-|  encoding                 | string      | optional   | "UTF-8"      | `UTF-8` or `ISO-8859-1` |
-|  ignore_unknown_values    | boolean     | optional   | false        | |
-|  allow_quoted_newlines    | boolean     | optional   | false        | Set true, if data contains newline characters. It may cause slow procsssing |
+| name                              | type     | required? | default | description            |
+|:----------------------------------|:---------|:----------|:--------|:-----------------------|
+|  source_format                    | string   | required  | "CSV"   |   File type (`NEWLINE_DELIMITED_JSON` or `CSV`) |
+|  max_bad_records                  | int      | optional  | 0       | |
+|  field_delimiter                  | char     | optional  | ","     | |
+|  encoding                         | string   | optional  | "UTF-8" | `UTF-8` or `ISO-8859-1` |
+|  ignore_unknown_values            | boolean  | optional  | false   | |
+|  allow_quoted_newlines            | boolean  | optional  | false   | Set true, if data contains newline characters. It may cause slow procsssing |
+|  time_partitioning                | hash     | optional  | nil     | See [Time Partitioning](#time-partitioning) |
+|  time_partitioning.type           | string   | required  | nil     | The only type supported is DAY, which will generate one partition per day based on data loading time. |
+|  time_partitioning.expiration__ms | int      | optional  | nil     | Number of milliseconds for which to keep the storage for a partition. partition |
 
 ### Example
 
@@ -366,6 +369,32 @@ out:
 ```
 
 ToDo: Use https://cloud.google.com/storage/docs/streaming if google-api-ruby-client supports streaming transfers into GCS.
+
+### Time Partitioning
+
+From 0.4.0, embulk-output-bigquery supports to load into partitioned table.
+See also [Creating and Updating Date-Partitioned Tables](https://cloud.google.com/bigquery/docs/creating-partitioned-tables).
+
+To load into a partition, specify `table` parameter with a partition decorator as:
+
+```yaml
+out:
+  type: bigquery
+  table: table_name$20160929
+  auto_create_table: true
+```
+
+You may configure `time_partitioning` parameter together to create table via `auto_create_table: true` option as:
+
+```yaml
+out:
+  type: bigquery
+  table: table_name$20160929
+  auto_create_table: true
+  time-partitioning:
+    type: DAY
+    expiration_ms: 259200000
+```
 
 ## Development
 
