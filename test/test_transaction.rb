@@ -55,7 +55,7 @@ module Embulk
           task = Bigquery.configure(config, schema, processor_count)
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).create_dataset(config['dataset'])
-            mock(obj).create_table(config['table'], options: task)
+            mock(obj).create_table(config['table'])
           end
           Bigquery.transaction(config, schema, processor_count, &control)
         end
@@ -74,7 +74,7 @@ module Embulk
           task = Bigquery.configure(config, schema, processor_count)
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).create_dataset(config['dataset'])
-            mock(obj).create_table(config['table'], options: task)
+            mock(obj).create_table(config['table'])
           end
           Bigquery.transaction(config, schema, processor_count, &control)
         end
@@ -87,7 +87,7 @@ module Embulk
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
             mock(obj).delete_table(config['table'])
-            mock(obj).create_table(config['table'], options: task)
+            mock(obj).create_table(config['table'])
           end
           Bigquery.transaction(config, schema, processor_count, &control)
         end
@@ -98,7 +98,7 @@ module Embulk
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
             mock(obj).delete_partition(config['table'])
-            mock(obj).create_table(config['table'], options: task)
+            mock(obj).create_table(config['table'])
           end
           Bigquery.transaction(config, schema, processor_count, &control)
         end
@@ -110,7 +110,7 @@ module Embulk
           task = Bigquery.configure(config, schema, processor_count)
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
-            mock(obj).create_table(config['temp_table'], options: task)
+            mock(obj).create_table(config['temp_table'])
             mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_TRUNCATE')
             mock(obj).delete_table(config['temp_table'])
           end
@@ -122,7 +122,7 @@ module Embulk
           task = Bigquery.configure(config, schema, processor_count)
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
-            mock(obj).create_table(config['temp_table'], options: task)
+            mock(obj).create_table(config['temp_table'])
             mock(obj).get_table(config['table'])
             mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_TRUNCATE')
             mock(obj).delete_table(config['temp_table'])
@@ -135,8 +135,8 @@ module Embulk
           task = Bigquery.configure(config, schema, processor_count)
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
-            mock(obj).create_table(config['temp_table'], options: task)
-            mock(obj).create_table(config['table'], options: task)
+            mock(obj).create_table(config['temp_table'])
+            mock(obj).create_table(config['table'])
             mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_TRUNCATE')
             mock(obj).delete_table(config['temp_table'])
           end
@@ -151,7 +151,7 @@ module Embulk
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
             mock(obj).get_dataset(config['dataset_old'])
-            mock(obj).create_table(config['temp_table'], options: task)
+            mock(obj).create_table(config['temp_table'])
 
             mock(obj).get_table(task['table'])
             mock(obj).copy(config['table'], config['table_old'], config['dataset_old'])
@@ -168,7 +168,7 @@ module Embulk
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).create_dataset(config['dataset'])
             mock(obj).create_dataset(config['dataset_old'], reference: config['dataset'])
-            mock(obj).create_table(config['temp_table'], options: task)
+            mock(obj).create_table(config['temp_table'])
 
             mock(obj).get_table(task['table'])
             mock(obj).copy(config['table'], config['table_old'], config['dataset_old'])
@@ -185,7 +185,7 @@ module Embulk
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
             mock(obj).get_dataset(config['dataset_old'])
-            mock(obj).create_table(config['temp_table'], options: task)
+            mock(obj).create_table(config['temp_table'])
             mock(obj).get_table(task['table'])
             mock(obj).get_table(task['table_old'], dataset: config['dataset_old'])
 
@@ -204,9 +204,9 @@ module Embulk
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
             mock(obj).get_dataset(config['dataset_old'])
-            mock(obj).create_table(config['temp_table'], options: task)
-            mock(obj).create_table(task['table'], options: task)
-            mock(obj).create_table(task['table_old'], dataset: config['dataset_old'], options: task)
+            mock(obj).create_table(config['temp_table'])
+            mock(obj).create_table(task['table'])
+            mock(obj).create_table(task['table_old'], dataset: config['dataset_old'])
 
             mock(obj).get_table(task['table'])
             mock(obj).copy(config['table'], config['table_old'], config['dataset_old'])
@@ -224,7 +224,7 @@ module Embulk
           task = Bigquery.configure(config, schema, processor_count)
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
-            mock(obj).create_table(config['temp_table'], options: task)
+            mock(obj).create_table(config['temp_table'])
             mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_APPEND')
             mock(obj).delete_table(config['temp_table'])
           end
@@ -236,7 +236,7 @@ module Embulk
           task = Bigquery.configure(config, schema, processor_count)
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
-            mock(obj).create_table(config['temp_table'], options: task)
+            mock(obj).create_table(config['temp_table'])
             mock(obj).get_table(config['table'])
             mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_APPEND')
             mock(obj).delete_table(config['temp_table'])
@@ -249,15 +249,14 @@ module Embulk
           task = Bigquery.configure(config, schema, processor_count)
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
-            mock(obj).create_table(config['temp_table'], options: task)
-            mock(obj).create_table(config['table'], options: task)
+            mock(obj).create_table(config['temp_table'])
+            mock(obj).create_table(config['table'])
             mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_APPEND')
             mock(obj).delete_table(config['temp_table'])
           end
           Bigquery.transaction(config, schema, processor_count, &control)
         end
       end
-
     end
   end
 end

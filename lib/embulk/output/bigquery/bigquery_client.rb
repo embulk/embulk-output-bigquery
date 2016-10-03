@@ -379,10 +379,14 @@ module Embulk
           end
         end
 
-        def create_table(table, dataset: nil, options: {})
+        def create_table(table, dataset: nil, options: nil)
           begin
-            table = Helper.chomp_partition_decorator(table)
             dataset ||= @dataset
+            options ||= @task
+            if Helper.has_partition_decorator?(table)
+              time_partitioning = options['time_partitioning'] || {'type' => 'DAY'}
+              table = Helper.chomp_partition_decorator(table)
+            end
             Embulk.logger.info { "embulk-output-bigquery: Create table... #{@project}:#{dataset}.#{table}" }
             body = {
               table_reference: {
@@ -392,12 +396,14 @@ module Embulk
                 fields: fields,
               }
             }
-            if options['time_partitioning']
+
+            if time_partitioning
               body[:time_partitioning] = {
-                type: options['time_partitioning']['type'],
-                expiration_ms: options['time_partitioning']['expiration_ms'],
+                type: time_partitioning['type'],
+                expiration_ms: time_partitioning['expiration_ms'],
               }
             end
+
             opts = {}
             Embulk.logger.debug { "embulk-output-bigquery: insert_table(#{@project}, #{dataset}, #{body}, #{opts})" }
             with_network_retry { client.insert_table(@project, dataset, body, opts) }

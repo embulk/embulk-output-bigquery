@@ -301,19 +301,19 @@ module Embulk
           else
             bigquery.delete_table(task['table'])
           end
-          bigquery.create_table(task['table'], options: task)
+          bigquery.create_table(task['table'])
         when 'replace', 'replace_backup', 'append'
-          bigquery.create_table(task['temp_table'], options: task)
+          bigquery.create_table(task['temp_table'])
           if task['time_partitioning']
             if task['auto_create_table']
-              bigquery.create_table(task['table'], options: task)
+              bigquery.create_table(task['table'])
             else
               bigquery.get_table(task['table']) # raises NotFoundError
             end
           end
         else # append_direct
           if task['auto_create_table']
-            bigquery.create_table(task['table'], options: task)
+            bigquery.create_table(task['table'])
           else
             bigquery.get_table(task['table']) # raises NotFoundError
           end
@@ -322,7 +322,7 @@ module Embulk
         if task['mode'] == 'replace_backup'
           if task['time_partitioning'] and Helper.has_partition_decorator?(task['table_old'])
             if task['auto_create_table']
-              bigquery.create_table(task['table_old'], dataset: task['dataset_old'], options: task)
+              bigquery.create_table(task['table_old'], dataset: task['dataset_old'])
             else
               bigquery.get_table(task['table_old'], dataset: task['dataset_old']) # raises NotFoundError
             end

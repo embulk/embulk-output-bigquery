@@ -110,7 +110,7 @@ else
             client.delete_table('your_table_name')
             assert_nothing_raised do
               client.create_table('your_table_name$20160929', options:{
-                'time_partitioning' => {'type'=>'DAY'}
+                'time_partitioning' => {'type'=>'DAY', 'expiration_ms'=>1000}
               })
             end
           end
@@ -153,9 +153,7 @@ else
 
         sub_test_case "delete_partition" do
           def test_delete_partition
-            client.create_table('your_table_name$20160929', options:{
-              'time_partitioning' => {'type'=>'DAY'}
-            })
+            client.create_table('your_table_name$20160929')
             assert_nothing_raised { client.delete_partition('your_table_name$20160929') }
           ensure
             client.delete_table('your_table_name')
