@@ -266,6 +266,14 @@ module Embulk
         task = Bigquery.configure(config, schema, processor_count)
         assert_equal 'DAY', task['time_partitioning']['type']
       end
+
+      def test_schema_update_options
+        config = least_config.merge('schema_update_options' => ['ALLOW_FIELD_ADDITION', 'ALLOW_FIELD_RELAXATION'])
+        assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
+
+        config = least_config.merge('schema_update_options' => ['FOO'])
+        assert_raise { Bigquery.configure(config, schema, processor_count) }
+      end
     end
   end
 end

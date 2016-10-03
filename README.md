@@ -103,6 +103,7 @@ Following options are same as [bq command-line tools](https://cloud.google.com/b
 |  time_partitioning                | hash     | optional  | `{"type":"DAY"}` if `table` parameter has a partition decorator, otherwise nil | See [Time Partitioning](#time-partitioning) |
 |  time_partitioning.type           | string   | required  | nil     | The only type supported is DAY, which will generate one partition per day based on data loading time. |
 |  time_partitioning.expiration__ms | int      | optional  | nil     | Number of milliseconds for which to keep the storage for a partition. partition |
+|  schema_update_options            | array    | optional  | nil     | List of `ALLOW_FIELD_ADDITION` or `ALLOW_FIELD_RELAXATION` or both. See [jobs#configuration.load.schemaUpdateOptions](https://cloud.google.com/bigquery/docs/reference/v2/jobs#configuration.load.schemaUpdateOptions) |
 
 ### Example
 
@@ -395,6 +396,25 @@ out:
     type: DAY
     expiration_ms: 259200000
 ```
+
+Use `schema_update_options` to allow the schema of the desitination table to be updated as a side effect of the load job as:
+
+```yaml
+out:
+  type: bigquery
+  table: table_name$20160929
+  auto_create_table: true
+  time_partitioning:
+    type: DAY
+    expiration_ms: 259200000
+  schema_update_options:
+    - ALLOW_FIELD_ADDITION
+    - ALLOW_FIELD_RELAXATION
+```
+
+It seems that only adding a new column, and relaxing non-necessary columns to be `NULLABLE` are supported now.
+Deleting columns, and renaming columns are not supported.
+See [jobs#configuration.load.schemaUpdateOptions](https://cloud.google.com/bigquery/docs/reference/v2/jobs#configuration.load.schemaUpdateOptions) for details.
 
 ## Development
 
