@@ -194,6 +194,10 @@ module Embulk
                 }
               }
 
+              if @task['schema_update_options']
+                body[:configuration][:load][:schema_update_options] = @task['schema_update_options']
+              end
+
               opts = {
                 upload_source: path,
                 content_type: "application/octet-stream",
@@ -253,6 +257,10 @@ module Embulk
                   }
                 }
               }
+
+              if @task['schema_update_options']
+                body[:configuration][:load][:schema_update_options] = @task['schema_update_options']
+              end
 
               opts = {}
               Embulk.logger.debug { "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts})" }

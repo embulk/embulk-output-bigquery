@@ -86,6 +86,7 @@ module Embulk
           'ignore_unknown_values'          => config.param('ignore_unknown_values',          :bool,    :default => false),
           'allow_quoted_newlines'          => config.param('allow_quoted_newlines',          :bool,    :default => false),
           'time_partitioning'              => config.param('time_partitioning',              :hash,    :default => nil),
+          'schema_update_options'          => config.param('schema_update_options',          :array,   :default => nil),
 
           # for debug
           'skip_load'                      => config.param('skip_load',                      :bool,    :default => false),
@@ -228,6 +229,14 @@ module Embulk
           end
         elsif Helper.has_partition_decorator?(task['table'])
           task['time_partitioning'] = {'type' => 'DAY'}
+        end
+
+        if task['schema_update_options']
+          task['schema_update_options'].each do |schema_update_option|
+            unless %w[ALLOW_FIELD_ADDITION ALLOW_FIELD_RELAXATION].include?(schema_update_option)
+              raise ConfigError.new "`schema_update_options` must contain either of ALLOW_FIELD_ADDITION or ALLOW_FIELD_RELAXATION or both"
+            end
+          end
         end
 
         task
