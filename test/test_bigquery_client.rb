@@ -153,6 +153,7 @@ else
 
         sub_test_case "delete_partition" do
           def test_delete_partition
+            client.delete_table('your_table_name')
             client.create_table('your_table_name$20160929')
             assert_nothing_raised { client.delete_partition('your_table_name$20160929') }
           ensure
@@ -160,6 +161,7 @@ else
           end
 
           def test_delete_partition_of_non_partitioned_table
+            client.delete_table('your_table_name')
             client.create_table('your_table_name')
             assert_raise { client.delete_partition('your_table_name$20160929') }
           ensure
