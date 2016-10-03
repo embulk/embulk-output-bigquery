@@ -1,3 +1,7 @@
+## 0.4.1 - 2016-10-03
+
+* [enhancement] Support `schema_update_options` option
+
 ## 0.4.0 - 2016-10-01
 
 * [enhancement] Support partitioned table
