@@ -259,7 +259,7 @@ module Embulk
               }
 
               if @task['schema_update_options']
-                body[:configuration][:load][:schema_update_options] = @task['schema_update_options']
+                body[:configuration][:copy][:schema_update_options] = @task['schema_update_options']
               end
 
               opts = {}
