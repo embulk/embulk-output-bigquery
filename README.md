@@ -103,7 +103,7 @@ Following options are same as [bq command-line tools](https://cloud.google.com/b
 |  time_partitioning                | hash     | optional  | `{"type":"DAY"}` if `table` parameter has a partition decorator, otherwise nil | See [Time Partitioning](#time-partitioning) |
 |  time_partitioning.type           | string   | required  | nil     | The only type supported is DAY, which will generate one partition per day based on data loading time. |
 |  time_partitioning.expiration__ms | int      | optional  | nil     | Number of milliseconds for which to keep the storage for a partition. partition |
-|  schema_update_options            | array    | optional  | nil     | List of `ALLOW_FIELD_ADDITION` or `ALLOW_FIELD_RELAXATION` or both. See [jobs#configuration.load.schemaUpdateOptions](https://cloud.google.com/bigquery/docs/reference/v2/jobs#configuration.load.schemaUpdateOptions) |
+|  schema_update_options            | array    | optional  | nil     | (Experimental) List of `ALLOW_FIELD_ADDITION` or `ALLOW_FIELD_RELAXATION` or both. See [jobs#configuration.load.schemaUpdateOptions](https://cloud.google.com/bigquery/docs/reference/v2/jobs#configuration.load.schemaUpdateOptions) |
 
 ### Example
 
@@ -132,7 +132,8 @@ out:
 
 ##### append_direct
 
-Insert data into existing table (or partition) directly.
+1. Insert data into existing table (or partition) directly. (WRITE_APPEND in parallel)
+
 This is not transactional, i.e., if fails, the target table could have some rows inserted.
 
 ##### replace
