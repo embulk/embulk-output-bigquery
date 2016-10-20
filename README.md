@@ -127,7 +127,7 @@ out:
 
 ##### append
 
-1. Load to temporary table.
+1. Load to temporary table (Create and WRITE_APPEND in parallel)
 2. Copy temporary table to destination table (or partition). (WRITE_APPEND)
 
 ##### append_direct
@@ -137,14 +137,14 @@ This is not transactional, i.e., if fails, the target table could have some rows
 
 ##### replace
 
-1. Load to temporary table.
+1. Load to temporary table (Create and WRITE_APPEND in parallel)
 2. Copy temporary table to destination table (or partition). (WRITE_TRUNCATE)
 
 ```is_skip_job_result_check``` must be false when replace mode
 
 ##### replace_backup
 
-1. Load to temporary table.
+1. Load to temporary table (Create and WRITE_APPEND in parallel)
 2. Copy destination table (or partition) to backup table (or partition). (dataset_old, table_old)
 3. Copy temporary table to destination table (or partition). (WRITE_TRUNCATE)
 
@@ -397,24 +397,12 @@ out:
     expiration_ms: 259200000
 ```
 
-Use `schema_update_options` to allow the schema of the desitination table to be updated as a side effect of the load job as:
+Use [Tables: patch](https://cloud.google.com/bigquery/docs/reference/v2/tables/patch) API to update the schema of the partitioned table, embulk-output-bigquery itself does not support it, though.
+Note that only adding a new column, and relaxing non-necessary columns to be `NULLABLE` are supported now. Deleting columns, and renaming columns are not supported.
 
-```yaml
-out:
-  type: bigquery
-  table: table_name$20160929
-  auto_create_table: true
-  time_partitioning:
-    type: DAY
-    expiration_ms: 259200000
-  schema_update_options:
-    - ALLOW_FIELD_ADDITION
-    - ALLOW_FIELD_RELAXATION
-```
-
-It seems that only adding a new column, and relaxing non-necessary columns to be `NULLABLE` are supported now.
-Deleting columns, and renaming columns are not supported.
-See [jobs#configuration.load.schemaUpdateOptions](https://cloud.google.com/bigquery/docs/reference/v2/jobs#configuration.load.schemaUpdateOptions) for details.
+MEMO: [jobs#configuration.load.schemaUpdateOptions](https://cloud.google.com/bigquery/docs/reference/v2/jobs#configuration.load.schemaUpdateOptions) is available
+to update the schema of the desitination table as a side effect of the load job, but it is not available for copy job.
+Thus, it was not suitable for embulk-output-bigquery idempotence strategy.
 
 ## Development
 
