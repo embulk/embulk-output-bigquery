@@ -403,7 +403,7 @@ Note that only adding a new column, and relaxing non-necessary columns to be `NU
 
 MEMO: [jobs#configuration.load.schemaUpdateOptions](https://cloud.google.com/bigquery/docs/reference/v2/jobs#configuration.load.schemaUpdateOptions) is available
 to update the schema of the desitination table as a side effect of the load job, but it is not available for copy job.
-Thus, it was not suitable for embulk-output-bigquery idempotence strategy.
+Thus, it was not suitable for embulk-output-bigquery idempotence modes, `append`, `replace`, and `replace_backup`, sigh.
 
 ## Development
 
