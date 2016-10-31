@@ -43,7 +43,7 @@ module Embulk
       end
 
       def record
-        [true, 1, 1.1, 'foo', Time.parse("2016-02-26 00:00:00 +09:00"), {"foo"=>"foo"}]
+        [true, 1, 1.1, 'foo', Time.parse("2016-02-26 00:00:00 +00:00").utc, {"foo"=>"foo"}]
       end
 
       def page
@@ -81,7 +81,7 @@ module Embulk
           formatter_proc = file_writer.instance_variable_get(:@formatter_proc)
           assert_equal :to_csv, formatter_proc.name
 
-          expected = %Q[true,1,1.1,foo,1456412400.0,"{""foo"":""foo""}"\n]
+          expected = %Q[true,1,1.1,foo,2016-02-26 00:00:00.000000 +00:00,"{""foo"":""foo""}"\n]
           assert_equal expected, formatter_proc.call(record)
         end
 
@@ -91,7 +91,7 @@ module Embulk
           formatter_proc = file_writer.instance_variable_get(:@formatter_proc)
           assert_equal :to_jsonl, formatter_proc.name
 
-          expected = %Q[{"boolean":true,"long":1,"double":1.1,"string":"foo","timestamp":1456412400.0,"json":"{\\"foo\\":\\"foo\\"}"}\n]
+          expected = %Q[{"boolean":true,"long":1,"double":1.1,"string":"foo","timestamp":"2016-02-26 00:00:00.000000 +00:00","json":"{\\"foo\\":\\"foo\\"}"}\n]
           assert_equal expected, formatter_proc.call(record)
         end
       end

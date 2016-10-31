@@ -23,8 +23,8 @@ module Embulk
           assert_equal 1, converters[1].call(1)
           assert_equal 1.1, converters[2].call(1.1)
           assert_equal 'foo', converters[3].call('foo')
-          timestamp = Time.parse("2016-02-26 00:00:00.100000 UTC")
-          assert_equal 1456444800.1, converters[4].call(timestamp)
+          timestamp = Time.parse("2016-02-26 00:00:00.500000 +00:00")
+          assert_equal "2016-02-26 00:00:00.500000 +00:00", converters[4].call(timestamp)
           assert_equal %Q[{"foo":"foo"}], converters[5].call({'foo'=>'foo'})
         end
 
@@ -55,7 +55,7 @@ module Embulk
           assert_equal '1', converters[1].call(1)
           assert_equal '1.1', converters[2].call(1.1)
           assert_equal 1, converters[3].call('1')
-          timestamp = Time.parse("2016-02-26 00:00:00.100000 UTC")
+          timestamp = Time.parse("2016-02-26 00:00:00.100000 +00:00")
           assert_equal 1456444800, converters[4].call(timestamp)
           assert_equal({'foo'=>'foo'}, converters[5].call({'foo'=>'foo'}))
         end
@@ -208,7 +208,7 @@ module Embulk
             timestamp_format: '%Y-%m-%d', timezone: 'Asia/Tokyo'
           ).create_converter
           assert_equal nil, converter.call(nil)
-          assert_equal 1456412400.0, converter.call("2016-02-26")
+          assert_equal "2016-02-26 00:00:00.000000 +09:00", converter.call("2016-02-26")
 
           # Users must care of BQ timestamp format by themselves with no timestamp_format
           converter = ValueConverterFactory.new(SCHEMA_TYPE, 'TIMESTAMP').create_converter
@@ -240,22 +240,22 @@ module Embulk
         def test_float
           converter = ValueConverterFactory.new(SCHEMA_TYPE, 'FLOAT').create_converter
           assert_equal nil, converter.call(nil)
-          expected = 1456444800.100000
+          expected = 1456444800.500000
           assert_equal expected, converter.call(Time.at(expected))
         end
 
         def test_string
           converter = ValueConverterFactory.new(SCHEMA_TYPE, 'STRING').create_converter
           assert_equal nil, converter.call(nil)
-          timestamp = Time.parse("2016-02-26 00:00:00.100000 UTC")
-          expected = "2016-02-26 00:00:00.100000"
+          timestamp = Time.parse("2016-02-26 00:00:00.500000 +00:00")
+          expected = "2016-02-26 00:00:00.500000"
           assert_equal expected, converter.call(timestamp)
 
           converter = ValueConverterFactory.new(
             SCHEMA_TYPE, 'STRING',
             timestamp_format: '%Y-%m-%d', timezone: 'Asia/Tokyo'
           ).create_converter
-          timestamp = Time.parse("2016-02-25 15:00:00.100000 UTC")
+          timestamp = Time.parse("2016-02-25 15:00:00.500000 +00:00")
           expected = "2016-02-26"
           assert_equal expected, converter.call(timestamp)
         end
@@ -263,8 +263,9 @@ module Embulk
         def test_timestamp
           converter = ValueConverterFactory.new(SCHEMA_TYPE, 'TIMESTAMP').create_converter
           assert_equal nil, converter.call(nil)
-          expected = 1456444800.100000
-          assert_equal expected, converter.call(Time.at(expected))
+          subject = 1456444800.500000
+          expected = "2016-02-26 00:00:00.500000 +00:00"
+          assert_equal expected, converter.call(Time.at(subject).utc)
         end
 
         def test_record
