@@ -23,8 +23,8 @@ module Embulk
         # @return [Array] an arary whose key is column_index, and value is its converter (Proc)
         def self.create_converters(task, schema)
           column_options_map       = Helper.column_options_map(task['column_options'])
-          default_timestamp_format = task['default_timestamp_format']
-          default_timezone         = task['default_timezone']
+          default_timestamp_format = task['default_timestamp_format'] || DEFAULT_TIMESTAMP_FORMAT
+          default_timezone         = task['default_timezone'] || DEFAULT_TIMEZONE
           schema.map do |column|
             column_name   = column[:name]
             embulk_type   = column[:type]
@@ -238,7 +238,7 @@ module Embulk
           when 'TIMESTAMP'
             Proc.new {|val|
               next nil if val.nil?
-              val.strftime("%Y-%m-%d %H:%M:%S.%6N UTC")
+              val.strftime("%Y-%m-%d %H:%M:%S.%6N %:z")
             }
           else
             raise NotSupportedType, "cannot take column type #{type} for timestamp column"
