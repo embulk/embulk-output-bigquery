@@ -317,7 +317,7 @@ Therefore, it is recommended to format records with filter plugins written in Ja
 filters:
   - type: to_json
     column: {name: payload, type: string}
-    default_format: %Y-%m-%d %H:%M:%S.%6N
+    default_format: "%Y-%m-%d %H:%M:%S.%6N"
 out:
   type: bigquery
   payload_column_index: 0 # or, payload_column: payload
