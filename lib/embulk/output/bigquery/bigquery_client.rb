@@ -263,10 +263,6 @@ module Embulk
                 }
               }
 
-              if @task['schema_update_options']
-                body[:configuration][:copy][:schema_update_options] = @task['schema_update_options']
-              end
-
               opts = {}
               Embulk.logger.debug { "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts})" }
               response = with_network_retry { client.insert_job(@project, body, opts) }
