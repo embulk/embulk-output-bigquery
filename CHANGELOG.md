@@ -1,3 +1,7 @@
+## 0.4.3 - 2017-02-11
+
+* [maintenance] Fix `schma_update_options` was not set with load_from_gcs (thanks to h10a-bf)
+
 ## 0.4.2 - 2016-10-12
 
 * [maintenance] Fix `schema_update_options` was not working (nil error)
