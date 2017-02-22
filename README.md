@@ -61,7 +61,7 @@ v0.3.x has incompatibility changes with v0.2.x. Please see [CHANGELOG.md](CHANGE
 |  default_timestamp_format            | string      | optional   | %Y-%m-%d %H:%M:%S.%6N    | |
 |  payload_column                      | string      | optional   | nil                      | See [Formatter Performance Issue](#formatter-performance-issue) |
 |  payload_column_index                | integer     | optional   | nil                      | See [Formatter Performance Issue](#formatter-performance-issue) |
-|  gcs_bucket                          | stringr     | optional   | nil                      | See [GCS Bucket](#gcs-bucket) |
+|  gcs_bucket                          | string      | optional   | nil                      | See [GCS Bucket](#gcs-bucket) |
 |  auto_create_gcs_bucket              | boolean     | optional   | false                    | See [GCS Bucket](#gcs-bucket) |
 |  progress_log_interval               | float       | optional   | nil (Disabled)           | Progress log interval. The progress log is disabled by nil (default). NOTE: This option may be removed in a future because a filter plugin can achieve the same goal |
 
