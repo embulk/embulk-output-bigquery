@@ -355,7 +355,7 @@ out:
 
 ### GCS Bucket
 
-This is useful to reduce number of consumed jobs, which is limited by [10,000 jobs per project per day](https://cloud.google.com/bigquery/quota-policy#import).
+This is useful to reduce number of consumed jobs, which is limited by [50,000 jobs per project per day](https://cloud.google.com/bigquery/quota-policy#import).
 
 This plugin originally loads local files into BigQuery in parallel, that is, consumes a number of jobs, say 24 jobs on 24 CPU core machine for example (this depends on embulk parameters such as `min_output_tasks` and `max_threads`).
 
