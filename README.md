@@ -69,8 +69,10 @@ Client or request options
 
 | name                                 | type        | required?  | default                  | description            |
 |:-------------------------------------|:------------|:-----------|:-------------------------|:-----------------------|
-|  timeout_sec                         | integer     | optional   | 300                      | Seconds to wait for one block to be read |
 |  open_timeout_sec                    | integer     | optional   | 300                      | Seconds to wait for the connection to open |
+|  timeout_sec                         | integer     | optional   | 300                      | Seconds to wait for one block to be read (google-api-ruby-client < v0.11.0) |
+|  send_timeout_sec                    | integer     | optional   | 300                      | Seconds to wait to send a request (google-api-ruby-client >= v0.11.0) |
+|  read_timeout_sec                    | integer     | optional   | 300                      | Seconds to wait to read a response (google-api-ruby-client >= v0.11.0) |
 |  retries                             | integer     | optional   | 5                        | Number of retries |
 |  application_name                    | string      | optional   | "Embulk BigQuery plugin" | User-Agent |
 |  sdk_log_level                       | string      | optional   | nil (WARN)               | Log level of google api client library |

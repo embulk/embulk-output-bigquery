@@ -22,8 +22,15 @@ module Embulk
           client = @client_class.new
           client.client_options.application_name = @task['application_name']
           client.request_options.retries = @task['retries']
-          client.request_options.timeout_sec = @task['timeout_sec']
-          client.request_options.open_timeout_sec = @task['open_timeout_sec']
+          if client.request_options.respond_to?(:timeout_sec)
+            client.request_options.timeout_sec = @task['timeout_sec']
+            client.request_options.open_timeout_sec = @task['open_timeout_sec']
+          else # google-api-ruby-client >= v0.11.0
+            Embulk.logger.warn { "embulk-output-bigquery: timeout_sec is deprecated in google-api-ruby-client >= v0.11.0. Use read_timeout_sec instead" }
+            client.client_options.open_timeout_sec = @task['open_timeout_sec'] # default: 60
+            client.client_options.send_timeout_sec = @task['send_timeout_sec'] # default: 120
+            client.client_options.read_timeout_sec = @task['read_timeout_sec'] || @task['timeout_sec'] # default: 60
+          end
           Embulk.logger.debug { "embulk-output-bigquery: client_options: #{client.client_options.to_h}" }
           Embulk.logger.debug { "embulk-output-bigquery: request_options: #{client.request_options.to_h}" }
 
