@@ -1,3 +1,8 @@
+## 0.4.4 - 2017-04-04
+
+* [maintenance] Support google-api-ruby-client >= v0.11.0
+* [maintenance] Add `send_timeout_sec` and `read_timeout_sec` option for google-api-ruby-client >= v0.11.0
+
 ## 0.4.3 - 2017-02-11
 
 * [maintenance] Fix `schma_update_options` was not set with load_from_gcs (thanks to h10a-bf)
