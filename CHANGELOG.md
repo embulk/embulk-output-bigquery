@@ -1,3 +1,7 @@
+## 0.4.5 - 2017-04-04
+
+* [maintenance] Fix deprecated warning log condition for `timeout_sec`
+
 ## 0.4.4 - 2017-04-04
 
 * [maintenance] Support google-api-ruby-client >= v0.11.0
