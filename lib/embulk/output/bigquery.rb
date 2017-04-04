@@ -64,8 +64,10 @@ module Embulk
           'payload_column'                 => config.param('payload_column',                 :string,  :default => nil),
           'payload_column_index'           => config.param('payload_column_index',           :integer, :default => nil),
           
-          'timeout_sec'                    => config.param('timeout_sec',                    :integer, :default => 300),
           'open_timeout_sec'               => config.param('open_timeout_sec',               :integer, :default => 300),
+          'timeout_sec'                    => config.param('timeout_sec',                    :integer, :default => 300), # google-api-ruby-client < v0.11.0
+          'send_timeout_sec'               => config.param('send_timeout_sec',               :integer, :default => 300), # google-api-ruby-client >= v0.11.0
+          'read_timeout_sec'               => config.param('read_timeout_sec',               :integer, :default => 300), # google-api-ruby-client >= v0.11.0
           'retries'                        => config.param('retries',                        :integer, :default => 5),
           'application_name'               => config.param('application_name',               :string,  :default => 'Embulk BigQuery plugin'),
           'sdk_log_level'                  => config.param('sdk_log_level',                  :string,  :default => nil),
