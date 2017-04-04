@@ -69,8 +69,6 @@ module Embulk
         assert_equal "%Y-%m-%d %H:%M:%S.%6N", task['default_timestamp_format']
         assert_equal nil, task['payload_column']
         assert_equal nil, task['payload_column_index']
-        assert_equal 300, task['timeout_sec']
-        assert_equal 300, task['open_timeout_sec']
         assert_equal 5, task['retries']
         assert_equal "Embulk BigQuery plugin", task['application_name']
         # assert_equal "/tmp/embulk_output_bigquery_20160228-27184-pubcn0", task['path_prefix']
