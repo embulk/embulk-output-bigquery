@@ -315,7 +315,7 @@ However, this plugin is written in jruby, and jruby plugins are slower than java
 
 Therefore, it is recommended to format records with filter plugins written in Java such as [embulk-filter-to_json](https://github.com/civitaspo/embulk-filter-to_json) as:
 
-```
+```yaml
 filters:
   - type: to_json
     column: {name: payload, type: string}
@@ -327,7 +327,7 @@ out:
 
 Furtheremore, if your files are originally jsonl or csv files, you can even skip a parser with [embulk-parser-none](https://github.com/sonots/embulk-parser-none) as:
 
-```
+```yaml
 in:
   type: file
   path_prefix: example/example.jsonl
