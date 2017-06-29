@@ -49,7 +49,7 @@ v0.3.x has incompatibility changes with v0.2.x. Please see [CHANGELOG.md](CHANGE
 |  auto_create_table                   | boolean     | optional   | false                    | See [Dynamic Table Creating](#dynamic-table-creating) |
 |  schema_file                         | string      | optional   |                          | /path/to/schema.json |
 |  template_table                      | string      | optional   |                          | template table name. See [Dynamic Table Creating](#dynamic-table-creating) |
-|  prevent_duplicate_insert            | boolean     | optional   | false                    | See [Prevent Duplication] (#prevent-duplication) |
+|  prevent_duplicate_insert            | boolean     | optional   | false                    | See [Prevent Duplication](#prevent-duplication) |
 |  job_status_max_polling_time         | int         | optional   | 3600 sec                 | Max job status polling time |
 |  job_status_polling_interval         | int         | optional   | 10 sec                   | Job status polling interval |
 |  is_skip_job_result_check            | boolean     | optional   | false                    | Skip waiting Load job finishes. Available for append, or delete_in_advance mode | 
