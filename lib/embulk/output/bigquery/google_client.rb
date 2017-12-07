@@ -8,6 +8,7 @@ module Embulk
       class NotFoundError < Error; end
       class BackendError < Error; end
       class InternalError < Error; end
+      class RateLimitExceeded < Error; end
 
       class GoogleClient
         def initialize(task, scope, client_class)
