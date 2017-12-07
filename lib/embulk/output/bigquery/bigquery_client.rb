@@ -8,6 +8,8 @@ module Embulk
   module Output
     class Bigquery < OutputPlugin
       class BigqueryClient < GoogleClient
+        BIGQUERY_TABLE_OPERATION_INTERVAL = 2 # https://cloud.google.com/bigquery/quotas
+
         def initialize(task, schema, fields = nil)
           scope = "https://www.googleapis.com/auth/bigquery"
           client_class = Google::Apis::BigqueryV2::BigqueryService
@@ -52,7 +54,11 @@ module Embulk
           retries = 0
           begin
             yield
-          rescue BackendError, InternalError => e
+          rescue BackendError, InternalError, RateLimitExceeded => e
+            if e.is_a?(RateLimitExceeded)
+              sleep(BIGQUERY_TABLE_OPERATION_INTERVAL)
+            end
+
             if retries < @task['retries']
               retries += 1
               Embulk.logger.warn { "embulk-output-bigquery: retry \##{retries}, #{e.message}" }
@@ -319,6 +325,8 @@ module Embulk
               raise BackendError, msg
             elsif _errors.any? {|error| error.reason == 'internalError' }
               raise InternalError, msg
+            elsif _errors.any? {|error| error.reason == 'rateLimitExceeded' }
+              raise RateLimitExceeded, msg
             else
               Embulk.logger.error { "embulk-output-bigquery: #{msg}" }
               raise Error, msg
