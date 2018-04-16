@@ -120,8 +120,8 @@ module Embulk
         end
 
         task['auth_method'] = task['auth_method'].downcase
-        unless %w[private_key json_key compute_engine].include?(task['auth_method'])
-          raise ConfigError.new "`auth_method` must be one of private_key, json_key, compute_engine"
+        unless %w[private_key json_key compute_engine application_default].include?(task['auth_method'])
+          raise ConfigError.new "`auth_method` must be one of private_key, json_key, compute_engine, application_default"
         end
         if task['auth_method'] == 'private_key' and task['p12_keyfile'].nil?
           raise ConfigError.new "`p12_keyfile` is required for auth_method private_key"
