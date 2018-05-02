@@ -1,3 +1,9 @@
+## 0.4.7 - 2017-05-02
+* [enhancement] Support location option to allow to use 'asia-northeast1' region
+
+## 0.4.6 - 2017-04-17
+* [enhancement] Support auth_method 'application_default'
+
 ## 0.4.5 - 2017-04-04
 
 * [maintenance] Fix deprecated warning log condition for `timeout_sec`
