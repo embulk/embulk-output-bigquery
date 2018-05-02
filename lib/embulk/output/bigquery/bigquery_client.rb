@@ -19,6 +19,8 @@ module Embulk
           reset_fields(fields) if fields
           @project = @task['project']
           @dataset = @task['dataset']
+          @location = @task['location']
+          @location_for_log = @location.nil? ? 'us/eu' : @location
 
           @task['source_format'] ||= 'CSV'
           @task['max_bad_records'] ||= 0
@@ -82,7 +84,7 @@ module Embulk
               else
                 job_id = "embulk_load_job_#{SecureRandom.uuid}"
               end
-              Embulk.logger.info { "embulk-output-bigquery: Load job starting... job_id:[#{job_id}] #{object_uris} => #{@project}:#{@dataset}.#{table}" }
+              Embulk.logger.info { "embulk-output-bigquery: Load job starting... job_id:[#{job_id}] #{object_uris} => #{@project}:#{@dataset}.#{table} in #{@location_for_log}" }
 
               body = {
                 job_reference: {
@@ -110,6 +112,10 @@ module Embulk
                   }
                 }
               }
+
+              if @location
+                body[:job_reference][:location] = @location
+              end
               
               if @task['schema_update_options']
                 body[:configuration][:load][:schema_update_options] = @task['schema_update_options']
@@ -128,7 +134,7 @@ module Embulk
               Embulk.logger.error {
                 "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts}), response:#{response}"
               }
-              raise Error, "failed to load #{object_uris} to #{@project}:#{@dataset}.#{table}, response:#{response}"
+              raise Error, "failed to load #{object_uris} to #{@project}:#{@dataset}.#{table} in #{@location_for_log}, response:#{response}"
             end
           end
         end
@@ -173,7 +179,7 @@ module Embulk
                 else
                   job_id = "embulk_load_job_#{SecureRandom.uuid}"
                 end
-                Embulk.logger.info { "embulk-output-bigquery: Load job starting... job_id:[#{job_id}] #{path} => #{@project}:#{@dataset}.#{table}" }
+                Embulk.logger.info { "embulk-output-bigquery: Load job starting... job_id:[#{job_id}] #{path} => #{@project}:#{@dataset}.#{table} in #{@location_for_log}" }
               else
                 Embulk.logger.info { "embulk-output-bigquery: Load job starting... #{path} does not exist, skipped" }
                 return
@@ -205,6 +211,10 @@ module Embulk
                 }
               }
 
+              if @location
+                body[:job_reference][:location] = @location
+              end
+
               if @task['schema_update_options']
                 body[:configuration][:load][:schema_update_options] = @task['schema_update_options']
               end
@@ -230,7 +240,7 @@ module Embulk
               Embulk.logger.error {
                 "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts}), response:#{response}"
               }
-              raise Error, "failed to load #{path} to #{@project}:#{@dataset}.#{table}, response:#{response}"
+              raise Error, "failed to load #{path} to #{@project}:#{@dataset}.#{table} in #{@location_for_log}, response:#{response}"
             end
           end
         end
@@ -268,6 +278,10 @@ module Embulk
                   }
                 }
               }
+
+              if @location
+                body[:job_reference][:location] = @location
+              end
 
               opts = {}
               Embulk.logger.debug { "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts})" }
@@ -312,7 +326,7 @@ module Embulk
                 "job_id:[#{job_id}] elapsed_time:#{elapsed.to_f}sec status:[#{status}]"
               }
               sleep wait_interval
-              _response = with_network_retry { client.get_job(@project, job_id) }
+              _response = with_network_retry { client.get_job(@project, job_id, location: @location) }
             end
           end
 
@@ -341,7 +355,7 @@ module Embulk
         def create_dataset(dataset = nil, reference: nil)
           dataset ||= @dataset
           begin
-            Embulk.logger.info { "embulk-output-bigquery: Create dataset... #{@project}:#{dataset}" }
+            Embulk.logger.info { "embulk-output-bigquery: Create dataset... #{@project}:#{dataset} in #{@location_for_log}" }
             hint = {}
             if reference
               response = get_dataset(reference)
@@ -353,8 +367,11 @@ module Embulk
                 dataset_id: dataset,
               },
             }.merge(hint)
+            if @location
+              body[:location] = @location
+            end
             opts = {}
-            Embulk.logger.debug { "embulk-output-bigquery: insert_dataset(#{@project}, #{dataset}, #{body}, #{opts})" }
+            Embulk.logger.debug { "embulk-output-bigquery: insert_dataset(#{@project}, #{dataset}, #{@location_for_log}, #{body}, #{opts})" }
             with_network_retry { client.insert_dataset(@project, body, opts) }
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             if e.status_code == 409 && /Already Exists:/ =~ e.message
@@ -366,14 +383,14 @@ module Embulk
             Embulk.logger.error {
               "embulk-output-bigquery: insert_dataset(#{@project}, #{body}, #{opts}), response:#{response}"
             }
-            raise Error, "failed to create dataset #{@project}:#{dataset}, response:#{response}"
+            raise Error, "failed to create dataset #{@project}:#{dataset} in #{@location_for_log}, response:#{response}"
           end
         end
 
         def get_dataset(dataset = nil)
           dataset ||= @dataset
           begin
-            Embulk.logger.info { "embulk-output-bigquery: Get dataset... #{@project}:#{@dataset}" }
+            Embulk.logger.info { "embulk-output-bigquery: Get dataset... #{@project}:#{dataset}" }
             with_network_retry { client.get_dataset(@project, dataset) }
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             if e.status_code == 404
@@ -416,7 +433,7 @@ module Embulk
             end
 
             opts = {}
-            Embulk.logger.debug { "embulk-output-bigquery: insert_table(#{@project}, #{dataset}, #{body}, #{opts})" }
+            Embulk.logger.debug { "embulk-output-bigquery: insert_table(#{@project}, #{dataset}, #{@location_for_log}, #{body}, #{opts})" }
             with_network_retry { client.insert_table(@project, dataset, body, opts) }
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             if e.status_code == 409 && /Already Exists:/ =~ e.message
@@ -426,9 +443,9 @@ module Embulk
 
             response = {status_code: e.status_code, message: e.message, error_class: e.class}
             Embulk.logger.error {
-              "embulk-output-bigquery: insert_table(#{@project}, #{dataset}, #{body}, #{opts}), response:#{response}"
+              "embulk-output-bigquery: insert_table(#{@project}, #{dataset}, #{@location_for_log}, #{body}, #{opts}), response:#{response}"
             }
-            raise Error, "failed to create table #{@project}:#{dataset}.#{table}, response:#{response}"
+            raise Error, "failed to create table #{@project}:#{dataset}.#{table} in #{@location_for_log}, response:#{response}"
           end
         end
 

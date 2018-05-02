@@ -94,6 +94,7 @@ module Embulk
       def test_create_load_job_id
         task = {
           'dataset' => 'your_dataset_name',
+          'location' => 'asia-northeast1',
           'table' => 'your_table_name',
           'source_format' => 'CSV',
           'max_bad_records' => nil,
@@ -108,6 +109,7 @@ module Embulk
         File.write("tmp/your_file_name", "foobarbaz")
         job_id = Helper.create_load_job_id(task, 'tmp/your_file_name', fields)
         assert job_id.is_a?(String)
+        assert_equal 'embulk_load_job_2abaf528b69987db0224e52bbd1f0eec', job_id
       end
     end
   end
