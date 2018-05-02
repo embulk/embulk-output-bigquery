@@ -49,6 +49,7 @@ module Embulk
         assert_equal nil, task['json_keyfile']
         assert_equal "your_project_name", task['project']
         assert_equal "your_dataset_name", task['dataset']
+        assert_equal nil, task['location']
         assert_equal "your_table_name", task['table']
         assert_equal nil, task['dataset_old']
         assert_equal nil, task['table_old']
@@ -100,6 +101,20 @@ module Embulk
         assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
 
         config = least_config.merge('mode' => 'replace_backup')
+        assert_raise { Bigquery.configure(config, schema, processor_count) }
+      end
+
+      def test_location
+        config = least_config.merge('location' => 'us')
+        assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
+
+        config = least_config.merge('location' => 'eu')
+        assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
+
+        config = least_config.merge('location' => 'asia-northeast1')
+        assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
+
+        config = least_config.merge('location' => 'asia-northeast1', 'auto_create_gcs_bucket' => true)
         assert_raise { Bigquery.configure(config, schema, processor_count) }
       end
 

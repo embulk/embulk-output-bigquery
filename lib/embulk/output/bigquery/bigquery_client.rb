@@ -19,6 +19,7 @@ module Embulk
           reset_fields(fields) if fields
           @project = @task['project']
           @dataset = @task['dataset']
+          @location = @task['location']
 
           @task['source_format'] ||= 'CSV'
           @task['max_bad_records'] ||= 0
@@ -110,6 +111,10 @@ module Embulk
                   }
                 }
               }
+
+              if @location
+                body[:job_reference][:location] = @location
+              end
               
               if @task['schema_update_options']
                 body[:configuration][:load][:schema_update_options] = @task['schema_update_options']
@@ -205,6 +210,10 @@ module Embulk
                 }
               }
 
+              if @location
+                body[:job_reference][:location] = @location
+              end
+
               if @task['schema_update_options']
                 body[:configuration][:load][:schema_update_options] = @task['schema_update_options']
               end
@@ -269,6 +278,10 @@ module Embulk
                 }
               }
 
+              if @location
+                body[:job_reference][:location] = @location
+              end
+
               opts = {}
               Embulk.logger.debug { "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts})" }
               response = with_network_retry { client.insert_job(@project, body, opts) }
@@ -312,7 +325,7 @@ module Embulk
                 "job_id:[#{job_id}] elapsed_time:#{elapsed.to_f}sec status:[#{status}]"
               }
               sleep wait_interval
-              _response = with_network_retry { client.get_job(@project, job_id) }
+              _response = with_network_retry { client.get_job(@project, job_id, location: @location) }
             end
           end
 
@@ -353,6 +366,9 @@ module Embulk
                 dataset_id: dataset,
               },
             }.merge(hint)
+            if @location
+              body[:location] = @location
+            end
             opts = {}
             Embulk.logger.debug { "embulk-output-bigquery: insert_dataset(#{@project}, #{dataset}, #{body}, #{opts})" }
             with_network_retry { client.insert_dataset(@project, body, opts) }

@@ -67,6 +67,7 @@ module Embulk
           elements = [
             Digest::MD5.file(path).hexdigest,
             task['dataset'],
+            task['location'],
             task['table'],
             fields,
             task['source_format'],
