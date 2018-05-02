@@ -44,6 +44,7 @@ v0.3.x has incompatibility changes with v0.2.x. Please see [CHANGELOG.md](CHANGE
 |  json_keyfile                        | string      | required when auth_method is json_key     |   | Fullpath of json key |
 |  project                             | string      | required if json_keyfile is not given     |   | project_id |
 |  dataset                             | string      | required   |                          | dataset |
+|  location                            | string      | optional   | nil                      | geographic location of dataset. See [Location](#location) |
 |  table                               | string      | required   |                          | table name, or table name with a partition decorator such as `table_name$20160929`|
 |  auto_create_dataset                 | boolean     | optional   | false                    | automatically create dataset |
 |  auto_create_table                   | boolean     | optional   | false                    | See [Dynamic Table Creating](#dynamic-table-creating) |
@@ -122,6 +123,14 @@ out:
   compression: GZIP
   source_format: NEWLINE_DELIMITED_JSON
 ```
+
+### location
+
+The geographic location of the dataset. Required except for US and EU.
+
+`auto_create_table` isn't supported except for US and EU. And GCS bucket should be in same region when you use `gcs_bucket`.
+
+See also [Dataset Locations | BigQuery | Google Cloud](https://cloud.google.com/bigquery/docs/dataset-locations)
 
 ### mode
 
