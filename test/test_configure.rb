@@ -113,9 +113,6 @@ module Embulk
 
         config = least_config.merge('location' => 'asia-northeast1')
         assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
-
-        config = least_config.merge('location' => 'asia-northeast1', 'auto_create_gcs_bucket' => true)
-        assert_raise { Bigquery.configure(config, schema, processor_count) }
       end
 
       def test_dataset_table_old
