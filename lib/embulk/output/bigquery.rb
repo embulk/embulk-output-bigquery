@@ -113,17 +113,6 @@ module Embulk
           task['table_old']   ||= task['table']
         end
 
-        unless task['location'].nil?
-          task['location'] = task['location'].downcase
-          # google-api-client doesn't support create bucket with region
-          # We need to use Cloud Storage Client Libraries to support it
-          if task['auto_create_gcs_bucket']
-            unless %w[us eu].include?(task['location'])
-              raise ConfigError.new "`auto_create_gcs_bucket` isn't supported excepts in us/eu"
-            end
-          end
-        end
-
         if task['table_old']
           task['table_old'] = now.strftime(task['table_old'])
         end

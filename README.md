@@ -128,8 +128,6 @@ out:
 
 The geographic location of the dataset. Required except for US and EU.
 
-`auto_create_table` isn't supported except for US and EU. And GCS bucket should be in same region when you use `gcs_bucket`.
-
 See also [Dataset Locations | BigQuery | Google Cloud](https://cloud.google.com/bigquery/docs/dataset-locations)
 
 ### mode
