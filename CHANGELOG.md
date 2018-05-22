@@ -1,3 +1,6 @@
+## 0.4.8 - 2017-05-23
+* [enhancement] Support location option for auto_create_gcs_bucket option (thanks to @potato2003)
+
 ## 0.4.7 - 2017-05-02
 * [enhancement] Support location option to allow to use 'asia-northeast1' region
 
