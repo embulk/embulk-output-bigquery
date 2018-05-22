@@ -17,15 +17,21 @@ module Embulk
 
           @project = @task['project']
           @bucket = @task['gcs_bucket']
+          @location = @task['location']
         end
 
         def insert_bucket(bucket = nil)
           bucket ||= @bucket
           begin
             Embulk.logger.info { "embulk-output-bigquery: Insert bucket... #{@project}:#{bucket}" }
-            body  = {
-              name: bucket,
+            body = {
+              name: bucket
             }
+
+            if @location
+              body[:location] = @location
+            end
+
             opts = {}
 
             Embulk.logger.debug { "embulk-output-bigquery: insert_bucket(#{@project}, #{body}, #{opts})" }
