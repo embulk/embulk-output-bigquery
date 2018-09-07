@@ -25,7 +25,19 @@ module Embulk
           begin
             Embulk.logger.info { "embulk-output-bigquery: Insert bucket... #{@project}:#{bucket}" }
             body = {
-              name: bucket
+              name: bucket,
+              lifecycle: {
+                rule: [
+                  {
+                    action: {
+                      type: "Delete",
+                    },
+                    condition: {
+                      age: 1,
+                    }
+                  },
+                ]
+              }
             }
 
             if @location
