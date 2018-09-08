@@ -1,5 +1,8 @@
+## 0.4.9 - 2018-09-08
+* [enhancement] Enable object lifecycle management when creating buckets with `auto_create_gcs_bucket` (thanks to @potato2003)
+
 ## 0.4.8 - 2017-05-23
-* [enhancement] Support location option for auto_create_gcs_bucket option (thanks to @potato2003)
+* [enhancement] Support location option for `auto_create_gcs_bucket` option (thanks to @potato2003)
 
 ## 0.4.7 - 2017-05-02
 * [enhancement] Support location option to allow to use 'asia-northeast1' region
