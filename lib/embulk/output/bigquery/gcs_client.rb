@@ -20,12 +20,24 @@ module Embulk
           @location = @task['location']
         end
 
-        def insert_bucket(bucket = nil)
+        def insert_temporary_bucket(bucket = nil)
           bucket ||= @bucket
           begin
             Embulk.logger.info { "embulk-output-bigquery: Insert bucket... #{@project}:#{bucket}" }
             body = {
-              name: bucket
+              name: bucket,
+              lifecycle: {
+                rule: [
+                  {
+                    action: {
+                      type: "Delete",
+                    },
+                    condition: {
+                      age: 1,
+                    }
+                  },
+                ]
+              }
             }
 
             if @location
@@ -34,7 +46,7 @@ module Embulk
 
             opts = {}
 
-            Embulk.logger.debug { "embulk-output-bigquery: insert_bucket(#{@project}, #{body}, #{opts})" }
+            Embulk.logger.debug { "embulk-output-bigquery: insert_temporary_bucket(#{@project}, #{body}, #{opts})" }
             with_network_retry { client.insert_bucket(@project, body, opts) }
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             if e.status_code == 409 && /conflict:/ =~ e.message
@@ -43,7 +55,7 @@ module Embulk
             end
             response = {status_code: e.status_code, message: e.message, error_class: e.class}
             Embulk.logger.error {
-              "embulk-output-bigquery: insert_bucket(#{@project}, #{body}, #{opts}), response:#{response}"
+              "embulk-output-bigquery: insert_temporary_bucket(#{@project}, #{body}, #{opts}), response:#{response}"
             }
             raise Error, "failed to insert bucket #{@project}:#{bucket}, response:#{response}"
           end
