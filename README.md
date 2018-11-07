@@ -105,7 +105,9 @@ Following options are same as [bq command-line tools](https://cloud.google.com/b
 |  allow_quoted_newlines            | boolean  | optional  | false   | Set true, if data contains newline characters. It may cause slow procsssing |
 |  time_partitioning                | hash     | optional  | `{"type":"DAY"}` if `table` parameter has a partition decorator, otherwise nil | See [Time Partitioning](#time-partitioning) |
 |  time_partitioning.type           | string   | required  | nil     | The only type supported is DAY, which will generate one partition per day based on data loading time. |
-|  time_partitioning.expiration_ms | int      | optional  | nil     | Number of milliseconds for which to keep the storage for a partition. partition |
+|  time_partitioning.expiration_ms  | int      | optional  | nil     | Number of milliseconds for which to keep the storage for a partition. |
+|  time_partitioning.field          | string   | optional  | nil     | `DATE` or `TIMESTAMP` column used for partitioning |
+|  time_partitioning.requirePartitionFilter | boolean      | optional  | nil     | If ture, valid partition filter is required when query |
 |  schema_update_options            | array    | optional  | nil     | (Experimental) List of `ALLOW_FIELD_ADDITION` or `ALLOW_FIELD_RELAXATION` or both. See [jobs#configuration.load.schemaUpdateOptions](https://cloud.google.com/bigquery/docs/reference/v2/jobs#configuration.load.schemaUpdateOptions). NOTE for the current status: `schema_update_options` does not work for `copy` job, that is, is not effective for most of modes such as `append`, `append_direct`, `replace`, `replace_backup` (except `delete_in_advance`) |
 
 ### Example
@@ -408,6 +410,19 @@ out:
     type: DAY
     expiration_ms: 259200000
 ```
+
+You can also create column-based partitioning table as:
+```yaml
+out:
+  type: bigquery
+  mode: replace
+  auto_create_table: true
+  table: table_name
+  time_partitioning:
+    type: DAY
+    field: timestamp
+```
+Note the `time_partitioning.field` should be top-level `DATE` or `TIMESTAMP`.
 
 Use [Tables: patch](https://cloud.google.com/bigquery/docs/reference/v2/tables/patch) API to update the schema of the partitioned table, embulk-output-bigquery itself does not support it, though.
 Note that only adding a new column, and relaxing non-necessary columns to be `NULLABLE` are supported now. Deleting columns, and renaming columns are not supported.
