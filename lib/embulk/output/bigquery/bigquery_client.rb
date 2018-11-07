@@ -429,6 +429,8 @@ module Embulk
               body[:time_partitioning] = {
                 type: options['time_partitioning']['type'],
                 expiration_ms: options['time_partitioning']['expiration_ms'],
+                field: options['time_partitioning']['field'],
+                requirePartitionFilter: options['time_partitioning']['requirePartitionFilter'],
               }
             end
 
