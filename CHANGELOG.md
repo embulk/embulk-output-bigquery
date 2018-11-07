@@ -1,3 +1,6 @@
+## 0.4.10 - 2018-11-08
+* [enhancement] Support column-based partition (thanks to Chi-Ruei Li)
+
 ## 0.4.9 - 2018-09-08
 * [enhancement] Enable object lifecycle management when creating buckets with `auto_create_gcs_bucket` (thanks to @potato2003)
 
