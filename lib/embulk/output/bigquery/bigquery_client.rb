@@ -237,10 +237,17 @@ module Embulk
               end
             rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
               response = {status_code: e.status_code, message: e.message, error_class: e.class}
-              Embulk.logger.error {
-                "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts}), response:#{response}"
-              }
-              raise Error, "failed to load #{path} to #{@project}:#{@dataset}.#{table} in #{@location_for_log}, response:#{response}"
+              # https://cloud.google.com/bigquery/troubleshooting-errors
+              if @task['ignore_duplicate_error'] && e.status_code == 409
+                Embulk.logger.warn {
+                  "embulk-output-bigquery: Skip duplicated insert_job(#{@project}, #{body}, #{opts}), response:#{response}"
+                }
+              else
+                Embulk.logger.error {
+                  "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts}), response:#{response}"
+                }
+                raise Error, "failed to load #{path} to #{@project}:#{@dataset}.#{table} in #{@location_for_log}, response:#{response}"
+              end
             end
           end
         end
