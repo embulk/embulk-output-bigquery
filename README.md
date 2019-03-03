@@ -444,16 +444,24 @@ $ embulk run -X page_size=1 -b . -l trace example/example.yml
 
 ### Run test:
 
+Place your embulk with `.jar` extension:
+
 ```
-$ bundle exec rake test
+$ cp -a $(which embulk) embulk.jar
+```
+
+Run tests with `env RUBYOPT="-r ./embulk.jar`:
+
+```
+$ bundle exec env RUBYOPT="-r ./embulk.jar" rake test
 ```
 
 To run tests which actually connects to BigQuery such as test/test\_bigquery\_client.rb,
 prepare a json\_keyfile at example/your-project-000.json, then
 
 ```
-$ bundle exec ruby test/test_bigquery_client.rb
-$ bundle exec ruby test/test_example.rb
+$ bundle exec env RUBYOPT="-r ./embulk.jar" ruby test/test_bigquery_client.rb
+$ bundle exec env RUBYOPT="-r ./embulk.jar" ruby test/test_example.rb
 ```
 
 ### Release gem:
