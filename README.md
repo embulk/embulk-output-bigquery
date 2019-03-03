@@ -14,7 +14,7 @@ https://developers.google.com/bigquery/loading-data-into-bigquery
 * **Cleanup supported**: no
 * **Dynamic table creating**: yes
 
-### NOT IMPLEMENTED 
+### NOT IMPLEMENTED
 * insert data over streaming inserts
   * for continuous real-time insertions
   * Please use other product, like [fluent-plugin-bigquery](https://github.com/kaizenplatform/fluent-plugin-bigquery)
@@ -35,7 +35,7 @@ v0.3.x has incompatibility changes with v0.2.x. Please see [CHANGELOG.md](CHANGE
 
 #### Original options
 
-| name                                 | type        | required?  | default                  | description            |  
+| name                                 | type        | required?  | default                  | description            |
 |:-------------------------------------|:------------|:-----------|:-------------------------|:-----------------------|
 |  mode                                | string      | optional   | "append"                 | See [Mode](#mode)     |
 |  auth_method                         | string      | optional   | "private_key"            | `private_key` , `json_key` or `compute_engine`
@@ -53,7 +53,7 @@ v0.3.x has incompatibility changes with v0.2.x. Please see [CHANGELOG.md](CHANGE
 |  prevent_duplicate_insert            | boolean     | optional   | false                    | See [Prevent Duplication](#prevent-duplication) |
 |  job_status_max_polling_time         | int         | optional   | 3600 sec                 | Max job status polling time |
 |  job_status_polling_interval         | int         | optional   | 10 sec                   | Job status polling interval |
-|  is_skip_job_result_check            | boolean     | optional   | false                    | Skip waiting Load job finishes. Available for append, or delete_in_advance mode | 
+|  is_skip_job_result_check            | boolean     | optional   | false                    | Skip waiting Load job finishes. Available for append, or delete_in_advance mode |
 |  with_rehearsal                      | boolean     | optional   | false                    | Load `rehearsal_counts` records as a rehearsal. Rehearsal loads into REHEARSAL temporary table, and delete finally. You may use this option to investigate data errors as early stage as possible |
 |  rehearsal_counts                    | integer     | optional   | 1000                     | Specify number of records to load in a rehearsal |
 |  abort_on_error                      | boolean     | optional   | true if max_bad_records is 0, otherwise false | Raise an error if number of input rows and number of output rows does not match |
@@ -80,7 +80,7 @@ Client or request options
 
 Options for intermediate local files
 
-| name                                 | type        | required?  | default                  | description            |  
+| name                                 | type        | required?  | default                  | description            |
 |:-------------------------------------|:------------|:-----------|:-------------------------|:-----------------------|
 |  path_prefix                         | string      | optional   |                          | Path prefix of local files such as "/tmp/prefix_". Default randomly generates with [tempfile](http://ruby-doc.org/stdlib-2.2.3/libdoc/tempfile/rdoc/Tempfile.html) |
 |  sequence_format                     | string      | optional   | .%d.%d                   | Sequence format for pid, thread id |
