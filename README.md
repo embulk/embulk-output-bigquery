@@ -372,7 +372,7 @@ This is useful to reduce number of consumed jobs, which is limited by [50,000 jo
 
 This plugin originally loads local files into BigQuery in parallel, that is, consumes a number of jobs, say 24 jobs on 24 CPU core machine for example (this depends on embulk parameters such as `min_output_tasks` and `max_threads`).
 
-BigQuery supports loading multiple files from GCS with one job (but not from local files, sigh), therefore, uploading local files to GCS and then loading from GCS into BigQuery reduces number of consumed jobs.
+BigQuery supports loading multiple files from GCS with one job, therefore, uploading local files to GCS in parallel and then loading from GCS into BigQuery reduces number of consumed jobs to 1.
 
 Using `gcs_bucket` option, such strategy is enabled. You may also use `auto_create_gcs_bucket` to create the specified GCS bucket automatically.
 
