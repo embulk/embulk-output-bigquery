@@ -1,11 +1,17 @@
 language: ruby
 matrix:
   include:
-    - rvm: jruby-9.0.5.0
-      jdk: openjdk7 # embulk 8.x uses jdk7. jruby-9.2.x.x does not support jdk7
-    - rvm: jruby-9.2.6.0
-      jdk: openjdk8 # embulk 9.x uses jdk8
-    - rvm: jruby-head
-      jdk: openjdk8
-  allow_failures:
-    - rvm: jruby-head
+    - env: EMBULK_VERSION=0.8.39
+      rvm: jruby-9.1.5.0 # bundled jruby version
+      jdk: openjdk7 # embulk 0.8.x uses jdk7
+#      - env: EMBULK_VERSION=0.9.15
+#        rvm: jruby-9.1.5.0 # bundled jruby version
+#        jdk: openjdk8 # embulk 0.9.x uses jdk8
+#      - env: EMBULK_VERSION=latest
+#        rvm: jruby-9.1.5.0 # ?
+#        jdk: openjdk8 # ?
+#    allow_failures:
+#      - env: EMBULK_VERSION=latest
+# before_install:
+#   - curl -o embulk.jar --create-dirs -L "http://dl.embulk.org/embulk-${EMBULK_VERSION}.jar"
+# script: bundle exec env RUBYOPT="-r $PWD/embulk.jar -r embulk" rake test
