@@ -331,9 +331,11 @@ module Embulk
           end
 
           # cf. http://www.rubydoc.info/github/google/google-api-ruby-client/Google/Apis/BigqueryV2/JobStatus#errors-instance_method
-          # `errors` returns Array<Google::Apis::BigqueryV2::ErrorProto> if any error exists.
+          # `error_result` returns Google::Apis::BigqueryV2::ErrorProto if job failed.
           # Otherwise, this returns nil.
-          if _errors = _response.status.errors
+          if _response.status.error_result
+            # `errors` returns Array<Google::Apis::BigqueryV2::ErrorProto> if any error exists.
+            _errors = _response.status.errors
             msg = "failed during waiting a #{kind} job, get_job(#{@project}, #{job_id}), errors:#{_errors.map(&:to_h)}"
             if _errors.any? {|error| error.reason == 'backendError' }
               raise BackendError, msg
