@@ -1,3 +1,7 @@
+## 0.4.11 - 2019-03-07
+
+* [maintenance] Fix to use `response.status.error_result` instead of `response.status.errors` to check job failure status (thanks to @nownabe)
+
 ## 0.4.10 - 2018-11-08
 * [enhancement] Support column-based partition (thanks to Chi-Ruei Li)
 
