@@ -441,6 +441,13 @@ module Embulk
               }
             end
 
+            options['clustering'] ||= @task['clustering']
+            if options['clustering']
+              body[:clustering] = {
+                fields: options['clustering']['fields'],
+              }
+            end
+
             opts = {}
             Embulk.logger.debug { "embulk-output-bigquery: insert_table(#{@project}, #{dataset}, #{@location_for_log}, #{body}, #{opts})" }
             with_network_retry { client.insert_table(@project, dataset, body, opts) }

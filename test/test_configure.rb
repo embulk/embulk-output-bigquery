@@ -84,6 +84,7 @@ module Embulk
         assert_equal false, task['ignore_unknown_values']
         assert_equal false, task['allow_quoted_newlines']
         assert_equal nil, task['time_partitioning']
+        assert_equal nil, task['clustering']
         assert_equal false, task['skip_load']
       end
 
@@ -275,6 +276,14 @@ module Embulk
         config = least_config.merge('table' => 'table_name$20160912')
         task = Bigquery.configure(config, schema, processor_count)
         assert_equal 'DAY', task['time_partitioning']['type']
+      end
+
+      def test_clustering
+        config = least_config.merge('clustering' => {'fields' => ['field_a']})
+        assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
+
+        config = least_config.merge('clustering' => {})
+        assert_raise { Bigquery.configure(config, schema, processor_count) }
       end
 
       def test_schema_update_options
