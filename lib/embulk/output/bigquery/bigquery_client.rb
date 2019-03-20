@@ -437,7 +437,7 @@ module Embulk
                 type: options['time_partitioning']['type'],
                 expiration_ms: options['time_partitioning']['expiration_ms'],
                 field: options['time_partitioning']['field'],
-                requirePartitionFilter: options['time_partitioning']['requirePartitionFilter'],
+                require_partition_filter: options['time_partitioning']['require_partition_filter'],
               }
             end
 
