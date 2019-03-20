@@ -466,7 +466,7 @@ $ bundle exec env RUBYOPT="-r ./embulk.jar" ruby test/test_example.rb
 
 ### Release gem:
 
-Fix gemspec, then
+Change the version of gemspec, and write CHANGELOG.md. Then,
 
 ```
 $ bundle exec rake release
