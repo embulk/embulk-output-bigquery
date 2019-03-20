@@ -1,3 +1,7 @@
+## 0.4.12 - 2019-03-20
+
+* [maintenance] Fix `time_partitioning.requirePartitionFilter` was not working. Use `time_partitioning.require_partition_filter` (thanks to @gitetsu)
+
 ## 0.4.11 - 2019-03-07
 
 * [maintenance] Fix to use `response.status.error_result` instead of `response.status.errors` to check job failure status (thanks to @nownabe)
