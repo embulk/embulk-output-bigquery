@@ -107,7 +107,7 @@ Following options are same as [bq command-line tools](https://cloud.google.com/b
 |  time_partitioning.type           | string   | required  | nil     | The only type supported is DAY, which will generate one partition per day based on data loading time. |
 |  time_partitioning.expiration_ms  | int      | optional  | nil     | Number of milliseconds for which to keep the storage for a partition. |
 |  time_partitioning.field          | string   | optional  | nil     | `DATE` or `TIMESTAMP` column used for partitioning |
-|  time_partitioning.requirePartitionFilter | boolean      | optional  | nil     | If true, valid partition filter is required when query |
+|  time_partitioning.require_partition_filter | boolean      | optional  | nil     | If true, valid partition filter is required when query |
 |  schema_update_options            | array    | optional  | nil     | (Experimental) List of `ALLOW_FIELD_ADDITION` or `ALLOW_FIELD_RELAXATION` or both. See [jobs#configuration.load.schemaUpdateOptions](https://cloud.google.com/bigquery/docs/reference/v2/jobs#configuration.load.schemaUpdateOptions). NOTE for the current status: `schema_update_options` does not work for `copy` job, that is, is not effective for most of modes such as `append`, `replace` and `replace_backup`. `delete_in_advance` deletes origin table so does not need to update schema. Only `append_direct` can utilize schema update. |
 
 ### Example
