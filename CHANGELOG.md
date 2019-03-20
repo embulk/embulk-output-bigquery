@@ -1,3 +1,7 @@
+## 0.4.13 - 2019-03-20
+
+* [enhancement] Support clustered table as an experimental feature
+
 ## 0.4.12 - 2019-03-20
 
 * [maintenance] Fix `time_partitioning.requirePartitionFilter` was not working. Use `time_partitioning.require_partition_filter` (thanks to @gitetsu)
