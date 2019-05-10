@@ -47,7 +47,7 @@ v0.3.x has incompatibility changes with v0.2.x. Please see [CHANGELOG.md](CHANGE
 |  location                            | string      | optional   | nil                      | geographic location of dataset. See [Location](#location) |
 |  table                               | string      | required   |                          | table name, or table name with a partition decorator such as `table_name$20160929`|
 |  auto_create_dataset                 | boolean     | optional   | false                    | automatically create dataset |
-|  auto_create_table                   | boolean     | optional   | false                    | See [Dynamic Table Creating](#dynamic-table-creating) |
+|  auto_create_table                   | boolean     | optional   | false                    | See [Dynamic Table Creating](#dynamic-table-creating) and [Time Partitioning](#time-partitioning) |
 |  schema_file                         | string      | optional   |                          | /path/to/schema.json |
 |  template_table                      | string      | optional   |                          | template table name. See [Dynamic Table Creating](#dynamic-table-creating) |
 |  prevent_duplicate_insert            | boolean     | optional   | false                    | See [Prevent Duplication](#prevent-duplication) |
@@ -250,9 +250,10 @@ out:
 
 ### Dynamic table creating
 
-When `auto_create_table` is set to true, try to create the table using BigQuery API.
+This plugin tries to create a table using BigQuery API when
 
-If table already exists, insert into it.
+* mode is either of `delete_in_advance`, `replace`, `replace_backup`, `append`.
+* mode is `append_direct` and `auto_create_table` is true.
 
 There are 3 ways to set schema.
 
