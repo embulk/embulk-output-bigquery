@@ -1,5 +1,4 @@
 require_relative './helper'
-require 'bundler'
 
 # 1. Prepare example/your-project-000.json
 # 2. embulk bundle
