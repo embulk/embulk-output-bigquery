@@ -455,7 +455,7 @@ $ curl -o embulk.jar --create-dirs -L "http://dl.embulk.org/embulk-latest.jar"
 $ chmod a+x embulk.jar
 ```
 
-Investigate JRUBY\_VERSION included in the embulk.jar:
+Investigate JRUBY\_VERSION and Bundler::VERSION included in the embulk.jar:
 
 ```
 $ echo JRUBY_VERSION | ./embulk.jar irb
@@ -463,15 +463,26 @@ $ echo JRUBY_VERSION | ./embulk.jar irb
 Switch to inspect mode.
 JRUBY_VERSION
 "X.X.X.X"
+
+$ echo "require 'bundler'; Bundler::VERSION" | ./embulk.jar irb
+2019-08-10 01:59:10.460 +0900: Embulk v0.9.17
+Switch to inspect mode.
+require 'bundler'; Bundler::VERSION
+"Y.Y.Y"
 ```
 
-Install the same version of jruby (change X.X.X.X to the version shown above):
+Install the same version of jruby (change X.X.X.X to the version shown above) and bundler:
 
 ```
 $ rbenv install jruby-X.X.X.X
 $ rbenv local jruby-X.X.X.X
-$ gem install bundler
-$ bundle install
+$ gem install bundler -v Y.Y.Y
+```
+
+Install dependencies (NOTE: Use bundler included in the embulk.jar, otherwise, `gem 'embulk'` is not found):
+
+```
+$ ./embulk.jar bundle install --path vendor/bundle
 ```
 
 Run tests with `env RUBYOPT="-r ./embulk.jar`:
