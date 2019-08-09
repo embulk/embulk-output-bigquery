@@ -7,7 +7,7 @@ require 'embulk'
 begin
   # Embulk ~> 0.8.x
   Embulk.setup
-rescue NotImplementedError
+rescue NotImplementedError, NoMethodError, NameError
   # Embulk ~> 0.9.x
   require 'embulk/java/bootstrap'
 end

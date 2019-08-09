@@ -449,8 +449,29 @@ $ embulk run -X page_size=1 -b . -l trace example/example.yml
 
 Place your embulk with `.jar` extension:
 
+
 ```
-$ cp -a $(which embulk) embulk.jar
+$ curl -o embulk.jar --create-dirs -L "http://dl.embulk.org/embulk-latest.jar"
+$ chmod a+x embulk.jar
+```
+
+Investigate JRUBY\_VERSION included in the embulk.jar:
+
+```
+$ echo JRUBY_VERSION | ./embulk.jar irb
+2019-08-10 00:59:11.866 +0900: Embulk v0.9.17
+Switch to inspect mode.
+JRUBY_VERSION
+"X.X.X.X"
+```
+
+Install the same version of jruby (change X.X.X.X to the version shown above):
+
+```
+$ rbenv install jruby-X.X.X.X
+$ rbenv local jruby-X.X.X.X
+$ gem install bundler
+$ bundle install
 ```
 
 Run tests with `env RUBYOPT="-r ./embulk.jar`:
