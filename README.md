@@ -158,6 +158,8 @@ This is not transactional, i.e., if fails, the target table could have some rows
 
 ```is_skip_job_result_check``` must be false when replace mode
 
+NOTE: BigQuery does not support replacing (actually, copying into) a non-partitioned table with a paritioned table atomically. You must once delete the non-partitioned table, otherwise, you get `Incompatible table partitioning specification when copying to the column partitioned table` error.
+
 ##### replace_backup
 
 1. Load to temporary table (Create and WRITE_APPEND in parallel)

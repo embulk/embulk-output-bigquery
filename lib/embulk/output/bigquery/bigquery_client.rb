@@ -116,11 +116,11 @@ module Embulk
               if @location
                 body[:job_reference][:location] = @location
               end
-              
+
               if @task['schema_update_options']
                 body[:configuration][:load][:schema_update_options] = @task['schema_update_options']
               end
-              
+
               opts = {}
 
               Embulk.logger.debug { "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts})" }
@@ -412,7 +412,7 @@ module Embulk
           end
         end
 
-        def create_table(table, dataset: nil, options: nil)
+        def create_table_if_not_exists(table, dataset: nil, options: nil)
           begin
             dataset ||= @dataset
             options ||= {}
@@ -466,8 +466,17 @@ module Embulk
         end
 
         def delete_table(table, dataset: nil)
+          table = Helper.chomp_partition_decorator(table)
+          delete_table_or_partition(table, dataset: dataset)
+        end
+
+        def delete_partition(table, dataset: nil)
+          delete_table_or_partition(table, dataset: dataset)
+        end
+
+        # if `table` with a partition decorator is given, a partition is deleted.
+        def delete_table_or_partition(table, dataset: nil)
           begin
-            table = Helper.chomp_partition_decorator(table)
             dataset ||= @dataset
             Embulk.logger.info { "embulk-output-bigquery: Delete table... #{@project}:#{dataset}.#{table}" }
             with_network_retry { client.delete_table(@project, dataset, table) }
@@ -486,8 +495,16 @@ module Embulk
         end
 
         def get_table(table, dataset: nil)
+          table = Helper.chomp_partition_decorator(table)
+          get_table_or_partition(table)
+        end
+
+        def get_partition(table, dataset: nil)
+          get_table_or_partition(table)
+        end
+
+        def get_table_or_partition(table, dataset: nil)
           begin
-            table = Helper.chomp_partition_decorator(table)
             dataset ||= @dataset
             Embulk.logger.info { "embulk-output-bigquery: Get table... #{@project}:#{dataset}.#{table}" }
             with_network_retry { client.get_table(@project, dataset, table) }
@@ -501,21 +518,6 @@ module Embulk
               "embulk-output-bigquery: get_table(#{@project}, #{dataset}, #{table}), response:#{response}"
             }
             raise Error, "failed to get table #{@project}:#{dataset}.#{table}, response:#{response}"
-          end
-        end
-
-        # Is this only a way to drop partition?
-        def delete_partition(table_with_partition, dataset: nil)
-          dataset ||= @dataset
-          begin
-            table = Helper.chomp_partition_decorator(table_with_partition)
-            get_table(table, dataset: dataset)
-          rescue NotFoundError
-          else
-            Embulk.logger.info { "embulk-output-bigquery: Delete partition... #{@project}:#{dataset}.#{table_with_partition}" }
-            Tempfile.create('embulk_output_bigquery_empty_file_') do |fp|
-              load(fp.path, table_with_partition, write_disposition: 'WRITE_TRUNCATE')
-            end
           end
         end
       end
