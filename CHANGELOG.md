@@ -1,3 +1,12 @@
+## 0.6.0 - 2019-08-11
+
+Cleanup `auth_method`:
+
+* [enhancement] Support `auth_method: authorized_user` (OAuth)
+* [incompatibility change] Rename `auth_method: json_key` to `auth_method: service_account` (`json_key` is kept for backward compatibility)
+* [incompatibility change] Remove deprecated `auth_method: private_key` (p12 key)
+* [incompatibility change] Change the default `auth_method` to `application_default` from `private_key`.
+
 ## 0.5.0 - 2019-08-10
 
 * [incompatibility change] Drop deprecated `time_partitioning`.`require_partition_filter`
