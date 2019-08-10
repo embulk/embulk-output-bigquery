@@ -55,7 +55,7 @@ module Embulk
         assert_equal nil, task['table_old']
         assert_equal nil, task['table_name_old']
         assert_equal false, task['auto_create_dataset']
-        assert_equal false, task['auto_create_table']
+        assert_equal true, task['auto_create_table']
         assert_equal nil, task['schema_file']
         assert_equal nil, task['template_table']
         assert_equal true, task['delete_from_local_when_job_end']
@@ -161,22 +161,22 @@ module Embulk
       end
 
       def test_payload_column
-        config = least_config.merge('payload_column' => schema.first.name)
+        config = least_config.merge('payload_column' => schema.first.name, 'auto_create_table' => false, 'mode' => 'append_direct')
         task = Bigquery.configure(config, schema, processor_count)
         assert_equal task['payload_column_index'], 0
 
-        config = least_config.merge('payload_column' => 'not_exist')
+        config = least_config.merge('payload_column' => 'not_exist', 'auto_create_table' => false, 'mode' => 'append_direct')
         assert_raise { Bigquery.configure(config, schema, processor_count) }
       end
 
       def test_payload_column_index
-        config = least_config.merge('payload_column_index' => 0)
+        config = least_config.merge('payload_column_index' => 0, 'auto_create_table' => false, 'mode' => 'append_direct')
         assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
 
-        config = least_config.merge('payload_column_index' => -1)
+        config = least_config.merge('payload_column_index' => -1, 'auto_create_table' => false, 'mode' => 'append_direct')
         assert_raise { Bigquery.configure(config, schema, processor_count) }
 
-        config = least_config.merge('payload_column_index' => schema.size)
+        config = least_config.merge('payload_column_index' => schema.size, 'auto_create_table' => false, 'mode' => 'append_direct')
         assert_raise { Bigquery.configure(config, schema, processor_count) }
       end
 
