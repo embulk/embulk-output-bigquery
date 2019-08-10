@@ -213,7 +213,7 @@ You can also embed contents of `json_keyfile` at config.yml.
 ```yaml
 out:
   type: bigquery
-  auth_method: service_account
+  auth_method: authorized_user
   json_keyfile:
     content: |
       {
