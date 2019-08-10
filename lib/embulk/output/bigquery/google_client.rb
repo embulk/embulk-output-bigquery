@@ -38,19 +38,8 @@ module Embulk
           Embulk.logger.debug { "embulk-output-bigquery: request_options: #{client.request_options.to_h}" }
 
           case @task['auth_method']
-          when 'private_key'
-            private_key_passphrase = 'notasecret'
-            key = Google::APIClient::KeyUtils.load_from_pkcs12(@task['p12_keyfile'], private_key_passphrase)
-            auth = Signet::OAuth2::Client.new(
-              token_credential_uri: "https://accounts.google.com/o/oauth2/token",
-              audience: "https://accounts.google.com/o/oauth2/token",
-              scope: @scope,
-              issuer: @task['service_account_email'],
-              signing_key: key)
-
           when 'compute_engine'
             auth = Google::Auth::GCECredentials.new
-
           when 'json_key'
             json_key = @task['json_keyfile']
             if File.exist?(json_key)
@@ -61,10 +50,8 @@ module Embulk
               key = StringIO.new(json_key)
               auth = Google::Auth::ServiceAccountCredentials.make_creds(json_key_io: key, scope: @scope)
             end
-
           when 'application_default'
             auth = Google::Auth.get_application_default([@scope])
-
           else
             raise ConfigError, "Unknown auth method: #{@task['auth_method']}"
           end

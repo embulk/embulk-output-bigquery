@@ -61,10 +61,6 @@ else
           def test_json_keyfile
             assert_nothing_raised { BigqueryClient.new(least_task, schema).client }
           end
-
-          def test_p12_keyfile
-            # pending
-          end
         end
 
         sub_test_case "create_dataset" do

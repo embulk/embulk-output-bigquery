@@ -33,9 +33,7 @@ module Embulk
       def self.configure(config, schema, task_count)
         task = {
           'mode'                           => config.param('mode',                           :string,  :default => 'append'),
-          'auth_method'                    => config.param('auth_method',                    :string,  :default => 'private_key'),
-          'service_account_email'          => config.param('service_account_email',          :string,  :default => nil),
-          'p12_keyfile'                    => config.param('p12_keyfile',                    :string,  :default => nil),
+          'auth_method'                    => config.param('auth_method',                    :string,  :default => 'json_key'),
           'json_keyfile'                   => config.param('json_keyfile',                  LocalFile, :default => nil),
           'project'                        => config.param('project',                        :string,  :default => nil),
           'dataset'                        => config.param('dataset',                        :string),
@@ -125,11 +123,8 @@ module Embulk
         end
 
         task['auth_method'] = task['auth_method'].downcase
-        unless %w[private_key json_key compute_engine application_default].include?(task['auth_method'])
-          raise ConfigError.new "`auth_method` must be one of private_key, json_key, compute_engine, application_default"
-        end
-        if task['auth_method'] == 'private_key' and task['p12_keyfile'].nil?
-          raise ConfigError.new "`p12_keyfile` is required for auth_method private_key"
+        unless %w[json_key compute_engine application_default].include?(task['auth_method'])
+          raise ConfigError.new "`auth_method` must be one of json_key, compute_engine, application_default"
         end
         if task['auth_method'] == 'json_key' and task['json_keyfile'].nil?
           raise ConfigError.new "`json_keyfile` is required for auth_method json_key"

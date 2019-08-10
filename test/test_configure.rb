@@ -18,10 +18,10 @@ module Embulk
 
       def least_config
         DataSource.new({
-          'project' => 'your_project_name',
-          'dataset' => 'your_dataset_name',
-          'table'   => 'your_table_name',
-          'p12_keyfile' => __FILE__, # fake
+          'project'      => 'your_project_name',
+          'dataset'      => 'your_dataset_name',
+          'table'        => 'your_table_name',
+          'json_keyfile' => File.join(EXAMPLE_ROOT, 'json_key.json'), # dummy
         })
       end
 
@@ -43,10 +43,8 @@ module Embulk
       def test_configure_default
         task = Bigquery.configure(least_config, schema, processor_count)
         assert_equal "append", task['mode']
-        assert_equal "private_key", task['auth_method']
-        assert_equal nil, task['service_account_email']
-        assert_equal __FILE__, task['p12_keyfile']
-        assert_equal nil, task['json_keyfile']
+        assert_equal "json_key", task['auth_method']
+        assert_equal File.read(File.join(EXAMPLE_ROOT, 'json_key.json')), task['json_keyfile']
         assert_equal "your_project_name", task['project']
         assert_equal "your_dataset_name", task['dataset']
         assert_equal nil, task['location']
@@ -131,11 +129,6 @@ module Embulk
       def test_auth_method
         config = least_config.merge('auth_method' => 'foobar')
         assert_raise { Bigquery.configure(config, schema, processor_count) }
-
-        config = least_config.merge('auth_method' => 'private_key').tap {|h| h.delete('p12_keyfile') }
-        assert_raise { Bigquery.configure(config, schema, processor_count) }
-        config = least_config.merge('auth_method' => 'private_key', 'p12_keyfile' => 'dummy')
-        assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
 
         config = least_config.merge('auth_method' => 'json_key').tap {|h| h.delete('json_keyfile') }
         assert_raise { Bigquery.configure(config, schema, processor_count) }
