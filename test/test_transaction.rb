@@ -8,12 +8,12 @@ module Embulk
     class TestTransaction < Test::Unit::TestCase
       def least_config
         DataSource.new({
-          'project'     => 'your_project_name',
-          'dataset'     => 'your_dataset_name',
-          'table'       => 'your_table_name',
-          'p12_keyfile' => __FILE__, # fake
-          'temp_table'  => 'temp_table', # randomly created is not good for our test
-          'path_prefix' => 'tmp/', # randomly created is not good for our test
+          'project'      => 'your_project_name',
+          'dataset'      => 'your_dataset_name',
+          'table'        => 'your_table_name',
+          'temp_table'   => 'temp_table', # randomly created is not good for our test
+          'path_prefix'  => 'tmp/', # randomly created is not good for our test
+          'json_keyfile' => File.join(EXAMPLE_ROOT, 'json_key.json'), # dummy
         })
       end
 

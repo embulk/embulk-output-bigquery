@@ -30,9 +30,7 @@ OAuth flow for installed applications.
 | name                                 | type        | required?  | default                  | description            |
 |:-------------------------------------|:------------|:-----------|:-------------------------|:-----------------------|
 |  mode                                | string      | optional   | "append"                 | See [Mode](#mode)     |
-|  auth_method                         | string      | optional   | "private_key"            | `private_key` , `json_key` or `compute_engine`
-|  service_account_email               | string      | required when auth_method is private_key  |   | Your Google service account email
-|  p12_keyfile                         | string      | required when auth_method is private_key  |   | Fullpath of private key in P12(PKCS12) format |
+|  auth_method                         | string      | optional   | "json\_key"              | `json_key`, `compute_engine`, or `application_default`
 |  json_keyfile                        | string      | required when auth_method is json_key     |   | Fullpath of json key |
 |  project                             | string      | required if json_keyfile is not given     |   | project_id |
 |  dataset                             | string      | required   |                          | dataset |
@@ -108,9 +106,8 @@ Following options are same as [bq command-line tools](https://cloud.google.com/b
 out:
   type: bigquery
   mode: append
-  auth_method: private_key   # default
-  service_account_email: ABCXYZ123ABCXYZ123.gserviceaccount.com
-  p12_keyfile: /path/to/p12_keyfile.p12
+  auth_method: json_key   # default
+  json_keyfile: /path/to/json_keyfile.json
   project: your-project-000
   dataset: your_dataset_name
   table: your_table_name
@@ -167,22 +164,9 @@ NOTE: BigQuery does not support replacing (actually, copying into) a non-partiti
 
 There are three methods supported to fetch access token for the service account.
 
-1. Public-Private key pair of GCP(Google Cloud Platform)'s service account
-2. JSON key of GCP(Google Cloud Platform)'s service account
-3. Pre-defined access token (Google Compute Engine only)
-
-#### Public-Private key pair of GCP's service account
-
-You first need to create a service account (client ID),
-download its private key and deploy the key with embulk.
-
-```yaml
-out:
-  type: bigquery
-  auth_method: private_key   # default
-  service_account_email: ABCXYZ123ABCXYZ123.gserviceaccount.com
-  p12_keyfile: /path/to/p12_keyfile.p12
-```
+1. JSON key of GCP(Google Cloud Platform)'s service account
+1. Pre-defined access token (Google Compute Engine only)
+1. [Application Default](https://cloud.google.com/docs/authentication/production)
 
 #### JSON key of GCP's service account
 
@@ -211,7 +195,7 @@ out:
        }
 ```
 
-#### Pre-defined access token(GCE only)
+#### Pre-defined access token (GCE only)
 
 On the other hand, you don't need to explicitly create a service account for embulk when you
 run embulk in Google Compute Engine. In this third authentication method, you need to
@@ -222,6 +206,16 @@ Compute Engine VM instance, then you can configure embulk like this.
 out:
   type: bigquery
   auth_method: compute_engine
+```
+
+#### Application Default
+
+See https://cloud.google.com/docs/authentication/production
+
+```yaml
+out:
+  type: bigquery
+  auth_method: application_default
 ```
 
 ### Table id formatting
