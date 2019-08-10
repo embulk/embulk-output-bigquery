@@ -1,9 +1,6 @@
 language: ruby
 matrix:
   include:
-    - env: EMBULK_VERSION=0.8.39
-      rvm: jruby-9.1.5.0 # bundled jruby version
-      jdk: openjdk7 # embulk 0.8.x uses jdk7
     - env: EMBULK_VERSION=0.9.15
       rvm: jruby-9.1.15.0 # bundled jruby version
       jdk: openjdk8 # embulk 0.9.x uses jdk8
