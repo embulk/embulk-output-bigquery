@@ -64,7 +64,7 @@ module Embulk
           'default_timestamp_format'       => config.param('default_timestamp_format',       :string,  :default => ValueConverterFactory::DEFAULT_TIMESTAMP_FORMAT),
           'payload_column'                 => config.param('payload_column',                 :string,  :default => nil),
           'payload_column_index'           => config.param('payload_column_index',           :integer, :default => nil),
-          
+
           'open_timeout_sec'               => config.param('open_timeout_sec',               :integer, :default => nil),
           'timeout_sec'                    => config.param('timeout_sec',                    :integer, :default => nil), # google-api-ruby-client < v0.11.0
           'send_timeout_sec'               => config.param('send_timeout_sec',               :integer, :default => nil), # google-api-ruby-client >= v0.11.0
@@ -276,7 +276,7 @@ module Embulk
           sum + (response ? response.statistics.load.output_rows.to_i : 0)
         end
         if task['temp_table']
-          num_output_rows = bigquery.get_table(task['temp_table']).num_rows.to_i
+          num_output_rows = bigquery.get_table_or_partition(task['temp_table']).num_rows.to_i
         else
           num_output_rows = num_response_rows
         end
@@ -306,24 +306,20 @@ module Embulk
 
         case task['mode']
         when 'delete_in_advance'
-          if task['time_partitioning']
-            bigquery.delete_partition(task['table'])
-          else
-            bigquery.delete_table(task['table'])
-          end
-          bigquery.create_table(task['table'])
+          bigquery.delete_table_or_partition(task['table'])
+          bigquery.create_table_if_not_exists(task['table'])
         when 'replace', 'replace_backup', 'append'
-          bigquery.create_table(task['temp_table'])
+          bigquery.create_table_if_not_exists(task['temp_table'])
           if task['time_partitioning']
             if task['auto_create_table']
-              bigquery.create_table(task['table'])
+              bigquery.create_table_if_not_exists(task['table'])
             else
               bigquery.get_table(task['table']) # raises NotFoundError
             end
           end
         else # append_direct
           if task['auto_create_table']
-            bigquery.create_table(task['table'])
+            bigquery.create_table_if_not_exists(task['table'])
           else
             bigquery.get_table(task['table']) # raises NotFoundError
           end
@@ -332,7 +328,7 @@ module Embulk
         if task['mode'] == 'replace_backup'
           if task['time_partitioning'] and Helper.has_partition_decorator?(task['table_old'])
             if task['auto_create_table']
-              bigquery.create_table(task['table_old'], dataset: task['dataset_old'])
+              bigquery.create_table_if_not_exists(task['table_old'], dataset: task['dataset_old'])
             else
               bigquery.get_table(task['table_old'], dataset: task['dataset_old']) # raises NotFoundError
             end
@@ -403,7 +399,7 @@ module Embulk
 
             if task['mode'] == 'replace_backup'
               begin
-                bigquery.get_table(task['table'])
+                bigquery.get_table_or_partition(task['table'])
                 bigquery.copy(task['table'], task['table_old'], task['dataset_old'])
               rescue NotFoundError
               end
@@ -515,7 +511,7 @@ module Embulk
 
         self.class.rehearsal_thread = Thread.new do
           begin
-            bigquery.create_table(task['rehearsal_table'])
+            bigquery.create_table_if_not_exists(task['rehearsal_table'])
             response = bigquery.load(rehearsal_path, task['rehearsal_table'])
             num_output_rows = response ? response.statistics.load.output_rows.to_i : 0
             Embulk.logger.info { "embulk-output-bigquery: Loaded rehearsal #{num_output_rows}" }

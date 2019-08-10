@@ -86,8 +86,8 @@ module Embulk
           task = Bigquery.configure(config, schema, processor_count)
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
-            mock(obj).delete_table(config['table'])
-            mock(obj).create_table(config['table'])
+            mock(obj).delete_table_or_partition(config['table'])
+            mock(obj).create_table_if_not_exists(config['table'])
           end
           Bigquery.transaction(config, schema, processor_count, &control)
         end
@@ -97,8 +97,8 @@ module Embulk
           task = Bigquery.configure(config, schema, processor_count)
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
-            mock(obj).delete_partition(config['table'])
-            mock(obj).create_table(config['table'])
+            mock(obj).delete_table_or_partition(config['table'])
+            mock(obj).create_table_if_not_exists(config['table'])
           end
           Bigquery.transaction(config, schema, processor_count, &control)
         end
@@ -153,7 +153,7 @@ module Embulk
             mock(obj).get_dataset(config['dataset_old'])
             mock(obj).create_table(config['temp_table'])
 
-            mock(obj).get_table(task['table'])
+            mock(obj).get_table_or_partition(task['table'])
             mock(obj).copy(config['table'], config['table_old'], config['dataset_old'])
 
             mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_TRUNCATE')
@@ -170,7 +170,7 @@ module Embulk
             mock(obj).create_dataset(config['dataset_old'], reference: config['dataset'])
             mock(obj).create_table(config['temp_table'])
 
-            mock(obj).get_table(task['table'])
+            mock(obj).get_table_or_partition(task['table'])
             mock(obj).copy(config['table'], config['table_old'], config['dataset_old'])
 
             mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_TRUNCATE')
@@ -189,7 +189,7 @@ module Embulk
             mock(obj).get_table(task['table'])
             mock(obj).get_table(task['table_old'], dataset: config['dataset_old'])
 
-            mock(obj).get_table(task['table'])
+            mock(obj).get_table_or_partition(task['table'])
             mock(obj).copy(config['table'], config['table_old'], config['dataset_old'])
 
             mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_TRUNCATE')
@@ -208,7 +208,7 @@ module Embulk
             mock(obj).create_table(task['table'])
             mock(obj).create_table(task['table_old'], dataset: config['dataset_old'])
 
-            mock(obj).get_table(task['table'])
+            mock(obj).get_table_or_partition(task['table'])
             mock(obj).copy(config['table'], config['table_old'], config['dataset_old'])
 
             mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_TRUNCATE')
