@@ -1,8 +1,8 @@
 ## 0.5.0 - 2019-08-10
 
-* [incompatibility change] Drop deprecated time\_partitioning.require\_partition\_filter
-* [incompatibility change] Drop prevent\_duplicate\_insert which has no use-case now
-* [incompatibility change] Change default value of `auto\_create\_table` to `true` from `false`
+* [incompatibility change] Drop deprecated `time_partitioning`.`require_partition_filter`
+* [incompatibility change] Drop `prevent_duplicate_insert` which has no use-case now
+* [incompatibility change] Change default value of `auto_create_table` to `true` from `false`
   * Modes `replace`, `replace_backup`, `append`, `delete_in_advance`, that is, except `append_direct` requires `auto_create_table: true`.
 
 ## 0.4.14 - 2019-08-10
