@@ -1,3 +1,7 @@
+## 0.4.14 - 2019-08-10
+
+* [enhancement] Support field partitioning correctly.
+
 ## 0.4.13 - 2019-03-20
 
 * [enhancement] Support clustered table as an experimental feature
