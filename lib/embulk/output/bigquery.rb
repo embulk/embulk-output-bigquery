@@ -45,7 +45,7 @@ module Embulk
           'table_old'                      => config.param('table_old',                      :string,  :default => nil),
           'table_name_old'                 => config.param('table_name_old',                 :string,  :default => nil), # lower version compatibility
           'auto_create_dataset'            => config.param('auto_create_dataset',            :bool,    :default => false),
-          'auto_create_table'              => config.param('auto_create_table',              :bool,    :default => false),
+          'auto_create_table'              => config.param('auto_create_table',              :bool,    :default => true),
           'schema_file'                    => config.param('schema_file',                    :string,  :default => nil),
           'template_table'                 => config.param('template_table',                 :string,  :default => nil),
 
@@ -104,10 +104,14 @@ module Embulk
           raise ConfigError.new "`mode` must be one of append, append_direct, replace, delete_in_advance, replace_backup"
         end
 
+        if %w[append replace delete_in_advance replace_backup].include?(task['mode']) and !task['auto_create_table']
+          raise ConfigError.new "`mode: #{task['mode']}` requires `auto_create_table: true`"
+        end
+
         if task['mode'] == 'replace_backup'
           task['table_old'] ||= task['table_name_old'] # for lower version compatibility
           if task['dataset_old'].nil? and task['table_old'].nil?
-            raise ConfigError.new "`mode replace_backup` requires either of `dataset_old` or `table_old`"
+            raise ConfigError.new "`mode: replace_backup` requires either of `dataset_old` or `table_old`"
           end
           task['dataset_old'] ||= task['dataset']
           task['table_old']   ||= task['table']
@@ -309,38 +313,14 @@ module Embulk
           bigquery.create_table_if_not_exists(task['table'])
         when 'replace'
           bigquery.create_table_if_not_exists(task['temp_table'])
-          if Helper.has_partition_decorator?(task['table'])
-            if task['auto_create_table']
-              bigquery.create_table_if_not_exists(task['table'])
-            else
-              bigquery.get_table(task['table']) # raises NotFoundError
-            end
-          end
+          bigquery.create_table_if_not_exists(task['table'])
         when 'append'
           bigquery.create_table_if_not_exists(task['temp_table'])
-          if Helper.has_partition_decorator?(task['table'])
-            if task['auto_create_table']
-              bigquery.create_table_if_not_exists(task['table'])
-            else
-              bigquery.get_table(task['table']) # raises NotFoundError
-            end
-          end
+          bigquery.create_table_if_not_exists(task['table'])
         when 'replace_backup'
           bigquery.create_table_if_not_exists(task['temp_table'])
-          if Helper.has_partition_decorator?(task['table'])
-            if task['auto_create_table']
-              bigquery.create_table_if_not_exists(task['table'])
-            else
-              bigquery.get_table(task['table']) # raises NotFoundError
-            end
-          end
-          if Helper.has_partition_decorator?(task['table_old'])
-            if task['auto_create_table']
-              bigquery.create_table_if_not_exists(task['table_old'], dataset: task['dataset_old'])
-            else
-              bigquery.get_table(task['table_old'], dataset: task['dataset_old']) # raises NotFoundError
-            end
-          end
+          bigquery.create_table_if_not_exists(task['table'])
+          bigquery.create_table_if_not_exists(task['table_old'], dataset: task['dataset_old'])
         else # append_direct
           if task['auto_create_table']
             bigquery.create_table_if_not_exists(task['table'])
