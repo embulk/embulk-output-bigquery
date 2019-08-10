@@ -5,13 +5,20 @@ matrix:
       rvm: jruby-9.1.5.0 # bundled jruby version
       jdk: openjdk7 # embulk 0.8.x uses jdk7
     - env: EMBULK_VERSION=0.9.15
-      rvm: jruby-9.1.5.0 # bundled jruby version
+      rvm: jruby-9.1.15.0 # bundled jruby version
       jdk: openjdk8 # embulk 0.9.x uses jdk8
     - env: EMBULK_VERSION=latest
-      rvm: jruby-9.1.5.0 # ?
+      rvm: jruby-9.1.15.0 # ?
       jdk: openjdk8 # ?
   allow_failures:
     - env: EMBULK_VERSION=latest
 before_install:
   - curl -o embulk.jar --create-dirs -L "http://dl.embulk.org/embulk-${EMBULK_VERSION}.jar"
-script: bundle exec env RUBYOPT="-r ./embulk.jar" rake test
+  - chmod a+x embulk.jar
+  - BUNDLER_VERSION=$(echo "require 'bundler'; Bundler::VERSION" | ./embulk.jar irb | tail -n 2 | tr -d '"')
+  - gem uninstall bundler -x
+  - gem install bundler -v ${BUNDLER_VERSION}
+install:
+  - ./embulk.jar bundle install --jobs=3 --retry=3 --path vendor/bundle
+script:
+  - bundle exec env RUBYOPT="-r ./embulk.jar  -r embulk -r embulk/java/bootstrap" rake test
