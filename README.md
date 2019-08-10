@@ -29,10 +29,10 @@ OAuth flow for installed applications.
 
 | name                                 | type        | required?  | default                  | description            |
 |:-------------------------------------|:------------|:-----------|:-------------------------|:-----------------------|
-|  mode                                | string      | optional   | "append"                 | See [Mode](#mode)     |
-|  auth_method                         | string      | optional   | "json\_key"              | `json_key`, `compute_engine`, or `application_default`
-|  json_keyfile                        | string      | required when auth_method is json_key     |   | Fullpath of json key |
-|  project                             | string      | required if json_keyfile is not given     |   | project_id |
+|  mode                                | string      | optional   | "append"                 | See [Mode](#mode)      |
+|  auth_method                         | string      | optional   | "application\_default"   | See [Authentication](#authentication) |
+|  json_keyfile                        | string      | optional   |                          | keyfile path or `content` |
+|  project                             | string      | required unless service\_account's `json_keyfile` is given. | | project\_id |
 |  dataset                             | string      | required   |                          | dataset |
 |  location                            | string      | optional   | nil                      | geographic location of dataset. See [Location](#location) |
 |  table                               | string      | required   |                          | table name, or table name with a partition decorator such as `table_name$20160929`|
@@ -106,7 +106,7 @@ Following options are same as [bq command-line tools](https://cloud.google.com/b
 out:
   type: bigquery
   mode: append
-  auth_method: json_key   # default
+  auth_method: service_account
   json_keyfile: /path/to/json_keyfile.json
   project: your-project-000
   dataset: your_dataset_name
@@ -115,7 +115,7 @@ out:
   source_format: NEWLINE_DELIMITED_JSON
 ```
 
-### location
+### Location
 
 The geographic location of the dataset. Required except for US and EU.
 
@@ -123,7 +123,7 @@ GCS bucket should be in same region when you use `gcs_bucket`.
 
 See also [Dataset Locations | BigQuery | Google Cloud](https://cloud.google.com/bigquery/docs/dataset-locations)
 
-### mode
+### Mode
 
 5 modes are provided.
 
@@ -162,40 +162,69 @@ NOTE: BigQuery does not support replacing (actually, copying into) a non-partiti
 
 ### Authentication
 
-There are three methods supported to fetch access token for the service account.
+There are four authentication methods
 
-1. JSON key of GCP(Google Cloud Platform)'s service account
-1. Pre-defined access token (Google Compute Engine only)
-1. [Application Default](https://cloud.google.com/docs/authentication/production)
+1. `service_account` (or `json_key` for backward compatibility)
+1. `authorized_user`
+1. `compute_engine`
+1. `application_default`
 
-#### JSON key of GCP's service account
+#### service\_account (or json\_key)
 
-You first need to create a service account (client ID),
-download its json key and deploy the key with embulk.
+Use GCP service account credentials.
+You first need to create a service account, download its json key and deploy the key with embulk.
 
 ```yaml
 out:
   type: bigquery
-  auth_method: json_key
+  auth_method: service_account
   json_keyfile: /path/to/json_keyfile.json
 ```
 
-You can also embed contents of json_keyfile at config.yml.
+You can also embed contents of `json_keyfile` at config.yml.
 
 ```yaml
 out:
   type: bigquery
-  auth_method: json_key
+  auth_method: service_account
   json_keyfile:
     content: |
       {
           "private_key_id": "123456789",
           "private_key": "-----BEGIN PRIVATE KEY-----\nABCDEF",
           "client_email": "..."
-       }
+      }
 ```
 
-#### Pre-defined access token (GCE only)
+#### authorized\_user
+
+Use Google user credentials.
+You can get your credentials at `~/.config/gcloud/application_default_credentials.json` by running `gcloud auth login`.
+
+```yaml
+out:
+  type: bigquery
+  auth_method: authorized_user
+  json_keyfile: /path/to/credentials.json
+```
+
+You can also embed contents of `json_keyfile` at config.yml.
+
+```yaml
+out:
+  type: bigquery
+  auth_method: service_account
+  json_keyfile:
+    content: |
+      {
+        "client_id":"xxxxxxxxxxx.apps.googleusercontent.com",
+        "client_secret":"xxxxxxxxxxx",
+        "refresh_token":"xxxxxxxxxxx",
+        "type":"authorized_user"
+      }
+```
+
+#### compute\_engine
 
 On the other hand, you don't need to explicitly create a service account for embulk when you
 run embulk in Google Compute Engine. In this third authentication method, you need to
@@ -208,9 +237,10 @@ out:
   auth_method: compute_engine
 ```
 
-#### Application Default
+#### application\_default
 
-See https://cloud.google.com/docs/authentication/production
+Use Application Default Credentials (ADC).
+See https://cloud.google.com/docs/authentication/production for details.
 
 ```yaml
 out:

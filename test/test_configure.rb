@@ -21,7 +21,6 @@ module Embulk
           'project'      => 'your_project_name',
           'dataset'      => 'your_dataset_name',
           'table'        => 'your_table_name',
-          'json_keyfile' => File.join(EXAMPLE_ROOT, 'json_key.json'), # dummy
         })
       end
 
@@ -43,8 +42,8 @@ module Embulk
       def test_configure_default
         task = Bigquery.configure(least_config, schema, processor_count)
         assert_equal "append", task['mode']
-        assert_equal "json_key", task['auth_method']
-        assert_equal File.read(File.join(EXAMPLE_ROOT, 'json_key.json')), task['json_keyfile']
+        assert_equal "application_default", task['auth_method']
+        assert_equal nil, task['json_keyfile']
         assert_equal "your_project_name", task['project']
         assert_equal "your_dataset_name", task['dataset']
         assert_equal nil, task['location']
