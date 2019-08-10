@@ -305,7 +305,7 @@ module Embulk
 
         case task['mode']
         when 'delete_in_advance'
-          bigquery.delete_partition(task['table'])
+          bigquery.delete_table_or_partition(task['table'])
           bigquery.create_table_if_not_exists(task['table'])
         when 'replace'
           bigquery.create_table_if_not_exists(task['temp_table'])

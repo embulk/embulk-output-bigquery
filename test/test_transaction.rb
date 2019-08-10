@@ -86,7 +86,7 @@ module Embulk
           task = Bigquery.configure(config, schema, processor_count)
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
-            mock(obj).delete_partition(config['table'])
+            mock(obj).delete_table_or_partition(config['table'])
             mock(obj).create_table_if_not_exists(config['table'])
           end
           Bigquery.transaction(config, schema, processor_count, &control)
@@ -97,7 +97,7 @@ module Embulk
           task = Bigquery.configure(config, schema, processor_count)
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
-            mock(obj).delete_partition(config['table'])
+            mock(obj).delete_table_or_partition(config['table'])
             mock(obj).create_table_if_not_exists(config['table'])
           end
           Bigquery.transaction(config, schema, processor_count, &control)
