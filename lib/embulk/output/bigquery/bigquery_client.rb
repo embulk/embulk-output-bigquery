@@ -79,11 +79,7 @@ module Embulk
             begin
               # As https://cloud.google.com/bigquery/docs/managing_jobs_datasets_projects#managingjobs says,
               # we should generate job_id in client code, otherwise, retrying would cause duplication
-              if @task['prevent_duplicate_insert'] and (@task['mode'] == 'append' or @task['mode'] == 'append_direct')
-                job_id = Helper.create_load_job_id(@task, path, fields)
-              else
-                job_id = "embulk_load_job_#{SecureRandom.uuid}"
-              end
+              job_id = "embulk_load_job_#{SecureRandom.uuid}"
               Embulk.logger.info { "embulk-output-bigquery: Load job starting... job_id:[#{job_id}] #{object_uris} => #{@project}:#{@dataset}.#{table} in #{@location_for_log}" }
 
               body = {
@@ -174,11 +170,7 @@ module Embulk
               if File.exist?(path)
                 # As https://cloud.google.com/bigquery/docs/managing_jobs_datasets_projects#managingjobs says,
                 # we should generate job_id in client code, otherwise, retrying would cause duplication
-                if @task['prevent_duplicate_insert'] and (@task['mode'] == 'append' or @task['mode'] == 'append_direct')
-                  job_id = Helper.create_load_job_id(@task, path, fields)
-                else
-                  job_id = "embulk_load_job_#{SecureRandom.uuid}"
-                end
+                job_id = "embulk_load_job_#{SecureRandom.uuid}"
                 Embulk.logger.info { "embulk-output-bigquery: Load job starting... job_id:[#{job_id}] #{path} => #{@project}:#{@dataset}.#{table} in #{@location_for_log}" }
               else
                 Embulk.logger.info { "embulk-output-bigquery: Load job starting... #{path} does not exist, skipped" }
