@@ -50,7 +50,6 @@ v0.3.x has incompatibility changes with v0.2.x. Please see [CHANGELOG.md](CHANGE
 |  auto_create_table                   | boolean     | optional   | false                    | See [Dynamic Table Creating](#dynamic-table-creating) and [Time Partitioning](#time-partitioning) |
 |  schema_file                         | string      | optional   |                          | /path/to/schema.json |
 |  template_table                      | string      | optional   |                          | template table name. See [Dynamic Table Creating](#dynamic-table-creating) |
-|  prevent_duplicate_insert            | boolean     | optional   | false                    | See [Prevent Duplication](#prevent-duplication) |
 |  job_status_max_polling_time         | int         | optional   | 3600 sec                 | Max job status polling time |
 |  job_status_polling_interval         | int         | optional   | 10 sec                   | Job status polling interval |
 |  is_skip_job_result_check            | boolean     | optional   | false                    | Skip waiting Load job finishes. Available for append, or delete_in_advance mode |
@@ -353,22 +352,6 @@ in:
 out:
   type: bigquery
   payload_column_index: 0 # or, payload_column: payload
-```
-
-### Prevent Duplication
-
-`prevent_duplicate_insert` option is used to prevent inserting same data for modes `append` or `append_direct`.
-
-When `prevent_duplicate_insert` is set to true, embulk-output-bigquery generate job ID from md5 hash of file and other options.
-
-`job ID = md5(md5(file) + dataset + table + schema + source_format + file_delimiter + max_bad_records + encoding + ignore_unknown_values + allow_quoted_newlines)`
-
-[job ID must be unique(including failures)](https://cloud.google.com/bigquery/loading-data-into-bigquery#consistency) so that same data can't be inserted with same settings repeatedly.
-
-```yaml
-out:
-  type: bigquery
-  prevent_duplicate_insert: true
 ```
 
 ### GCS Bucket

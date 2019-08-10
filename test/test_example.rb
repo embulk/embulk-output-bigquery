@@ -33,7 +33,6 @@ else
     files.each do |config_path|
       if %w[
         config_expose_errors.yml
-        config_prevent_duplicate_insert.yml
         ].include?(File.basename(config_path))
         define_method(:"test_#{File.basename(config_path, ".yml")}") do
           assert_false embulk_run(config_path)
