@@ -470,6 +470,10 @@ module Embulk
           delete_table_or_partition(table, dataset: dataset)
         end
 
+        def delete_partition(table, dataset: nil)
+          delete_table_or_partition(table, dataset: dataset)
+        end
+
         # if `table` with a partition decorator is given, a partition is deleted.
         def delete_table_or_partition(table, dataset: nil)
           begin

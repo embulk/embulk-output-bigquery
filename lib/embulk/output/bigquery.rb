@@ -306,15 +306,40 @@ module Embulk
 
         case task['mode']
         when 'delete_in_advance'
-          bigquery.delete_table_or_partition(task['table'])
+          bigquery.delete_partition(task['table'])
           bigquery.create_table_if_not_exists(task['table'])
-        when 'replace', 'replace_backup', 'append'
+        when 'replace'
           bigquery.create_table_if_not_exists(task['temp_table'])
-          if task['time_partitioning']
+          if Helper.has_partition_decorator?(task['table'])
             if task['auto_create_table']
               bigquery.create_table_if_not_exists(task['table'])
             else
               bigquery.get_table(task['table']) # raises NotFoundError
+            end
+          end
+        when 'append'
+          bigquery.create_table_if_not_exists(task['temp_table'])
+          if Helper.has_partition_decorator?(task['table'])
+            if task['auto_create_table']
+              bigquery.create_table_if_not_exists(task['table'])
+            else
+              bigquery.get_table(task['table']) # raises NotFoundError
+            end
+          end
+        when 'replace_backup'
+          bigquery.create_table_if_not_exists(task['temp_table'])
+          if Helper.has_partition_decorator?(task['table'])
+            if task['auto_create_table']
+              bigquery.create_table_if_not_exists(task['table'])
+            else
+              bigquery.get_table(task['table']) # raises NotFoundError
+            end
+          end
+          if Helper.has_partition_decorator?(task['table_old'])
+            if task['auto_create_table']
+              bigquery.create_table_if_not_exists(task['table_old'], dataset: task['dataset_old'])
+            else
+              bigquery.get_table(task['table_old'], dataset: task['dataset_old']) # raises NotFoundError
             end
           end
         else # append_direct
@@ -322,16 +347,6 @@ module Embulk
             bigquery.create_table_if_not_exists(task['table'])
           else
             bigquery.get_table(task['table']) # raises NotFoundError
-          end
-        end
-
-        if task['mode'] == 'replace_backup'
-          if task['time_partitioning'] and Helper.has_partition_decorator?(task['table_old'])
-            if task['auto_create_table']
-              bigquery.create_table_if_not_exists(task['table_old'], dataset: task['dataset_old'])
-            else
-              bigquery.get_table(task['table_old'], dataset: task['dataset_old']) # raises NotFoundError
-            end
           end
         end
       end
