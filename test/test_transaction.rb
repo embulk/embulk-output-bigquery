@@ -41,8 +41,8 @@ module Embulk
       end
 
       sub_test_case "append_direct" do
-        def test_append_direct
-          config = least_config.merge('mode' => 'append_direct')
+        def test_append_direc_without_auto_create
+          config = least_config.merge('mode' => 'append_direct', 'auto_create_dataset' => false, 'auto_create_table' => false)
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
             mock(obj).get_table(config['table'])
@@ -60,8 +60,8 @@ module Embulk
           Bigquery.transaction(config, schema, processor_count, &control)
         end
 
-        def test_append_direct_with_partition
-          config = least_config.merge('mode' => 'append_direct', 'table' => 'table$20160929')
+        def test_append_direct_with_partition_without_auto_create
+          config = least_config.merge('mode' => 'append_direct', 'table' => 'table$20160929', 'auto_create_dataset' => false, 'auto_create_table' => false)
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
             mock(obj).get_table(config['table'])
@@ -111,6 +111,7 @@ module Embulk
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
             mock(obj).create_table_if_not_exists(config['temp_table'])
+            mock(obj).create_table_if_not_exists(config['table'])
             mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_TRUNCATE')
             mock(obj).delete_table(config['temp_table'])
           end
@@ -119,19 +120,6 @@ module Embulk
 
         def test_replace_with_partitioning
           config = least_config.merge('mode' => 'replace', 'table' => 'table$20160929')
-          task = Bigquery.configure(config, schema, processor_count)
-          any_instance_of(BigqueryClient) do |obj|
-            mock(obj).get_dataset(config['dataset'])
-            mock(obj).create_table_if_not_exists(config['temp_table'])
-            mock(obj).get_table(config['table'])
-            mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_TRUNCATE')
-            mock(obj).delete_table(config['temp_table'])
-          end
-          Bigquery.transaction(config, schema, processor_count, &control)
-        end
-
-        def test_replace_with_partitioning_with_auto_create_table
-          config = least_config.merge('mode' => 'replace', 'table' => 'table$20160929', 'auto_create_table' => true)
           task = Bigquery.configure(config, schema, processor_count)
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
@@ -152,8 +140,10 @@ module Embulk
             mock(obj).get_dataset(config['dataset'])
             mock(obj).get_dataset(config['dataset_old'])
             mock(obj).create_table_if_not_exists(config['temp_table'])
+            mock(obj).create_table_if_not_exists(config['table'])
+            mock(obj).create_table_if_not_exists(config['table_old'], dataset: config['dataset_old'])
 
-            mock(obj).get_table_or_partition(task['table'])
+            mock(obj).get_table_or_partition(config['table'])
             mock(obj).copy(config['table'], config['table_old'], config['dataset_old'])
 
             mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_TRUNCATE')
@@ -168,9 +158,11 @@ module Embulk
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).create_dataset(config['dataset'])
             mock(obj).create_dataset(config['dataset_old'], reference: config['dataset'])
+            mock(obj).create_table_if_not_exists(config['table'])
             mock(obj).create_table_if_not_exists(config['temp_table'])
+            mock(obj).create_table_if_not_exists(config['table_old'], dataset: config['dataset_old'])
 
-            mock(obj).get_table_or_partition(task['table'])
+            mock(obj).get_table_or_partition(config['table'])
             mock(obj).copy(config['table'], config['table_old'], config['dataset_old'])
 
             mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_TRUNCATE')
@@ -180,35 +172,16 @@ module Embulk
         end
 
         def test_replace_backup_with_partitioning
-          config = least_config.merge('mode' => 'replace_backup', 'table' => 'table$20160929', 'dataset_old' => 'dataset_old', 'table_old' => 'table_old$20190929', 'temp_table' => 'temp_table')
-          task = Bigquery.configure(config, schema, processor_count)
-          any_instance_of(BigqueryClient) do |obj|
-            mock(obj).get_dataset(config['dataset'])
-            mock(obj).get_dataset(config['dataset_old'])
-            mock(obj).create_table_if_not_exists(config['temp_table'])
-            mock(obj).get_table(task['table'])
-            mock(obj).get_table(task['table_old'], dataset: config['dataset_old'])
-
-            mock(obj).get_table_or_partition(task['table'])
-            mock(obj).copy(config['table'], config['table_old'], config['dataset_old'])
-
-            mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_TRUNCATE')
-            mock(obj).delete_table(config['temp_table'])
-          end
-          Bigquery.transaction(config, schema, processor_count, &control)
-        end
-
-        def test_replace_backup_with_partitioning_auto_create_table
           config = least_config.merge('mode' => 'replace_backup', 'table' => 'table$20160929', 'dataset_old' => 'dataset_old', 'table_old' => 'table_old$20160929', 'temp_table' => 'temp_table', 'auto_create_table' => true)
           task = Bigquery.configure(config, schema, processor_count)
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
             mock(obj).get_dataset(config['dataset_old'])
             mock(obj).create_table_if_not_exists(config['temp_table'])
-            mock(obj).create_table_if_not_exists(task['table'])
-            mock(obj).create_table_if_not_exists(task['table_old'], dataset: config['dataset_old'])
+            mock(obj).create_table_if_not_exists(config['table'])
+            mock(obj).create_table_if_not_exists(config['table_old'], dataset: config['dataset_old'])
 
-            mock(obj).get_table_or_partition(task['table'])
+            mock(obj).get_table_or_partition(config['table'])
             mock(obj).copy(config['table'], config['table_old'], config['dataset_old'])
 
             mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_TRUNCATE')
@@ -225,6 +198,7 @@ module Embulk
           any_instance_of(BigqueryClient) do |obj|
             mock(obj).get_dataset(config['dataset'])
             mock(obj).create_table_if_not_exists(config['temp_table'])
+            mock(obj).create_table_if_not_exists(config['table'])
             mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_APPEND')
             mock(obj).delete_table(config['temp_table'])
           end
@@ -232,19 +206,6 @@ module Embulk
         end
 
         def test_append_with_partitioning
-          config = least_config.merge('mode' => 'append', 'table' => 'table$20160929')
-          task = Bigquery.configure(config, schema, processor_count)
-          any_instance_of(BigqueryClient) do |obj|
-            mock(obj).get_dataset(config['dataset'])
-            mock(obj).create_table_if_not_exists(config['temp_table'])
-            mock(obj).get_table(config['table'])
-            mock(obj).copy(config['temp_table'], config['table'], write_disposition: 'WRITE_APPEND')
-            mock(obj).delete_table(config['temp_table'])
-          end
-          Bigquery.transaction(config, schema, processor_count, &control)
-        end
-
-        def test_append_with_partitioning_with_auto_create_table
           config = least_config.merge('mode' => 'append', 'table' => 'table$20160929', 'auto_create_table' => true)
           task = Bigquery.configure(config, schema, processor_count)
           any_instance_of(BigqueryClient) do |obj|

@@ -47,7 +47,7 @@ v0.3.x has incompatibility changes with v0.2.x. Please see [CHANGELOG.md](CHANGE
 |  location                            | string      | optional   | nil                      | geographic location of dataset. See [Location](#location) |
 |  table                               | string      | required   |                          | table name, or table name with a partition decorator such as `table_name$20160929`|
 |  auto_create_dataset                 | boolean     | optional   | false                    | automatically create dataset |
-|  auto_create_table                   | boolean     | optional   | false                    | See [Dynamic Table Creating](#dynamic-table-creating) and [Time Partitioning](#time-partitioning) |
+|  auto_create_table                   | boolean     | optional   | true                     | `false` is available only for `append_direct` mode. Other modes requires `true`. See [Dynamic Table Creating](#dynamic-table-creating) and [Time Partitioning](#time-partitioning) |
 |  schema_file                         | string      | optional   |                          | /path/to/schema.json |
 |  template_table                      | string      | optional   |                          | template table name. See [Dynamic Table Creating](#dynamic-table-creating) |
 |  job_status_max_polling_time         | int         | optional   | 3600 sec                 | Max job status polling time |
@@ -250,11 +250,6 @@ out:
 
 ### Dynamic table creating
 
-This plugin tries to create a table using BigQuery API when
-
-* mode is either of `delete_in_advance`, `replace`, `replace_backup`, `append`.
-* mode is `append_direct` and `auto_create_table` is true.
-
 There are 3 ways to set schema.
 
 #### Set schema.json
@@ -383,32 +378,31 @@ To load into a partition, specify `table` parameter with a partition decorator a
 out:
   type: bigquery
   table: table_name$20160929
-  auto_create_table: true
 ```
 
-You may configure `time_partitioning` parameter together to create table via `auto_create_table: true` option as:
+You may configure `time_partitioning` parameter together as:
 
 ```yaml
 out:
   type: bigquery
   table: table_name$20160929
-  auto_create_table: true
   time_partitioning:
     type: DAY
     expiration_ms: 259200000
 ```
 
 You can also create column-based partitioning table as:
+
 ```yaml
 out:
   type: bigquery
   mode: replace
-  auto_create_table: true
   table: table_name
   time_partitioning:
     type: DAY
     field: timestamp
 ```
+
 Note the `time_partitioning.field` should be top-level `DATE` or `TIMESTAMP`.
 
 Use [Tables: patch](https://cloud.google.com/bigquery/docs/reference/v2/tables/patch) API to update the schema of the partitioned table, embulk-output-bigquery itself does not support it, though.
