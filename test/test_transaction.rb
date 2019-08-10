@@ -13,7 +13,6 @@ module Embulk
           'table'        => 'your_table_name',
           'temp_table'   => 'temp_table', # randomly created is not good for our test
           'path_prefix'  => 'tmp/', # randomly created is not good for our test
-          'json_keyfile' => File.join(EXAMPLE_ROOT, 'json_key.json'), # dummy
         })
       end
 

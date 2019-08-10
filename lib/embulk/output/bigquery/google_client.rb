@@ -1,4 +1,4 @@
-require 'google/api_client/auth/key_utils'
+require_relative 'auth'
 
 module Embulk
   module Output
@@ -14,6 +14,7 @@ module Embulk
         def initialize(task, scope, client_class)
           @task = task
           @scope = scope
+          @auth = Auth.new(task, scope)
           @client_class = client_class
         end
 
@@ -37,26 +38,7 @@ module Embulk
           Embulk.logger.debug { "embulk-output-bigquery: client_options: #{client.client_options.to_h}" }
           Embulk.logger.debug { "embulk-output-bigquery: request_options: #{client.request_options.to_h}" }
 
-          case @task['auth_method']
-          when 'compute_engine'
-            auth = Google::Auth::GCECredentials.new
-          when 'json_key'
-            json_key = @task['json_keyfile']
-            if File.exist?(json_key)
-              auth = File.open(json_key) do |f|
-                Google::Auth::ServiceAccountCredentials.make_creds(json_key_io: f, scope: @scope)
-              end
-            else
-              key = StringIO.new(json_key)
-              auth = Google::Auth::ServiceAccountCredentials.make_creds(json_key_io: key, scope: @scope)
-            end
-          when 'application_default'
-            auth = Google::Auth.get_application_default([@scope])
-          else
-            raise ConfigError, "Unknown auth method: #{@task['auth_method']}"
-          end
-
-          client.authorization = auth
+          client.authorization = @auth.authenticate
 
           @cached_client_expiration = Time.now + 1800
           @cached_client = client

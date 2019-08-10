@@ -23,7 +23,7 @@ module Embulk
         # @return JSON string
         def self.load(v)
           if v.is_a?(String) # path
-            File.read(v)
+            File.read(File.expand_path(v))
           elsif v.is_a?(Hash)
             v['content']
           end
@@ -33,7 +33,7 @@ module Embulk
       def self.configure(config, schema, task_count)
         task = {
           'mode'                           => config.param('mode',                           :string,  :default => 'append'),
-          'auth_method'                    => config.param('auth_method',                    :string,  :default => 'json_key'),
+          'auth_method'                    => config.param('auth_method',                    :string,  :default => 'application_default'),
           'json_keyfile'                   => config.param('json_keyfile',                  LocalFile, :default => nil),
           'project'                        => config.param('project',                        :string,  :default => nil),
           'dataset'                        => config.param('dataset',                        :string),
@@ -123,24 +123,20 @@ module Embulk
         end
 
         task['auth_method'] = task['auth_method'].downcase
-        unless %w[json_key compute_engine application_default].include?(task['auth_method'])
-          raise ConfigError.new "`auth_method` must be one of json_key, compute_engine, application_default"
+        unless %w[json_key service_account authorized_user compute_engine application_default].include?(task['auth_method'])
+          raise ConfigError.new "`auth_method` must be one of service_account (or json_key), authorized_user, compute_engine, application_default"
         end
-        if task['auth_method'] == 'json_key' and task['json_keyfile'].nil?
-          raise ConfigError.new "`json_keyfile` is required for auth_method json_key"
+        if (task['auth_method'] == 'service_account' or task['auth_method'] == 'json_key') and task['json_keyfile'].nil?
+          raise ConfigError.new "`json_keyfile` is required for auth_method: service_account (or json_key)"
         end
 
-        jsonkey_params = nil
         if task['json_keyfile']
           begin
-            jsonkey_params = JSON.parse(task['json_keyfile'])
+            json_key = JSON.parse(task['json_keyfile'])
+            task['project'] ||= json_key['project_id']
           rescue => e
             raise ConfigError.new "json_keyfile is not a JSON file"
           end
-        end
-
-        if jsonkey_params
-          task['project'] ||= jsonkey_params['project_id']
         end
         if task['project'].nil?
           raise ConfigError.new "Required field \"project\" is not set"

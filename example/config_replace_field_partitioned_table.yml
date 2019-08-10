@@ -19,7 +19,7 @@ in:
 out:
   type: bigquery
   mode: replace
-  auth_method: json_key
+  auth_method: service_account
   json_keyfile: example/your-project-000.json
   dataset: your_dataset_name
   table: your_field_partitioned_table_name

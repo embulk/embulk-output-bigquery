@@ -32,7 +32,7 @@ else
             'dataset'          => 'your_dataset_name',
             'table'            => 'your_table_name',
             'auth_method'      => 'json_key',
-            'json_keyfile'     => JSON_KEYFILE,
+            'json_keyfile'     => File.read(JSON_KEYFILE),
             'retries'          => 3,
             'timeout_sec'      => 300,
             'open_timeout_sec' => 300,
