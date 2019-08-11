@@ -37,7 +37,7 @@ OAuth flow for installed applications.
 |  location                            | string      | optional   | nil                      | geographic location of dataset. See [Location](#location) |
 |  table                               | string      | required   |                          | table name, or table name with a partition decorator such as `table_name$20160929`|
 |  auto_create_dataset                 | boolean     | optional   | false                    | automatically create dataset |
-|  auto_create_table                   | boolean     | optional   | true                     | `false` is available only for `append_direct` mode. Other modes requires `true`. See [Dynamic Table Creating](#dynamic-table-creating) and [Time Partitioning](#time-partitioning) |
+|  auto_create_table                   | boolean     | optional   | true                     | `false` is available only for `append_direct` mode. Other modes require `true`. See [Dynamic Table Creating](#dynamic-table-creating) and [Time Partitioning](#time-partitioning) |
 |  schema_file                         | string      | optional   |                          | /path/to/schema.json |
 |  template_table                      | string      | optional   |                          | template table name. See [Dynamic Table Creating](#dynamic-table-creating) |
 |  job_status_max_polling_time         | int         | optional   | 3600 sec                 | Max job status polling time |
@@ -256,12 +256,12 @@ Table ids are formatted at runtime
 using the local time of the embulk server.
 
 For example, with the configuration below,
-data is inserted into tables `table_2015_04`, `table_2015_05` and so on.
+data is inserted into tables `table_20150503`, `table_20150504` and so on.
 
 ```yaml
 out:
   type: bigquery
-  table: table_%Y_%m
+  table: table_%Y%m%d
 ```
 
 ### Dynamic table creating
@@ -276,7 +276,7 @@ Please set file path of schema.json.
 out:
   type: bigquery
   auto_create_table: true
-  table: table_%Y_%m
+  table: table_%Y%m%d
   schema_file: /path/to/schema.json
 ```
 
@@ -288,7 +288,7 @@ Plugin will try to read schema from existing table and use it as schema template
 out:
   type: bigquery
   auto_create_table: true
-  table: table_%Y_%m
+  table: table_%Y%m%d
   template_table: existing_table_name
 ```
 

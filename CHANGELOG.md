@@ -5,14 +5,14 @@ Cleanup `auth_method`:
 * [enhancement] Support `auth_method: authorized_user` (OAuth)
 * [incompatibility change] Rename `auth_method: json_key` to `auth_method: service_account` (`json_key` is kept for backward compatibility)
 * [incompatibility change] Remove deprecated `auth_method: private_key` (p12 key)
-* [incompatibility change] Change the default `auth_method` to `application_default` from `private_key`.
+* [incompatibility change] Change the default `auth_method` to `application_default` from `private_key` because `private_key` was dropped.
 
 ## 0.5.0 - 2019-08-10
 
 * [incompatibility change] Drop deprecated `time_partitioning`.`require_partition_filter`
 * [incompatibility change] Drop `prevent_duplicate_insert` which has no use-case now
-* [incompatibility change] Change default value of `auto_create_table` to `true` from `false`
-  * Modes `replace`, `replace_backup`, `append`, `delete_in_advance`, that is, except `append_direct` requires `auto_create_table: true`.
+* [incompatibility change] Modes `replace`, `replace_backup`, `append`, and `delete_in_advance` require `auto_create_table: true` now because, previously, these modes had created a target table even with `auto_create_table: false` and made users being confused. Note that `auto_create_table: true` is always required even for a partition (a table name with a partition decorator) which may not require creating a table. This is for simplicity of logics and implementations.
+* [incompatibility change] Change default value of `auto_create_table` to `true` because the above 4 modes, that is, except `append_direct` always require `auto_create_table: true` now.
 
 ## 0.4.14 - 2019-08-10
 

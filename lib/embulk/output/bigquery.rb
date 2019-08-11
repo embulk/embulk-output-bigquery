@@ -304,14 +304,14 @@ module Embulk
           bigquery.create_table_if_not_exists(task['table'])
         when 'replace'
           bigquery.create_table_if_not_exists(task['temp_table'])
-          bigquery.create_table_if_not_exists(task['table'])
+          bigquery.create_table_if_not_exists(task['table']) # needs for when task['table'] is a partition
         when 'append'
           bigquery.create_table_if_not_exists(task['temp_table'])
-          bigquery.create_table_if_not_exists(task['table'])
+          bigquery.create_table_if_not_exists(task['table']) # needs for when task['table'] is a partition
         when 'replace_backup'
           bigquery.create_table_if_not_exists(task['temp_table'])
           bigquery.create_table_if_not_exists(task['table'])
-          bigquery.create_table_if_not_exists(task['table_old'], dataset: task['dataset_old'])
+          bigquery.create_table_if_not_exists(task['table_old'], dataset: task['dataset_old']) # needs for when a partition
         else # append_direct
           if task['auto_create_table']
             bigquery.create_table_if_not_exists(task['table'])
