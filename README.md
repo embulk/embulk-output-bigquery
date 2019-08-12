@@ -239,7 +239,12 @@ out:
 
 #### application\_default
 
-Use Application Default Credentials (ADC).
+Use Application Default Credentials (ADC).  ADC is a strategy to locate Google Cloud Service Account credentials.
+
+1. ADC checks to see if the environment variable `GOOGLE_APPLICATION_CREDENTIALS` is set. If the variable is set, ADC uses the service account file that the variable points to.
+2. ADC checks to see if `~/.config/gcloud/application_default_credentials.json` is located. This file is created by running `gcloud auth application-default login`.
+3. Use the default service account for credentials if the application running on Compute Engine, App Engine, Kubernetes Engine, Cloud Functions or Cloud Run.
+
 See https://cloud.google.com/docs/authentication/production for details.
 
 ```yaml
