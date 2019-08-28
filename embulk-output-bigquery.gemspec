@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name          = "embulk-output-bigquery"
-  spec.version       = "0.6.0"
+  spec.version       = "0.6.1"
   spec.authors       = ["Satoshi Akama", "Naotoshi Seo"]
   spec.summary       = "Google BigQuery output plugin for Embulk"
   spec.description   = "Embulk plugin that insert records to Google BigQuery."
@@ -8,12 +8,9 @@ Gem::Specification.new do |spec|
   spec.licenses      = ["MIT"]
   spec.homepage      = "https://github.com/embulk/embulk-output-bigquery"
 
-  # Exclude example directory for generating gem.
-  # example dir use symlink.
-  # It doesn't work properly on the Windows platform without administrator
-  # privilege.
-  spec.files         = `git ls-files`.split("\n") + Dir["classpath/*.jar"] -
-                       Dir["example/*" ]
+  # Exclude example directory which uses symlinks from generating gem.
+  # Symlinks do not work properly on the Windows platform without administrator privilege.
+  spec.files         = `git ls-files`.split("\n") + Dir["classpath/*.jar"] - Dir["example/*" ]
   spec.test_files    = spec.files.grep(%r{^(test|spec)/})
   spec.require_paths = ["lib"]
 

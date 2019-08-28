@@ -1,3 +1,7 @@
+## 0.6.1 - 2019-08-28
+
+* [maintenance] Release a new gem not to include symlinks to make it work on Windows.
+
 ## 0.6.0 - 2019-08-11
 
 Cleanup `auth_method`:
