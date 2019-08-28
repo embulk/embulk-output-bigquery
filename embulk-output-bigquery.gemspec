@@ -8,7 +8,12 @@ Gem::Specification.new do |spec|
   spec.licenses      = ["MIT"]
   spec.homepage      = "https://github.com/embulk/embulk-output-bigquery"
 
-  spec.files         = `git ls-files`.split("\n") + Dir["classpath/*.jar"]
+  # Exclude example directory for generating gem.
+  # example dir use symlink.
+  # It doesn't work properly on the Windows platform without administrator
+  # privilege.
+  spec.files         = `git ls-files`.split("\n") + Dir["classpath/*.jar"] -
+                       Dir["example/*" ]
   spec.test_files    = spec.files.grep(%r{^(test|spec)/})
   spec.require_paths = ["lib"]
 
