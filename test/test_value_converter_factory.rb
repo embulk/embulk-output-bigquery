@@ -90,6 +90,10 @@ module Embulk
           assert_raise { ValueConverterFactory.new(SCHEMA_TYPE, 'TIMESTAMP').create_converter }
         end
 
+        def test_date
+          assert_raise { ValueConverterFactory.new(SCHEMA_TYPE, 'DATE').create_converter }
+        end
+
         def test_record
           assert_raise { ValueConverterFactory.new(SCHEMA_TYPE, 'RECORD').create_converter }
         end
@@ -130,6 +134,10 @@ module Embulk
           assert_equal 1408452095, converter.call(1408452095)
         end
 
+        def test_date
+          assert_raise { ValueConverterFactory.new(SCHEMA_TYPE, 'DATE').create_converter }
+        end
+
         def test_record
           assert_raise { ValueConverterFactory.new(SCHEMA_TYPE, 'RECORD').create_converter }
         end
@@ -164,6 +172,10 @@ module Embulk
           converter = ValueConverterFactory.new(SCHEMA_TYPE, 'TIMESTAMP').create_converter
           assert_equal nil, converter.call(nil)
           assert_equal 1408452095.188766, converter.call(1408452095.188766)
+        end
+
+        def test_date
+          assert_raise { ValueConverterFactory.new(SCHEMA_TYPE, 'DATE').create_converter }
         end
 
         def test_record
@@ -214,6 +226,14 @@ module Embulk
           converter = ValueConverterFactory.new(SCHEMA_TYPE, 'TIMESTAMP').create_converter
           assert_equal nil, converter.call(nil)
           assert_equal "2016-02-26 00:00:00", converter.call("2016-02-26 00:00:00")
+        end
+
+        def test_date
+          converter = ValueConverterFactory.new(SCHEMA_TYPE, 'DATE').create_converter
+          assert_equal nil, converter.call(nil)
+          assert_equal "2016-02-26", converter.call("2016-02-26")
+          assert_equal "2016-02-26 00:00:00", converter.call("2016-02-26")
+          assert_raise { converter.call('foo') }
         end
 
         def test_record
@@ -268,6 +288,14 @@ module Embulk
           assert_equal expected, converter.call(Time.at(subject).utc)
         end
 
+        def test_date
+          converter = ValueConverterFactory.new(SCHEMA_TYPE, 'DATE').create_converter
+          assert_equal nil, converter.call(nil)
+          assert_equal "2016-02-26", converter.call("2016-02-26")
+          assert_equal "2016-02-26 00:00:00", converter.call("2016-02-26")
+          assert_raise { converter.call('foo') }
+        end
+
         def test_record
           assert_raise { ValueConverterFactory.new(SCHEMA_TYPE, 'RECORD').create_converter }
         end
@@ -296,6 +324,10 @@ module Embulk
 
         def test_timestamp
           assert_raise { ValueConverterFactory.new(SCHEMA_TYPE, 'TIMESTAMP').create_converter }
+        end
+
+        def test_date
+          assert_raise { ValueConverterFactory.new(SCHEMA_TYPE, 'DATE').create_converter }
         end
 
         def test_record
