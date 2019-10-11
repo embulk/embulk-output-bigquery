@@ -18,11 +18,12 @@ in:
       - {name: boolean,     type: boolean}
 out:
   type: bigquery
-  mode: replace
-  auth_method: json_key
+  mode: replace_backup
+  auth_method: service_account
   json_keyfile: example/your-project-000.json
   dataset: your_dataset_name
-  table: your_partitioned_table_name$20160929
+  table: your_field_partitioned_table_name
+  table_old: your_field_partitioned_table_name_old
   source_format: NEWLINE_DELIMITED_JSON
   compression: NONE
   auto_create_dataset: true
@@ -30,4 +31,4 @@ out:
   schema_file: example/schema.json
   time_partitioning:
     type: 'DAY'
-    expiration_ms: 100
+    field: 'timestamp'

@@ -23,7 +23,7 @@ module Embulk
         # @return JSON string
         def self.load(v)
           if v.is_a?(String) # path
-            File.read(v)
+            File.read(File.expand_path(v))
           elsif v.is_a?(Hash)
             v['content']
           end
@@ -33,9 +33,7 @@ module Embulk
       def self.configure(config, schema, task_count)
         task = {
           'mode'                           => config.param('mode',                           :string,  :default => 'append'),
-          'auth_method'                    => config.param('auth_method',                    :string,  :default => 'private_key'),
-          'service_account_email'          => config.param('service_account_email',          :string,  :default => nil),
-          'p12_keyfile'                    => config.param('p12_keyfile',                    :string,  :default => nil),
+          'auth_method'                    => config.param('auth_method',                    :string,  :default => 'application_default'),
           'json_keyfile'                   => config.param('json_keyfile',                  LocalFile, :default => nil),
           'project'                        => config.param('project',                        :string,  :default => nil),
           'dataset'                        => config.param('dataset',                        :string),
@@ -45,7 +43,7 @@ module Embulk
           'table_old'                      => config.param('table_old',                      :string,  :default => nil),
           'table_name_old'                 => config.param('table_name_old',                 :string,  :default => nil), # lower version compatibility
           'auto_create_dataset'            => config.param('auto_create_dataset',            :bool,    :default => false),
-          'auto_create_table'              => config.param('auto_create_table',              :bool,    :default => false),
+          'auto_create_table'              => config.param('auto_create_table',              :bool,    :default => true),
           'schema_file'                    => config.param('schema_file',                    :string,  :default => nil),
           'template_table'                 => config.param('template_table',                 :string,  :default => nil),
 
@@ -53,7 +51,6 @@ module Embulk
           'job_status_max_polling_time'    => config.param('job_status_max_polling_time',    :integer, :default => 3600),
           'job_status_polling_interval'    => config.param('job_status_polling_interval',    :integer, :default => 10),
           'is_skip_job_result_check'       => config.param('is_skip_job_result_check',       :bool,    :default => false),
-          'prevent_duplicate_insert'       => config.param('prevent_duplicate_insert',       :bool,    :default => false),
           'with_rehearsal'                 => config.param('with_rehearsal',                 :bool,    :default => false),
           'rehearsal_counts'               => config.param('rehearsal_counts',               :integer, :default => 1000),
           'abort_on_error'                 => config.param('abort_on_error',                 :bool,    :default => nil),
@@ -64,7 +61,7 @@ module Embulk
           'default_timestamp_format'       => config.param('default_timestamp_format',       :string,  :default => ValueConverterFactory::DEFAULT_TIMESTAMP_FORMAT),
           'payload_column'                 => config.param('payload_column',                 :string,  :default => nil),
           'payload_column_index'           => config.param('payload_column_index',           :integer, :default => nil),
-          
+
           'open_timeout_sec'               => config.param('open_timeout_sec',               :integer, :default => nil),
           'timeout_sec'                    => config.param('timeout_sec',                    :integer, :default => nil), # google-api-ruby-client < v0.11.0
           'send_timeout_sec'               => config.param('send_timeout_sec',               :integer, :default => nil), # google-api-ruby-client >= v0.11.0
@@ -89,6 +86,7 @@ module Embulk
           'ignore_unknown_values'          => config.param('ignore_unknown_values',          :bool,    :default => false),
           'allow_quoted_newlines'          => config.param('allow_quoted_newlines',          :bool,    :default => false),
           'time_partitioning'              => config.param('time_partitioning',              :hash,    :default => nil),
+          'clustering'                     => config.param('clustering',                     :hash,    :default => nil), # google-api-ruby-client >= v0.21.0
           'schema_update_options'          => config.param('schema_update_options',          :array,   :default => nil),
 
           # for debug
@@ -104,10 +102,14 @@ module Embulk
           raise ConfigError.new "`mode` must be one of append, append_direct, replace, delete_in_advance, replace_backup"
         end
 
+        if %w[append replace delete_in_advance replace_backup].include?(task['mode']) and !task['auto_create_table']
+          raise ConfigError.new "`mode: #{task['mode']}` requires `auto_create_table: true`"
+        end
+
         if task['mode'] == 'replace_backup'
           task['table_old'] ||= task['table_name_old'] # for lower version compatibility
           if task['dataset_old'].nil? and task['table_old'].nil?
-            raise ConfigError.new "`mode replace_backup` requires either of `dataset_old` or `table_old`"
+            raise ConfigError.new "`mode: replace_backup` requires either of `dataset_old` or `table_old`"
           end
           task['dataset_old'] ||= task['dataset']
           task['table_old']   ||= task['table']
@@ -121,27 +123,20 @@ module Embulk
         end
 
         task['auth_method'] = task['auth_method'].downcase
-        unless %w[private_key json_key compute_engine application_default].include?(task['auth_method'])
-          raise ConfigError.new "`auth_method` must be one of private_key, json_key, compute_engine, application_default"
+        unless %w[json_key service_account authorized_user compute_engine application_default].include?(task['auth_method'])
+          raise ConfigError.new "`auth_method` must be one of service_account (or json_key), authorized_user, compute_engine, application_default"
         end
-        if task['auth_method'] == 'private_key' and task['p12_keyfile'].nil?
-          raise ConfigError.new "`p12_keyfile` is required for auth_method private_key"
-        end
-        if task['auth_method'] == 'json_key' and task['json_keyfile'].nil?
-          raise ConfigError.new "`json_keyfile` is required for auth_method json_key"
+        if (task['auth_method'] == 'service_account' or task['auth_method'] == 'json_key') and task['json_keyfile'].nil?
+          raise ConfigError.new "`json_keyfile` is required for auth_method: service_account (or json_key)"
         end
 
-        jsonkey_params = nil
         if task['json_keyfile']
           begin
-            jsonkey_params = JSON.parse(task['json_keyfile'])
+            json_key = JSON.parse(task['json_keyfile'])
+            task['project'] ||= json_key['project_id']
           rescue => e
             raise ConfigError.new "json_keyfile is not a JSON file"
           end
-        end
-
-        if jsonkey_params
-          task['project'] ||= jsonkey_params['project_id']
         end
         if task['project'].nil?
           raise ConfigError.new "Required field \"project\" is not set"
@@ -234,6 +229,12 @@ module Embulk
           task['time_partitioning'] = {'type' => 'DAY'}
         end
 
+        if task['clustering']
+          unless task['clustering']['fields']
+            raise ConfigError.new "`clustering` must have `fields` key"
+          end
+        end
+
         if task['schema_update_options']
           task['schema_update_options'].each do |schema_update_option|
             unless %w[ALLOW_FIELD_ADDITION ALLOW_FIELD_RELAXATION].include?(schema_update_option)
@@ -269,7 +270,7 @@ module Embulk
           sum + (response ? response.statistics.load.output_rows.to_i : 0)
         end
         if task['temp_table']
-          num_output_rows = bigquery.get_table(task['temp_table']).num_rows.to_i
+          num_output_rows = bigquery.get_table_or_partition(task['temp_table']).num_rows.to_i
         else
           num_output_rows = num_response_rows
         end
@@ -299,36 +300,23 @@ module Embulk
 
         case task['mode']
         when 'delete_in_advance'
-          if task['time_partitioning']
-            bigquery.delete_partition(task['table'])
-          else
-            bigquery.delete_table(task['table'])
-          end
-          bigquery.create_table(task['table'])
-        when 'replace', 'replace_backup', 'append'
-          bigquery.create_table(task['temp_table'])
-          if task['time_partitioning']
-            if task['auto_create_table']
-              bigquery.create_table(task['table'])
-            else
-              bigquery.get_table(task['table']) # raises NotFoundError
-            end
-          end
+          bigquery.delete_table_or_partition(task['table'])
+          bigquery.create_table_if_not_exists(task['table'])
+        when 'replace'
+          bigquery.create_table_if_not_exists(task['temp_table'])
+          bigquery.create_table_if_not_exists(task['table']) # needs for when task['table'] is a partition
+        when 'append'
+          bigquery.create_table_if_not_exists(task['temp_table'])
+          bigquery.create_table_if_not_exists(task['table']) # needs for when task['table'] is a partition
+        when 'replace_backup'
+          bigquery.create_table_if_not_exists(task['temp_table'])
+          bigquery.create_table_if_not_exists(task['table'])
+          bigquery.create_table_if_not_exists(task['table_old'], dataset: task['dataset_old']) # needs for when a partition
         else # append_direct
           if task['auto_create_table']
-            bigquery.create_table(task['table'])
+            bigquery.create_table_if_not_exists(task['table'])
           else
             bigquery.get_table(task['table']) # raises NotFoundError
-          end
-        end
-
-        if task['mode'] == 'replace_backup'
-          if task['time_partitioning'] and Helper.has_partition_decorator?(task['table_old'])
-            if task['auto_create_table']
-              bigquery.create_table(task['table_old'], dataset: task['dataset_old'])
-            else
-              bigquery.get_table(task['table_old'], dataset: task['dataset_old']) # raises NotFoundError
-            end
           end
         end
       end
@@ -396,7 +384,7 @@ module Embulk
 
             if task['mode'] == 'replace_backup'
               begin
-                bigquery.get_table(task['table'])
+                bigquery.get_table_or_partition(task['table'])
                 bigquery.copy(task['table'], task['table_old'], task['dataset_old'])
               rescue NotFoundError
               end
@@ -508,7 +496,7 @@ module Embulk
 
         self.class.rehearsal_thread = Thread.new do
           begin
-            bigquery.create_table(task['rehearsal_table'])
+            bigquery.create_table_if_not_exists(task['rehearsal_table'])
             response = bigquery.load(rehearsal_path, task['rehearsal_table'])
             num_output_rows = response ? response.statistics.load.output_rows.to_i : 0
             Embulk.logger.info { "embulk-output-bigquery: Loaded rehearsal #{num_output_rows}" }

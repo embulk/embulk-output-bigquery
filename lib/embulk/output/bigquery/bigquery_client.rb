@@ -79,11 +79,7 @@ module Embulk
             begin
               # As https://cloud.google.com/bigquery/docs/managing_jobs_datasets_projects#managingjobs says,
               # we should generate job_id in client code, otherwise, retrying would cause duplication
-              if @task['prevent_duplicate_insert'] and (@task['mode'] == 'append' or @task['mode'] == 'append_direct')
-                job_id = Helper.create_load_job_id(@task, path, fields)
-              else
-                job_id = "embulk_load_job_#{SecureRandom.uuid}"
-              end
+              job_id = "embulk_load_job_#{SecureRandom.uuid}"
               Embulk.logger.info { "embulk-output-bigquery: Load job starting... job_id:[#{job_id}] #{object_uris} => #{@project}:#{@dataset}.#{table} in #{@location_for_log}" }
 
               body = {
@@ -116,11 +112,11 @@ module Embulk
               if @location
                 body[:job_reference][:location] = @location
               end
-              
+
               if @task['schema_update_options']
                 body[:configuration][:load][:schema_update_options] = @task['schema_update_options']
               end
-              
+
               opts = {}
 
               Embulk.logger.debug { "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts})" }
@@ -174,11 +170,7 @@ module Embulk
               if File.exist?(path)
                 # As https://cloud.google.com/bigquery/docs/managing_jobs_datasets_projects#managingjobs says,
                 # we should generate job_id in client code, otherwise, retrying would cause duplication
-                if @task['prevent_duplicate_insert'] and (@task['mode'] == 'append' or @task['mode'] == 'append_direct')
-                  job_id = Helper.create_load_job_id(@task, path, fields)
-                else
-                  job_id = "embulk_load_job_#{SecureRandom.uuid}"
-                end
+                job_id = "embulk_load_job_#{SecureRandom.uuid}"
                 Embulk.logger.info { "embulk-output-bigquery: Load job starting... job_id:[#{job_id}] #{path} => #{@project}:#{@dataset}.#{table} in #{@location_for_log}" }
               else
                 Embulk.logger.info { "embulk-output-bigquery: Load job starting... #{path} does not exist, skipped" }
@@ -330,10 +322,13 @@ module Embulk
             end
           end
 
-          # cf. http://www.rubydoc.info/github/google/google-api-ruby-client/Google/Apis/BigqueryV2/JobStatus#errors-instance_method
           # `errors` returns Array<Google::Apis::BigqueryV2::ErrorProto> if any error exists.
+          _errors = _response.status.errors
+
+          # cf. http://www.rubydoc.info/github/google/google-api-ruby-client/Google/Apis/BigqueryV2/JobStatus#errors-instance_method
+          # `error_result` returns Google::Apis::BigqueryV2::ErrorProto if job failed.
           # Otherwise, this returns nil.
-          if _errors = _response.status.errors
+          if _response.status.error_result
             msg = "failed during waiting a #{kind} job, get_job(#{@project}, #{job_id}), errors:#{_errors.map(&:to_h)}"
             if _errors.any? {|error| error.reason == 'backendError' }
               raise BackendError, msg
@@ -345,6 +340,10 @@ module Embulk
               Embulk.logger.error { "embulk-output-bigquery: #{msg}" }
               raise Error, msg
             end
+          end
+
+          if _errors
+            Embulk.logger.warn { "embulk-output-bigquery: #{kind} job errors... job_id:[#{job_id}] errors:#{_errors.map(&:to_h)}" }
           end
 
           Embulk.logger.info { "embulk-output-bigquery: #{kind} job response... job_id:[#{job_id}] response.statistics:#{_response.statistics.to_h}" }
@@ -405,7 +404,7 @@ module Embulk
           end
         end
 
-        def create_table(table, dataset: nil, options: nil)
+        def create_table_if_not_exists(table, dataset: nil, options: nil)
           begin
             dataset ||= @dataset
             options ||= {}
@@ -430,7 +429,13 @@ module Embulk
                 type: options['time_partitioning']['type'],
                 expiration_ms: options['time_partitioning']['expiration_ms'],
                 field: options['time_partitioning']['field'],
-                requirePartitionFilter: options['time_partitioning']['requirePartitionFilter'],
+              }
+            end
+
+            options['clustering'] ||= @task['clustering']
+            if options['clustering']
+              body[:clustering] = {
+                fields: options['clustering']['fields'],
               }
             end
 
@@ -452,8 +457,17 @@ module Embulk
         end
 
         def delete_table(table, dataset: nil)
+          table = Helper.chomp_partition_decorator(table)
+          delete_table_or_partition(table, dataset: dataset)
+        end
+
+        def delete_partition(table, dataset: nil)
+          delete_table_or_partition(table, dataset: dataset)
+        end
+
+        # if `table` with a partition decorator is given, a partition is deleted.
+        def delete_table_or_partition(table, dataset: nil)
           begin
-            table = Helper.chomp_partition_decorator(table)
             dataset ||= @dataset
             Embulk.logger.info { "embulk-output-bigquery: Delete table... #{@project}:#{dataset}.#{table}" }
             with_network_retry { client.delete_table(@project, dataset, table) }
@@ -472,8 +486,16 @@ module Embulk
         end
 
         def get_table(table, dataset: nil)
+          table = Helper.chomp_partition_decorator(table)
+          get_table_or_partition(table)
+        end
+
+        def get_partition(table, dataset: nil)
+          get_table_or_partition(table)
+        end
+
+        def get_table_or_partition(table, dataset: nil)
           begin
-            table = Helper.chomp_partition_decorator(table)
             dataset ||= @dataset
             Embulk.logger.info { "embulk-output-bigquery: Get table... #{@project}:#{dataset}.#{table}" }
             with_network_retry { client.get_table(@project, dataset, table) }
@@ -487,21 +509,6 @@ module Embulk
               "embulk-output-bigquery: get_table(#{@project}, #{dataset}, #{table}), response:#{response}"
             }
             raise Error, "failed to get table #{@project}:#{dataset}.#{table}, response:#{response}"
-          end
-        end
-
-        # Is this only a way to drop partition?
-        def delete_partition(table_with_partition, dataset: nil)
-          dataset ||= @dataset
-          begin
-            table = Helper.chomp_partition_decorator(table_with_partition)
-            get_table(table, dataset: dataset)
-          rescue NotFoundError
-          else
-            Embulk.logger.info { "embulk-output-bigquery: Delete partition... #{@project}:#{dataset}.#{table_with_partition}" }
-            Tempfile.create('embulk_output_bigquery_empty_file_') do |fp|
-              load(fp.path, table_with_partition, write_disposition: 'WRITE_TRUNCATE')
-            end
           end
         end
       end

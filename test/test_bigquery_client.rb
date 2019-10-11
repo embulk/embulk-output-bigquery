@@ -32,7 +32,7 @@ else
             'dataset'          => 'your_dataset_name',
             'table'            => 'your_table_name',
             'auth_method'      => 'json_key',
-            'json_keyfile'     => JSON_KEYFILE,
+            'json_keyfile'     => File.read(JSON_KEYFILE),
             'retries'          => 3,
             'timeout_sec'      => 300,
             'open_timeout_sec' => 300,
@@ -60,10 +60,6 @@ else
         sub_test_case "client" do
           def test_json_keyfile
             assert_nothing_raised { BigqueryClient.new(least_task, schema).client }
-          end
-
-          def test_p12_keyfile
-            # pending
           end
         end
 
@@ -96,20 +92,20 @@ else
           end
         end
 
-        sub_test_case "create_table" do
-          def test_create_table
+        sub_test_case "create_table_if_not_exists" do
+          def test_create_table_if_not_exists
             client.delete_table('your_table_name')
-            assert_nothing_raised { client.create_table('your_table_name') }
+            assert_nothing_raised { client.create_table_if_not_exists('your_table_name') }
           end
 
-          def test_create_table_already_exists
-            assert_nothing_raised { client.create_table('your_table_name') }
+          def test_create_table_if_not_exists_already_exists
+            assert_nothing_raised { client.create_table_if_not_exists('your_table_name') }
           end
 
           def test_create_partitioned_table
             client.delete_table('your_table_name')
             assert_nothing_raised do
-              client.create_table('your_table_name$20160929', options:{
+              client.create_table_if_not_exists('your_table_name$20160929', options:{
                 'time_partitioning' => {'type'=>'DAY', 'expiration_ms'=>1000}
               })
             end
@@ -118,7 +114,7 @@ else
 
         sub_test_case "delete_table" do
           def test_delete_table
-            client.create_table('your_table_name')
+            client.create_table_if_not_exists('your_table_name')
             assert_nothing_raised { client.delete_table('your_table_name') }
           end
 
@@ -127,14 +123,14 @@ else
           end
 
           def test_delete_partitioned_table
-            client.create_table('your_table_name')
+            client.create_table_if_not_exists('your_table_name')
             assert_nothing_raised { client.delete_table('your_table_name$20160929') }
           end
         end
 
         sub_test_case "get_table" do
           def test_get_table
-            client.create_table('your_table_name')
+            client.create_table_if_not_exists('your_table_name')
             assert_nothing_raised { client.get_table('your_table_name') }
           end
 
@@ -146,7 +142,7 @@ else
           end
 
           def test_get_partitioned_table
-            client.create_table('your_table_name')
+            client.create_table_if_not_exists('your_table_name')
             assert_nothing_raised { client.get_table('your_table_name$20160929') }
           end
         end
@@ -154,7 +150,7 @@ else
         sub_test_case "delete_partition" do
           def test_delete_partition
             client.delete_table('your_table_name')
-            client.create_table('your_table_name$20160929')
+            client.create_table_if_not_exists('your_table_name$20160929')
             assert_nothing_raised { client.delete_partition('your_table_name$20160929') }
           ensure
             client.delete_table('your_table_name')
@@ -162,7 +158,7 @@ else
 
           def test_delete_partition_of_non_partitioned_table
             client.delete_table('your_table_name')
-            client.create_table('your_table_name')
+            client.create_table_if_not_exists('your_table_name')
             assert_raise { client.delete_partition('your_table_name$20160929') }
           ensure
             client.delete_table('your_table_name')
@@ -175,7 +171,7 @@ else
 
         sub_test_case "fields" do
           def test_fields_from_table
-            client.create_table('your_table_name')
+            client.create_table_if_not_exists('your_table_name')
             fields = client.fields_from_table('your_table_name')
             expected = [
               {:type=>"BOOLEAN", :name=>"boolean"},
@@ -190,15 +186,15 @@ else
         end
 
         sub_test_case "copy" do
-          def test_create_table
-            client.create_table('your_table_name')
+          def test_create_table_if_not_exists
+            client.create_table_if_not_exists('your_table_name')
             assert_nothing_raised { client.copy('your_table_name', 'your_table_name_old') }
           end
         end
 
         sub_test_case "load" do
           def test_load
-            client.create_table('your_table_name')
+            client.create_table_if_not_exists('your_table_name')
             File.write("tmp/your_file_name.csv", record.to_csv)
             assert_nothing_raised { client.load("/tmp/your_file_name.csv", 'your_table_name') }
           end

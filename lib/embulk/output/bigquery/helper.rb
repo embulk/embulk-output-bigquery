@@ -7,12 +7,16 @@ module Embulk
       class Helper
         PARTITION_DECORATOR_REGEXP = /\$.+\z/
 
-        def self.has_partition_decorator?(table)
-          !!(table =~ PARTITION_DECORATOR_REGEXP)
+        def self.field_partitioning?(task)
+          (task['time_partitioning'] || {}).key?('field')
         end
 
-        def self.chomp_partition_decorator(table)
-          table.sub(PARTITION_DECORATOR_REGEXP, '')
+        def self.has_partition_decorator?(table_name)
+          !!(table_name =~ PARTITION_DECORATOR_REGEXP)
+        end
+
+        def self.chomp_partition_decorator(table_name)
+          table_name.sub(PARTITION_DECORATOR_REGEXP, '')
         end
 
         def self.bq_type_from_embulk_type(embulk_type)

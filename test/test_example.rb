@@ -9,8 +9,10 @@ unless File.exist?(JSON_KEYFILE)
 else
   class TestExample < Test::Unit::TestCase
     def embulk_path
-      if File.exist?("#{ENV['PATH']}/.embulk/bin/embulk")
-        "#{ENV['PATH']}/.embulk/bin/embulk"
+      if File.exist?("#{ENV['HOME']}/.embulk/bin/embulk")
+        "#{ENV['HOME']}/.embulk/bin/embulk"
+      elsif File.exist?("#{ENV['PWD']}/embulk.jar")
+        "#{ENV['PWD']}/embulk.jar"
       elsif File.exist?("/usr/local/bin/embulk")
         "/usr/local/bin/embulk"
       else
@@ -19,7 +21,7 @@ else
     end
 
     def embulk_run(config_path)
-      Bundler.with_clean_env do
+      ::Bundler.with_clean_env do
         cmd = "#{embulk_path} run -X page_size=1 -b . -l trace #{config_path}"
         puts "=" * 64
         puts cmd
@@ -31,7 +33,6 @@ else
     files.each do |config_path|
       if %w[
         config_expose_errors.yml
-        config_prevent_duplicate_insert.yml
         ].include?(File.basename(config_path))
         define_method(:"test_#{File.basename(config_path, ".yml")}") do
           assert_false embulk_run(config_path)

@@ -14,7 +14,7 @@ https://developers.google.com/bigquery/loading-data-into-bigquery
 * **Cleanup supported**: no
 * **Dynamic table creating**: yes
 
-### NOT IMPLEMENTED 
+### NOT IMPLEMENTED
 * insert data over streaming inserts
   * for continuous real-time insertions
   * Please use other product, like [fluent-plugin-bigquery](https://github.com/kaizenplatform/fluent-plugin-bigquery)
@@ -23,37 +23,26 @@ https://developers.google.com/bigquery/loading-data-into-bigquery
 Current version of this plugin supports Google API with Service Account Authentication, but does not support
 OAuth flow for installed applications.
 
-### INCOMPATIBILITY CHANGES
-
-v0.3.x has incompatibility changes with v0.2.x. Please see [CHANGELOG.md](CHANGELOG.md) for details.
-
-* `formatter` option (formatter plugin support) is dropped. Use `source_format` option instead. (it already exists in v0.2.x too)
-* `encoders` option (encoder plugin support) is dropped. Use `compression` option instead (it already exists in v0.2.x too).
-* `mode: append` mode now expresses a transactional append, and `mode: append_direct` is one which is not transactional.
-
 ## Configuration
 
 #### Original options
 
-| name                                 | type        | required?  | default                  | description            |  
+| name                                 | type        | required?  | default                  | description            |
 |:-------------------------------------|:------------|:-----------|:-------------------------|:-----------------------|
-|  mode                                | string      | optional   | "append"                 | See [Mode](#mode)     |
-|  auth_method                         | string      | optional   | "private_key"            | `private_key` , `json_key` or `compute_engine`
-|  service_account_email               | string      | required when auth_method is private_key  |   | Your Google service account email
-|  p12_keyfile                         | string      | required when auth_method is private_key  |   | Fullpath of private key in P12(PKCS12) format |
-|  json_keyfile                        | string      | required when auth_method is json_key     |   | Fullpath of json key |
-|  project                             | string      | required if json_keyfile is not given     |   | project_id |
+|  mode                                | string      | optional   | "append"                 | See [Mode](#mode)      |
+|  auth_method                         | string      | optional   | "application\_default"   | See [Authentication](#authentication) |
+|  json_keyfile                        | string      | optional   |                          | keyfile path or `content` |
+|  project                             | string      | required unless service\_account's `json_keyfile` is given. | | project\_id |
 |  dataset                             | string      | required   |                          | dataset |
 |  location                            | string      | optional   | nil                      | geographic location of dataset. See [Location](#location) |
 |  table                               | string      | required   |                          | table name, or table name with a partition decorator such as `table_name$20160929`|
 |  auto_create_dataset                 | boolean     | optional   | false                    | automatically create dataset |
-|  auto_create_table                   | boolean     | optional   | false                    | See [Dynamic Table Creating](#dynamic-table-creating) |
+|  auto_create_table                   | boolean     | optional   | true                     | `false` is available only for `append_direct` mode. Other modes require `true`. See [Dynamic Table Creating](#dynamic-table-creating) and [Time Partitioning](#time-partitioning) |
 |  schema_file                         | string      | optional   |                          | /path/to/schema.json |
 |  template_table                      | string      | optional   |                          | template table name. See [Dynamic Table Creating](#dynamic-table-creating) |
-|  prevent_duplicate_insert            | boolean     | optional   | false                    | See [Prevent Duplication](#prevent-duplication) |
 |  job_status_max_polling_time         | int         | optional   | 3600 sec                 | Max job status polling time |
 |  job_status_polling_interval         | int         | optional   | 10 sec                   | Job status polling interval |
-|  is_skip_job_result_check            | boolean     | optional   | false                    | Skip waiting Load job finishes. Available for append, or delete_in_advance mode | 
+|  is_skip_job_result_check            | boolean     | optional   | false                    | Skip waiting Load job finishes. Available for append, or delete_in_advance mode |
 |  with_rehearsal                      | boolean     | optional   | false                    | Load `rehearsal_counts` records as a rehearsal. Rehearsal loads into REHEARSAL temporary table, and delete finally. You may use this option to investigate data errors as early stage as possible |
 |  rehearsal_counts                    | integer     | optional   | 1000                     | Specify number of records to load in a rehearsal |
 |  abort_on_error                      | boolean     | optional   | true if max_bad_records is 0, otherwise false | Raise an error if number of input rows and number of output rows does not match |
@@ -80,7 +69,7 @@ Client or request options
 
 Options for intermediate local files
 
-| name                                 | type        | required?  | default                  | description            |  
+| name                                 | type        | required?  | default                  | description            |
 |:-------------------------------------|:------------|:-----------|:-------------------------|:-----------------------|
 |  path_prefix                         | string      | optional   |                          | Path prefix of local files such as "/tmp/prefix_". Default randomly generates with [tempfile](http://ruby-doc.org/stdlib-2.2.3/libdoc/tempfile/rdoc/Tempfile.html) |
 |  sequence_format                     | string      | optional   | .%d.%d                   | Sequence format for pid, thread id |
@@ -107,7 +96,8 @@ Following options are same as [bq command-line tools](https://cloud.google.com/b
 |  time_partitioning.type           | string   | required  | nil     | The only type supported is DAY, which will generate one partition per day based on data loading time. |
 |  time_partitioning.expiration_ms  | int      | optional  | nil     | Number of milliseconds for which to keep the storage for a partition. |
 |  time_partitioning.field          | string   | optional  | nil     | `DATE` or `TIMESTAMP` column used for partitioning |
-|  time_partitioning.requirePartitionFilter | boolean      | optional  | nil     | If ture, valid partition filter is required when query |
+|  clustering                       | hash     | optional  | nil     | Currently, clustering is supported for partitioned tables, so must be used with `time_partitioning` option. See [clustered tables](https://cloud.google.com/bigquery/docs/clustered-tables) |
+|  clustering.fields                | array    | required  | nil     | One or more fields on which data should be clustered. The order of the specified columns determines the sort order of the data. |
 |  schema_update_options            | array    | optional  | nil     | (Experimental) List of `ALLOW_FIELD_ADDITION` or `ALLOW_FIELD_RELAXATION` or both. See [jobs#configuration.load.schemaUpdateOptions](https://cloud.google.com/bigquery/docs/reference/v2/jobs#configuration.load.schemaUpdateOptions). NOTE for the current status: `schema_update_options` does not work for `copy` job, that is, is not effective for most of modes such as `append`, `replace` and `replace_backup`. `delete_in_advance` deletes origin table so does not need to update schema. Only `append_direct` can utilize schema update. |
 
 ### Example
@@ -116,9 +106,8 @@ Following options are same as [bq command-line tools](https://cloud.google.com/b
 out:
   type: bigquery
   mode: append
-  auth_method: private_key   # default
-  service_account_email: ABCXYZ123ABCXYZ123.gserviceaccount.com
-  p12_keyfile: /path/to/p12_keyfile.p12
+  auth_method: service_account
+  json_keyfile: /path/to/json_keyfile.json
   project: your-project-000
   dataset: your_dataset_name
   table: your_table_name
@@ -126,7 +115,7 @@ out:
   source_format: NEWLINE_DELIMITED_JSON
 ```
 
-### location
+### Location
 
 The geographic location of the dataset. Required except for US and EU.
 
@@ -134,7 +123,7 @@ GCS bucket should be in same region when you use `gcs_bucket`.
 
 See also [Dataset Locations | BigQuery | Google Cloud](https://cloud.google.com/bigquery/docs/dataset-locations)
 
-### mode
+### Mode
 
 5 modes are provided.
 
@@ -156,6 +145,8 @@ This is not transactional, i.e., if fails, the target table could have some rows
 
 ```is_skip_job_result_check``` must be false when replace mode
 
+NOTE: BigQuery does not support replacing (actually, copying into) a non-partitioned table with a paritioned table atomically. You must once delete the non-partitioned table, otherwise, you get `Incompatible table partitioning specification when copying to the column partitioned table` error.
+
 ##### replace_backup
 
 1. Load to temporary table (Create and WRITE_APPEND in parallel)
@@ -171,53 +162,69 @@ This is not transactional, i.e., if fails, the target table could have some rows
 
 ### Authentication
 
-There are three methods supported to fetch access token for the service account.
+There are four authentication methods
 
-1. Public-Private key pair of GCP(Google Cloud Platform)'s service account
-2. JSON key of GCP(Google Cloud Platform)'s service account
-3. Pre-defined access token (Google Compute Engine only)
+1. `service_account` (or `json_key` for backward compatibility)
+1. `authorized_user`
+1. `compute_engine`
+1. `application_default`
 
-#### Public-Private key pair of GCP's service account
+#### service\_account (or json\_key)
 
-You first need to create a service account (client ID),
-download its private key and deploy the key with embulk.
-
-```yaml
-out:
-  type: bigquery
-  auth_method: private_key   # default
-  service_account_email: ABCXYZ123ABCXYZ123.gserviceaccount.com
-  p12_keyfile: /path/to/p12_keyfile.p12
-```
-
-#### JSON key of GCP's service account
-
-You first need to create a service account (client ID),
-download its json key and deploy the key with embulk.
+Use GCP service account credentials.
+You first need to create a service account, download its json key and deploy the key with embulk.
 
 ```yaml
 out:
   type: bigquery
-  auth_method: json_key
+  auth_method: service_account
   json_keyfile: /path/to/json_keyfile.json
 ```
 
-You can also embed contents of json_keyfile at config.yml.
+You can also embed contents of `json_keyfile` at config.yml.
 
 ```yaml
 out:
   type: bigquery
-  auth_method: json_key
+  auth_method: service_account
   json_keyfile:
     content: |
       {
           "private_key_id": "123456789",
           "private_key": "-----BEGIN PRIVATE KEY-----\nABCDEF",
           "client_email": "..."
-       }
+      }
 ```
 
-#### Pre-defined access token(GCE only)
+#### authorized\_user
+
+Use Google user credentials.
+You can get your credentials at `~/.config/gcloud/application_default_credentials.json` by running `gcloud auth login`.
+
+```yaml
+out:
+  type: bigquery
+  auth_method: authorized_user
+  json_keyfile: /path/to/credentials.json
+```
+
+You can also embed contents of `json_keyfile` at config.yml.
+
+```yaml
+out:
+  type: bigquery
+  auth_method: authorized_user
+  json_keyfile:
+    content: |
+      {
+        "client_id":"xxxxxxxxxxx.apps.googleusercontent.com",
+        "client_secret":"xxxxxxxxxxx",
+        "refresh_token":"xxxxxxxxxxx",
+        "type":"authorized_user"
+      }
+```
+
+#### compute\_engine
 
 On the other hand, you don't need to explicitly create a service account for embulk when you
 run embulk in Google Compute Engine. In this third authentication method, you need to
@@ -230,6 +237,22 @@ out:
   auth_method: compute_engine
 ```
 
+#### application\_default
+
+Use Application Default Credentials (ADC).  ADC is a strategy to locate Google Cloud Service Account credentials.
+
+1. ADC checks to see if the environment variable `GOOGLE_APPLICATION_CREDENTIALS` is set. If the variable is set, ADC uses the service account file that the variable points to.
+2. ADC checks to see if `~/.config/gcloud/application_default_credentials.json` is located. This file is created by running `gcloud auth application-default login`.
+3. Use the default service account for credentials if the application running on Compute Engine, App Engine, Kubernetes Engine, Cloud Functions or Cloud Run.
+
+See https://cloud.google.com/docs/authentication/production for details.
+
+```yaml
+out:
+  type: bigquery
+  auth_method: application_default
+```
+
 ### Table id formatting
 
 `table` and option accept [Time#strftime](http://ruby-doc.org/core-1.9.3/Time.html#method-i-strftime)
@@ -238,19 +261,15 @@ Table ids are formatted at runtime
 using the local time of the embulk server.
 
 For example, with the configuration below,
-data is inserted into tables `table_2015_04`, `table_2015_05` and so on.
+data is inserted into tables `table_20150503`, `table_20150504` and so on.
 
 ```yaml
 out:
   type: bigquery
-  table: table_%Y_%m
+  table: table_%Y%m%d
 ```
 
 ### Dynamic table creating
-
-When `auto_create_table` is set to true, try to create the table using BigQuery API.
-
-If table already exists, insert into it.
 
 There are 3 ways to set schema.
 
@@ -262,7 +281,7 @@ Please set file path of schema.json.
 out:
   type: bigquery
   auto_create_table: true
-  table: table_%Y_%m
+  table: table_%Y%m%d
   schema_file: /path/to/schema.json
 ```
 
@@ -274,7 +293,7 @@ Plugin will try to read schema from existing table and use it as schema template
 out:
   type: bigquery
   auto_create_table: true
-  table: table_%Y_%m
+  table: table_%Y%m%d
   template_table: existing_table_name
 ```
 
@@ -350,29 +369,13 @@ out:
   payload_column_index: 0 # or, payload_column: payload
 ```
 
-### Prevent Duplication
-
-`prevent_duplicate_insert` option is used to prevent inserting same data for modes `append` or `append_direct`.
-
-When `prevent_duplicate_insert` is set to true, embulk-output-bigquery generate job ID from md5 hash of file and other options.
-
-`job ID = md5(md5(file) + dataset + table + schema + source_format + file_delimiter + max_bad_records + encoding + ignore_unknown_values + allow_quoted_newlines)`
-
-[job ID must be unique(including failures)](https://cloud.google.com/bigquery/loading-data-into-bigquery#consistency) so that same data can't be inserted with same settings repeatedly.
-
-```yaml
-out:
-  type: bigquery
-  prevent_duplicate_insert: true
-```
-
 ### GCS Bucket
 
-This is useful to reduce number of consumed jobs, which is limited by [50,000 jobs per project per day](https://cloud.google.com/bigquery/quota-policy#import).
+This is useful to reduce number of consumed jobs, which is limited by [100,000 jobs per project per day](https://cloud.google.com/bigquery/quotas#load_jobs).
 
 This plugin originally loads local files into BigQuery in parallel, that is, consumes a number of jobs, say 24 jobs on 24 CPU core machine for example (this depends on embulk parameters such as `min_output_tasks` and `max_threads`).
 
-BigQuery supports loading multiple files from GCS with one job (but not from local files, sigh), therefore, uploading local files to GCS and then loading from GCS into BigQuery reduces number of consumed jobs.
+BigQuery supports loading multiple files from GCS with one job, therefore, uploading local files to GCS in parallel and then loading from GCS into BigQuery reduces number of consumed jobs to 1.
 
 Using `gcs_bucket` option, such strategy is enabled. You may also use `auto_create_gcs_bucket` to create the specified GCS bucket automatically.
 
@@ -396,32 +399,31 @@ To load into a partition, specify `table` parameter with a partition decorator a
 out:
   type: bigquery
   table: table_name$20160929
-  auto_create_table: true
 ```
 
-You may configure `time_partitioning` parameter together to create table via `auto_create_table: true` option as:
+You may configure `time_partitioning` parameter together as:
 
 ```yaml
 out:
   type: bigquery
   table: table_name$20160929
-  auto_create_table: true
   time_partitioning:
     type: DAY
     expiration_ms: 259200000
 ```
 
 You can also create column-based partitioning table as:
+
 ```yaml
 out:
   type: bigquery
   mode: replace
-  auto_create_table: true
   table: table_name
   time_partitioning:
     type: DAY
     field: timestamp
 ```
+
 Note the `time_partitioning.field` should be top-level `DATE` or `TIMESTAMP`.
 
 Use [Tables: patch](https://cloud.google.com/bigquery/docs/reference/v2/tables/patch) API to update the schema of the partitioned table, embulk-output-bigquery itself does not support it, though.
@@ -444,21 +446,61 @@ $ embulk run -X page_size=1 -b . -l trace example/example.yml
 
 ### Run test:
 
+Place your embulk with `.jar` extension:
+
+
 ```
-$ bundle exec rake test
+$ curl -o embulk.jar --create-dirs -L "http://dl.embulk.org/embulk-latest.jar"
+$ chmod a+x embulk.jar
+```
+
+Investigate JRUBY\_VERSION and Bundler::VERSION included in the embulk.jar:
+
+```
+$ echo JRUBY_VERSION | ./embulk.jar irb
+2019-08-10 00:59:11.866 +0900: Embulk v0.9.17
+Switch to inspect mode.
+JRUBY_VERSION
+"X.X.X.X"
+
+$ echo "require 'bundler'; Bundler::VERSION" | ./embulk.jar irb
+2019-08-10 01:59:10.460 +0900: Embulk v0.9.17
+Switch to inspect mode.
+require 'bundler'; Bundler::VERSION
+"Y.Y.Y"
+```
+
+Install the same version of jruby (change X.X.X.X to the version shown above) and bundler:
+
+```
+$ rbenv install jruby-X.X.X.X
+$ rbenv local jruby-X.X.X.X
+$ gem install bundler -v Y.Y.Y
+```
+
+Install dependencies (NOTE: Use bundler included in the embulk.jar, otherwise, `gem 'embulk'` is not found):
+
+```
+$ ./embulk.jar bundle install --path vendor/bundle
+```
+
+Run tests with `env RUBYOPT="-r ./embulk.jar`:
+
+```
+$ bundle exec env RUBYOPT="-r ./embulk.jar" rake test
 ```
 
 To run tests which actually connects to BigQuery such as test/test\_bigquery\_client.rb,
 prepare a json\_keyfile at example/your-project-000.json, then
 
 ```
-$ bundle exec ruby test/test_bigquery_client.rb
-$ bundle exec ruby test/test_example.rb
+$ bundle exec env RUBYOPT="-r ./embulk.jar" ruby test/test_bigquery_client.rb
+$ bundle exec env RUBYOPT="-r ./embulk.jar" ruby test/test_example.rb
 ```
 
 ### Release gem:
 
-Fix gemspec, then
+Change the version of gemspec, and write CHANGELOG.md. Then,
 
 ```
 $ bundle exec rake release

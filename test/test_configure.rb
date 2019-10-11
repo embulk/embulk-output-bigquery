@@ -18,10 +18,9 @@ module Embulk
 
       def least_config
         DataSource.new({
-          'project' => 'your_project_name',
-          'dataset' => 'your_dataset_name',
-          'table'   => 'your_table_name',
-          'p12_keyfile' => __FILE__, # fake
+          'project'      => 'your_project_name',
+          'dataset'      => 'your_dataset_name',
+          'table'        => 'your_table_name',
         })
       end
 
@@ -43,9 +42,7 @@ module Embulk
       def test_configure_default
         task = Bigquery.configure(least_config, schema, processor_count)
         assert_equal "append", task['mode']
-        assert_equal "private_key", task['auth_method']
-        assert_equal nil, task['service_account_email']
-        assert_equal __FILE__, task['p12_keyfile']
+        assert_equal "application_default", task['auth_method']
         assert_equal nil, task['json_keyfile']
         assert_equal "your_project_name", task['project']
         assert_equal "your_dataset_name", task['dataset']
@@ -55,14 +52,13 @@ module Embulk
         assert_equal nil, task['table_old']
         assert_equal nil, task['table_name_old']
         assert_equal false, task['auto_create_dataset']
-        assert_equal false, task['auto_create_table']
+        assert_equal true, task['auto_create_table']
         assert_equal nil, task['schema_file']
         assert_equal nil, task['template_table']
         assert_equal true, task['delete_from_local_when_job_end']
         assert_equal 3600, task['job_status_max_polling_time']
         assert_equal 10, task['job_status_polling_interval']
         assert_equal false, task['is_skip_job_result_check']
-        assert_equal false, task['prevent_duplicate_insert']
         assert_equal false, task['with_rehearsal']
         assert_equal 1000, task['rehearsal_counts']
         assert_equal [], task['column_options']
@@ -84,6 +80,7 @@ module Embulk
         assert_equal false, task['ignore_unknown_values']
         assert_equal false, task['allow_quoted_newlines']
         assert_equal nil, task['time_partitioning']
+        assert_equal nil, task['clustering']
         assert_equal false, task['skip_load']
       end
 
@@ -132,11 +129,6 @@ module Embulk
         config = least_config.merge('auth_method' => 'foobar')
         assert_raise { Bigquery.configure(config, schema, processor_count) }
 
-        config = least_config.merge('auth_method' => 'private_key').tap {|h| h.delete('p12_keyfile') }
-        assert_raise { Bigquery.configure(config, schema, processor_count) }
-        config = least_config.merge('auth_method' => 'private_key', 'p12_keyfile' => 'dummy')
-        assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
-
         config = least_config.merge('auth_method' => 'json_key').tap {|h| h.delete('json_keyfile') }
         assert_raise { Bigquery.configure(config, schema, processor_count) }
         config = least_config.merge('auth_method' => 'json_key', 'json_keyfile' => "#{EXAMPLE_ROOT}/json_key.json")
@@ -161,22 +153,22 @@ module Embulk
       end
 
       def test_payload_column
-        config = least_config.merge('payload_column' => schema.first.name)
+        config = least_config.merge('payload_column' => schema.first.name, 'auto_create_table' => false, 'mode' => 'append_direct')
         task = Bigquery.configure(config, schema, processor_count)
         assert_equal task['payload_column_index'], 0
 
-        config = least_config.merge('payload_column' => 'not_exist')
+        config = least_config.merge('payload_column' => 'not_exist', 'auto_create_table' => false, 'mode' => 'append_direct')
         assert_raise { Bigquery.configure(config, schema, processor_count) }
       end
 
       def test_payload_column_index
-        config = least_config.merge('payload_column_index' => 0)
+        config = least_config.merge('payload_column_index' => 0, 'auto_create_table' => false, 'mode' => 'append_direct')
         assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
 
-        config = least_config.merge('payload_column_index' => -1)
+        config = least_config.merge('payload_column_index' => -1, 'auto_create_table' => false, 'mode' => 'append_direct')
         assert_raise { Bigquery.configure(config, schema, processor_count) }
 
-        config = least_config.merge('payload_column_index' => schema.size)
+        config = least_config.merge('payload_column_index' => schema.size, 'auto_create_table' => false, 'mode' => 'append_direct')
         assert_raise { Bigquery.configure(config, schema, processor_count) }
       end
 
@@ -275,6 +267,14 @@ module Embulk
         config = least_config.merge('table' => 'table_name$20160912')
         task = Bigquery.configure(config, schema, processor_count)
         assert_equal 'DAY', task['time_partitioning']['type']
+      end
+
+      def test_clustering
+        config = least_config.merge('clustering' => {'fields' => ['field_a']})
+        assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
+
+        config = least_config.merge('clustering' => {})
+        assert_raise { Bigquery.configure(config, schema, processor_count) }
       end
 
       def test_schema_update_options
