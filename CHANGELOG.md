@@ -1,3 +1,7 @@
+## 0.6.3 - 2019-10-28
+
+* [enhancement] Add DATE type conveter (thanks to @tksfjt1024)
+
 ## 0.6.2 - 2019-10-16
 
 * [maintenance] Lock signet and google-api-client version (thanks to @hiroyuki-sato)
