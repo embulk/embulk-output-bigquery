@@ -94,6 +94,10 @@ module Embulk
           assert_raise { ValueConverterFactory.new(SCHEMA_TYPE, 'DATE').create_converter }
         end
 
+        def test_datetime
+          assert_raise { ValueConverterFactory.new(SCHEMA_TYPE, 'DATETIME').create_converter }
+        end
+
         def test_record
           assert_raise { ValueConverterFactory.new(SCHEMA_TYPE, 'RECORD').create_converter }
         end
@@ -138,6 +142,10 @@ module Embulk
           assert_raise { ValueConverterFactory.new(SCHEMA_TYPE, 'DATE').create_converter }
         end
 
+        def test_datetime
+          assert_raise { ValueConverterFactory.new(SCHEMA_TYPE, 'DATETIME').create_converter }
+        end
+
         def test_record
           assert_raise { ValueConverterFactory.new(SCHEMA_TYPE, 'RECORD').create_converter }
         end
@@ -176,6 +184,10 @@ module Embulk
 
         def test_date
           assert_raise { ValueConverterFactory.new(SCHEMA_TYPE, 'DATE').create_converter }
+        end
+
+        def test_datetime
+          assert_raise { ValueConverterFactory.new(SCHEMA_TYPE, 'DATETIME').create_converter }
         end
 
         def test_record
@@ -236,6 +248,20 @@ module Embulk
           assert_raise { converter.call('foo') }
         end
 
+        def test_datetime
+          converter = ValueConverterFactory.new(
+            SCHEMA_TYPE, 'DATETIME',
+            timestamp_format: '%Y/%m/%d'
+          ).create_converter
+          assert_equal nil, converter.call(nil)
+          assert_equal "2016-02-26 00:00:00.000000", converter.call("2016/02/26")
+
+          # Users must care of BQ datetime format by themselves with no timestamp_format
+          converter = ValueConverterFactory.new(SCHEMA_TYPE, 'DATETIME').create_converter
+          assert_equal nil, converter.call(nil)
+          assert_equal "2016-02-26 00:00:00", converter.call("2016-02-26 00:00:00")
+        end
+
         def test_record
           converter = ValueConverterFactory.new(SCHEMA_TYPE, 'RECORD').create_converter
           assert_equal({'foo'=>'foo'}, converter.call(%Q[{"foo":"foo"}]))
@@ -294,13 +320,31 @@ module Embulk
           timestamp = Time.parse("2016-02-26 00:00:00.500000 +00:00")
           expected = "2016-02-26"
           assert_equal expected, converter.call(timestamp)
-          
+
           converter = ValueConverterFactory.new(
             SCHEMA_TYPE, 'DATE', timezone: 'Asia/Tokyo'
           ).create_converter
           assert_equal nil, converter.call(nil)
           timestamp = Time.parse("2016-02-25 15:00:00.500000 +00:00")
           expected = "2016-02-26"
+          assert_equal expected, converter.call(timestamp)
+
+          assert_raise { converter.call('foo') }
+        end
+
+        def test_datetime
+          converter = ValueConverterFactory.new(SCHEMA_TYPE, 'DATETIME').create_converter
+          assert_equal nil, converter.call(nil)
+          timestamp = Time.parse("2016-02-26 00:00:00.500000 +00:00")
+          expected = "2016-02-26 00:00:00.500000"
+          assert_equal expected, converter.call(timestamp)
+
+          converter = ValueConverterFactory.new(
+            SCHEMA_TYPE, 'DATETIME', timezone: 'Asia/Tokyo'
+          ).create_converter
+          assert_equal nil, converter.call(nil)
+          timestamp = Time.parse("2016-02-25 15:00:00.500000 +00:00")
+          expected = "2016-02-26 00:00:00.500000"
           assert_equal expected, converter.call(timestamp)
 
           assert_raise { converter.call('foo') }

@@ -63,7 +63,8 @@ module Embulk
             Column.new({index: 3, name: 'string', type: :string}),
             Column.new({index: 4, name: 'timestamp', type: :timestamp}),
             Column.new({index: 5, name: 'date', type: :timestamp}),
-            Column.new({index: 6, name: 'json', type: :json}),
+            Column.new({index: 6, name: 'datetime', type: :timestamp}),
+            Column.new({index: 7, name: 'json', type: :json}),
           ])
           task = {
             'column_options' => [
@@ -73,6 +74,7 @@ module Embulk
               {'name' => 'string',    'type' => 'INTEGER'},
               {'name' => 'timestamp', 'type' => 'INTEGER'},
               {'name' => 'date',      'type' => 'DATE'},
+              {'name' => 'datetime',  'type' => 'DATETIME'},
               {'name' => 'json',      'type' => 'RECORD', 'fields' => [
                 { 'name' => 'key1',   'type' => 'STRING' },
               ]},
@@ -85,6 +87,7 @@ module Embulk
             {name: 'string',    type: 'INTEGER'},
             {name: 'timestamp', type: 'INTEGER'},
             {name: 'date',      type: 'DATE'},
+            {name: 'datetime',  type: 'DATETIME'},
             {name: 'json',      type: 'RECORD', fields: [
               {name: 'key1',    type: 'STRING'},
             ]},
