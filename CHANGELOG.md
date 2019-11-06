@@ -1,3 +1,7 @@
+## 0.6.4 - 2019-11-06
+
+* [enhancement] Add DATETIME type conveter (thanks to @kekekenta)
+
 ## 0.6.3 - 2019-10-28
 
 * [enhancement] Add DATE type conveter (thanks to @tksfjt1024)
