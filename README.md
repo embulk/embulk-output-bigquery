@@ -319,7 +319,7 @@ Column options are used to aid guessing BigQuery schema, or to define conversion
   - **fields**: Describes the nested schema fields if the type property is set to RECORD. Please note that this is **required** for `RECORD` column.
   - **timestamp_format**: timestamp format to convert into/from `timestamp` (string, default is `default_timestamp_format`)
   - **timezone**: timezone to convert into/from `timestamp`, `date` (string, default is `default_timezone`).
-  - **description**: description of the column
+  - **description**: description for the column.
 - **default_timestamp_format**: default timestamp format for column_options (string, default is "%Y-%m-%d %H:%M:%S.%6N")
 - **default_timezone**: default timezone for column_options (string, default is "UTC")
 - **update_description**: flag for update description in columns (only works for append and append_direct)
