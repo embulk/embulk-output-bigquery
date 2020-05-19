@@ -71,12 +71,12 @@ module Embulk
               {'name' => 'boolean',   'type' => 'STRING', 'mode' => 'REQUIRED'},
               {'name' => 'long',      'type' => 'STRING'},
               {'name' => 'double',    'type' => 'STRING'},
-              {'name' => 'string',    'type' => 'INTEGER'},
+              {'name' => 'string',    'type' => 'INTEGER', 'description' => 'memo'},
               {'name' => 'timestamp', 'type' => 'INTEGER'},
               {'name' => 'date',      'type' => 'DATE'},
               {'name' => 'datetime',  'type' => 'DATETIME'},
               {'name' => 'json',      'type' => 'RECORD', 'fields' => [
-                { 'name' => 'key1',   'type' => 'STRING' },
+                { 'name' => 'key1',   'type' => 'STRING', 'description' => 'nested_memo'},
               ]},
             ],
           }
@@ -84,12 +84,12 @@ module Embulk
             {name: 'boolean',   type: 'STRING', mode: 'REQUIRED'},
             {name: 'long',      type: 'STRING'},
             {name: 'double',    type: 'STRING'},
-            {name: 'string',    type: 'INTEGER'},
+            {name: 'string',    type: 'INTEGER', description: 'memo'},
             {name: 'timestamp', type: 'INTEGER'},
             {name: 'date',      type: 'DATE'},
             {name: 'datetime',  type: 'DATETIME'},
             {name: 'json',      type: 'RECORD', fields: [
-              {name: 'key1',    type: 'STRING'},
+              {name: 'key1',    type: 'STRING', description: 'nested_memo'},
             ]},
           ]
           fields = Helper.fields_from_embulk_schema(task, schema)
