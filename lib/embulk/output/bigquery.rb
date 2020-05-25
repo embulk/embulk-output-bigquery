@@ -401,10 +401,8 @@ module Embulk
           end
 
           if task['mode'] == 'append' || task['mode'] == 'append_direct'
-            puts "update description"
-            if task['update_description']
-              bigquery.patch_table
-            end
+            # update only column.description based on column_options
+            bigquery.patch_table
           end
 
         ensure
