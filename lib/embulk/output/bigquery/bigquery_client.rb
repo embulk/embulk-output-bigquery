@@ -512,7 +512,7 @@ module Embulk
           end
         end
 
-        # experimental function for update only description
+        # update only column.description
         def patch_table
           table = get_table(@task['table'])
           fields = table.schema.fields.map do |field|
