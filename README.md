@@ -49,6 +49,7 @@ OAuth flow for installed applications.
 |  column_options                      | hash        | optional   |                          | See [Column Options](#column-options) |
 |  default_timezone                    | string      | optional   | UTC                      | |
 |  default_timestamp_format            | string      | optional   | %Y-%m-%d %H:%M:%S.%6N    | |
+|  update_description                  | boolean     | default    | false                    | See [Column Options](#column-options)|
 |  payload_column                      | string      | optional   | nil                      | See [Formatter Performance Issue](#formatter-performance-issue) |
 |  payload_column_index                | integer     | optional   | nil                      | See [Formatter Performance Issue](#formatter-performance-issue) |
 |  gcs_bucket                          | string      | optional   | nil                      | See [GCS Bucket](#gcs-bucket) |
@@ -318,8 +319,10 @@ Column options are used to aid guessing BigQuery schema, or to define conversion
   - **fields**: Describes the nested schema fields if the type property is set to RECORD. Please note that this is **required** for `RECORD` column.
   - **timestamp_format**: timestamp format to convert into/from `timestamp` (string, default is `default_timestamp_format`)
   - **timezone**: timezone to convert into/from `timestamp`, `date` (string, default is `default_timezone`).
+  - **description**: description of the column
 - **default_timestamp_format**: default timestamp format for column_options (string, default is "%Y-%m-%d %H:%M:%S.%6N")
 - **default_timezone**: default timezone for column_options (string, default is "UTC")
+- **update_description**: flag for update description in columns (only works for append and append_direct)
 
 Example)
 

@@ -61,6 +61,7 @@ module Embulk
           'default_timestamp_format'       => config.param('default_timestamp_format',       :string,  :default => ValueConverterFactory::DEFAULT_TIMESTAMP_FORMAT),
           'payload_column'                 => config.param('payload_column',                 :string,  :default => nil),
           'payload_column_index'           => config.param('payload_column_index',           :integer, :default => nil),
+          'update_description'             => config.param('update_description',             :bool, :default => false),
 
           'open_timeout_sec'               => config.param('open_timeout_sec',               :integer, :default => nil),
           'timeout_sec'                    => config.param('timeout_sec',                    :integer, :default => nil), # google-api-ruby-client < v0.11.0
@@ -398,6 +399,14 @@ module Embulk
               end
             end
           end
+
+          if task['mode'] == 'append' || task['mode'] == 'append_direct'
+            puts "update description"
+            if task['update_description']
+              bigquery.patch_table
+            end
+          end
+
         ensure
           begin
             if task['temp_table'] # append or replace or replace_backup

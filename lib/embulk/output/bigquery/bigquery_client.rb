@@ -511,6 +511,21 @@ module Embulk
             raise Error, "failed to get table #{@project}:#{dataset}.#{table}, response:#{response}"
           end
         end
+
+        # experimental function for update only description
+        def patch_table
+          table = get_table(@task['table'])
+          fields = table.schema.fields.map do |field|
+            col_option = @task['column_options'].select{|col_opt| col_opt['name'] == field.name}.first
+            if col_option
+              field.description = col_option['description'] if col_option['description']
+            end
+            field
+          end
+
+          table.schema.update!(fields: fields)
+          client.patch_table(@project, @dataset, @task['table'], table)
+        end
       end
     end
   end
