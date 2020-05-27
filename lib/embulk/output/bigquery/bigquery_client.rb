@@ -515,14 +515,22 @@ module Embulk
         # update only column.description
         def patch_table
           table = get_table(@task['table'])
-          fields = table.schema.fields.map do |field|
-            col_option = @task['column_options'].select{|col_opt| col_opt['name'] == field.name}.first
-            if col_option
-              field.description = col_option['description'] if col_option['description']
+
+          def patch_description(fields, column_options)
+            fields.map do |field|
+              column_option = column_options.select{|col_opt| col_opt['name'] == field.name}.first
+              if column_option
+                field.description = column_option['description'] if column_option['description']
+                unless field.fields.empty? && column_option['fields']
+                  nested_fields = patch_description(field.fields, column_option['fields'])
+                  field.update!(fields: nested_fields)
+                end
+              end
+              field
             end
-            field
           end
 
+          fields = patch_description(table.schema.fields, @task['column_options'])
           table.schema.update!(fields: fields)
           client.patch_table(@project, @dataset, @task['table'], table)
         end
