@@ -520,8 +520,8 @@ module Embulk
             fields.map do |field|
               column_option = column_options.select{|col_opt| col_opt['name'] == field.name}.first
               if column_option
-                field.description = column_option['description'] if column_option['description']
-                unless field.fields.empty? && column_option['fields']
+                field.update!(description: column_option['description']) if column_option['description']
+                if field.fields && column_option['fields']
                   nested_fields = patch_description(field.fields, column_option['fields'])
                   field.update!(fields: nested_fields)
                 end
