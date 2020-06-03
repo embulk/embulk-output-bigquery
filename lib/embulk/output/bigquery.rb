@@ -399,10 +399,7 @@ module Embulk
             end
           end
 
-          if task['mode'] == 'append' || task['mode'] == 'append_direct'
-            # update only column.description based on column_options
-            bigquery.patch_table
-          end
+          bigquery.patch_table
 
         ensure
           begin
