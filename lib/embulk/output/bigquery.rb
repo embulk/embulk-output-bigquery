@@ -398,6 +398,9 @@ module Embulk
               end
             end
           end
+
+          bigquery.patch_table
+
         ensure
           begin
             if task['temp_table'] # append or replace or replace_backup
