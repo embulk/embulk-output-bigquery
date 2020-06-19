@@ -532,7 +532,8 @@ module Embulk
 
           fields = patch_description(table.schema.fields, @task['column_options'])
           table.schema.update!(fields: fields)
-          client.patch_table(@project, @dataset, table.id, table)
+          table_id = Helper.chomp_partition_decorator(@task['table'])
+          client.patch_table(@project, @dataset, table_id, table)
         end
       end
     end
