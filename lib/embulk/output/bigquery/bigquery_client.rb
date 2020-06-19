@@ -532,7 +532,7 @@ module Embulk
 
           fields = patch_description(table.schema.fields, @task['column_options'])
           table.schema.update!(fields: fields)
-          client.patch_table(@project, @dataset, @task['table'], table)
+          client.patch_table(@project, @dataset, table.id, table)
         end
       end
     end
