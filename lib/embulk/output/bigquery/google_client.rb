@@ -66,7 +66,7 @@ module Embulk
             # httpclient which google-api-ruby-client depends on, catches java.net.SocketException and java.net.ConnectionException and
             # raises SSLError.
             # https://github.com/nahi/httpclient/blob/4658227a46f7caa633ef8036f073bbd1f0a955a2/lib/httpclient/jruby_ssl_socket.rb#L124-L134
-          rescue SSLError => e
+          rescue OpenSSL::SSL::SSLError => e
             retry_messages = [
               "Java::JavaNet::SocketException: Connection reset",
               "Java::JavaNet::SocketException: Broken pipe",
