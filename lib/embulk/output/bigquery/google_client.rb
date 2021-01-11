@@ -49,8 +49,17 @@ module Embulk
           retries = 0
           begin
             yield
-          rescue ::Java::Java.net.SocketException, ::Java::Java.net.ConnectException => e
-            if ['Broken pipe', 'Connection reset', 'Connection timed out'].include?(e.message)
+
+            # httpclient which google-api-ruby-client depends on, catches java.net.SocketException and java.net.ConnectionException and
+            # raises SSLError.
+            # https://github.com/nahi/httpclient/blob/4658227a46f7caa633ef8036f073bbd1f0a955a2/lib/httpclient/jruby_ssl_socket.rb#L124-L134
+          rescue OpenSSL::SSL::SSLError => e
+            retry_messages = [
+              "Java::JavaNet::SocketException: Connection reset",
+              "Java::JavaNet::SocketException: Broken pipe",
+              "Java::JavaNet::ConnectException: Connection timed out",
+            ]
+            if retry_messages.include?(e.message)
               if retries < @task['retries']
                 retries += 1
                 Embulk.logger.warn { "embulk-output-bigquery: retry \##{retries}, #{e.class} #{e.message}" }
