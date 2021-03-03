@@ -330,6 +330,7 @@ module Embulk
         @converters = ValueConverterFactory.create_converters(task, schema)
 
         self.auto_create(@task, @bigquery)
+        bigquery.patch_table
 
         begin
           paths = []
@@ -398,8 +399,6 @@ module Embulk
               end
             end
           end
-
-          bigquery.patch_table
 
         ensure
           begin
