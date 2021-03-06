@@ -16,6 +16,7 @@ module Embulk
           super(task, scope, client_class)
 
           @project = @task['project']
+          @destination_project = @task['destination_project']
           @bucket = @task['gcs_bucket']
           @location = @task['location']
         end
@@ -23,7 +24,7 @@ module Embulk
         def insert_temporary_bucket(bucket = nil)
           bucket ||= @bucket
           begin
-            Embulk.logger.info { "embulk-output-bigquery: Insert bucket... #{@project}:#{bucket}" }
+            Embulk.logger.info { "embulk-output-bigquery: Insert bucket... #{@destination_project}:#{bucket}" }
             body = {
               name: bucket,
               lifecycle: {
@@ -57,7 +58,7 @@ module Embulk
             Embulk.logger.error {
               "embulk-output-bigquery: insert_temporary_bucket(#{@project}, #{body}, #{opts}), response:#{response}"
             }
-            raise Error, "failed to insert bucket #{@project}:#{bucket}, response:#{response}"
+            raise Error, "failed to insert bucket #{@destination_project}:#{bucket}, response:#{response}"
           end
         end
 
@@ -69,7 +70,7 @@ module Embulk
 
           started = Time.now
           begin
-            Embulk.logger.info { "embulk-output-bigquery: Insert object... #{path} => #{@project}:#{object_uri}" }
+            Embulk.logger.info { "embulk-output-bigquery: Insert object... #{path} => #{@destination_project}:#{object_uri}" }
             body = {
               name: object,
             }
@@ -86,7 +87,7 @@ module Embulk
             Embulk.logger.error {
               "embulk-output-bigquery: insert_object(#{bucket}, #{body}, #{opts}), response:#{response}"
             }
-            raise Error, "failed to insert object #{@project}:#{object_uri}, response:#{response}"
+            raise Error, "failed to insert object #{@destination_project}:#{object_uri}, response:#{response}"
           end
         end
 
@@ -109,7 +110,7 @@ module Embulk
           object = object.start_with?('/') ? object[1..-1] : object
           object_uri = URI.join("gs://#{bucket}", object).to_s
           begin
-            Embulk.logger.info { "embulk-output-bigquery: Delete object... #{@project}:#{object_uri}" }
+            Embulk.logger.info { "embulk-output-bigquery: Delete object... #{@destination_project}:#{object_uri}" }
             opts = {}
 
             Embulk.logger.debug { "embulk-output-bigquery: delete_object(#{bucket}, #{object}, #{opts})" }
@@ -122,7 +123,7 @@ module Embulk
             Embulk.logger.error {
               "embulk-output-bigquery: delete_object(#{bucket}, #{object}, #{opts}), response:#{response}"
             }
-            raise Error, "failed to delete object #{@project}:#{object_uri}, response:#{response}"
+            raise Error, "failed to delete object #{@destination_project}:#{object_uri}, response:#{response}"
           end
         end
       end

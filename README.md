@@ -33,6 +33,7 @@ OAuth flow for installed applications.
 |  auth_method                         | string      | optional   | "application\_default"   | See [Authentication](#authentication) |
 |  json_keyfile                        | string      | optional   |                          | keyfile path or `content` |
 |  project                             | string      | required unless service\_account's `json_keyfile` is given. | | project\_id |
+|  destination_project                 | string      | optional   |                          | destination project |
 |  dataset                             | string      | required   |                          | dataset |
 |  location                            | string      | optional   | nil                      | geographic location of dataset. See [Location](#location) |
 |  table                               | string      | required   |                          | table name, or table name with a partition decorator such as `table_name$20160929`|

@@ -29,6 +29,7 @@ else
         def least_task
           {
             'project'          => JSON.parse(File.read(JSON_KEYFILE))['project_id'],
+            'destination_project' => JSON.parse(File.read(JSON_KEYFILE))['project_id'],
             'dataset'          => 'your_dataset_name',
             'table'            => 'your_table_name',
             'auth_method'      => 'json_key',
