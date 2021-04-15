@@ -18,9 +18,11 @@ Gem::Specification.new do |spec|
   # signet 0.12.0 and google-api-client 0.33.0 require >= Ruby 2.4.
   # Embulk 0.9 use JRuby 9.1.X.Y and It compatible Ruby 2.3.
   # So, Force install signet < 0.12 and google-api-client < 0.33.0
+  # Also, representable veresion > 3.1.0 requires Ruby version >= 2.4
   spec.add_dependency 'signet', '~> 0.7', '< 0.12.0'
   spec.add_dependency 'google-api-client','< 0.33.0'
   spec.add_dependency 'time_with_zone'
+  spec.add_dependency "representable", ['~> 3.0.0', '< 3.1']
 
   spec.add_development_dependency 'bundler', ['>= 1.10.6']
   spec.add_development_dependency 'rake', ['>= 10.0']
