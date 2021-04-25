@@ -50,7 +50,9 @@ module Embulk
           begin
             yield
           rescue ::Java::Java.net.SocketException, ::Java::Java.net.ConnectException => e
-            if ['Broken pipe', 'Connection reset', 'Connection timed out'].include?(e.message)
+            if ['Broken pipe', 'Connection reset', 'Connection timed out'].select! { |x| e.message.include?(x) }.empty?
+              raise e
+            else
               if retries < @task['retries']
                 retries += 1
                 Embulk.logger.warn { "embulk-output-bigquery: retry \##{retries}, #{e.class} #{e.message}" }
@@ -59,8 +61,6 @@ module Embulk
                 Embulk.logger.error { "embulk-output-bigquery: retry exhausted \##{retries}, #{e.class} #{e.message}" }
                 raise e
               end
-            else
-              raise e
             end
           end
         end
