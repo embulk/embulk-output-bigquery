@@ -23,6 +23,9 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'google-api-client','< 0.33.0'
   spec.add_dependency 'time_with_zone'
   spec.add_dependency "representable", ['~> 3.0.0', '< 3.1']
+  # faraday 1.1.0 require >= Ruby 2.4.
+  # googleauth 0.9.0 requires faraday ~> 0.12
+  spec.add_dependency "faraday", '~> 0.12'
 
   spec.add_development_dependency 'bundler', ['>= 1.10.6']
   spec.add_development_dependency 'rake', ['>= 10.0']
