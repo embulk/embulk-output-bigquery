@@ -1,3 +1,7 @@
+## 0.6.5 - 2021-06-10
+* [maintenance] Fix failed tests (thanks to @kyoshidajp)
+* [maintenance] Lock representable version for avoiding requiring Ruby 2.4 (thanks to @hiroyuki-sato)
+
 ## 0.6.4 - 2019-11-06
 
 * [enhancement] Add DATETIME type conveter (thanks to @kekekenta)
