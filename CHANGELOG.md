@@ -1,3 +1,9 @@
+## 0.6.6 - 2021-06-10
+
+* [maintenance] Fix network retry function (thanks to @case-k-git)
+* [enhancement] Allow to specify the billing project and the project to which the data will be loaded separately (thanks to @ck-fm0211)
+* [enhancement] Include original error message on json parse error (thanks to @k-yomo)
+
 ## 0.6.5 - 2021-06-10
 * [maintenance] Fix failed tests (thanks to @kyoshidajp)
 * [maintenance] Lock representable version for avoiding requiring Ruby 2.4 (thanks to @hiroyuki-sato)
