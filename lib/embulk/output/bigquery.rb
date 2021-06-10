@@ -36,6 +36,7 @@ module Embulk
           'auth_method'                    => config.param('auth_method',                    :string,  :default => 'application_default'),
           'json_keyfile'                   => config.param('json_keyfile',                  LocalFile, :default => nil),
           'project'                        => config.param('project',                        :string,  :default => nil),
+          'destination_project'            => config.param('destination_project',            :string,  :default => nil),
           'dataset'                        => config.param('dataset',                        :string),
           'location'                       => config.param('location',                       :string,  :default => nil),
           'table'                          => config.param('table',                          :string),
@@ -141,6 +142,7 @@ module Embulk
         if task['project'].nil?
           raise ConfigError.new "Required field \"project\" is not set"
         end
+        task['destination_project'] ||= task['project']
 
         if (task['payload_column'] or task['payload_column_index']) and task['auto_create_table']
           if task['schema_file'].nil? and task['template_table'].nil?

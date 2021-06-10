@@ -45,6 +45,7 @@ module Embulk
         assert_equal "application_default", task['auth_method']
         assert_equal nil, task['json_keyfile']
         assert_equal "your_project_name", task['project']
+        assert_equal "your_project_name", task['destination_project']
         assert_equal "your_dataset_name", task['dataset']
         assert_equal nil, task['location']
         assert_equal "your_table_name", task['table']
@@ -284,6 +285,16 @@ module Embulk
         config = least_config.merge('schema_update_options' => ['FOO'])
         assert_raise { Bigquery.configure(config, schema, processor_count) }
       end
+
+      def test_destination_project
+        config = least_config.merge('destination_project' => 'your_destination_project_name')
+        task = Bigquery.configure(config, schema, processor_count)
+
+        assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
+        assert_equal 'your_destination_project_name', task['destination_project']
+        assert_equal 'your_project_name', task['project']
+      end
+
     end
   end
 end
