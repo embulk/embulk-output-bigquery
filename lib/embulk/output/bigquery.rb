@@ -135,7 +135,7 @@ module Embulk
             json_key = JSON.parse(task['json_keyfile'])
             task['project'] ||= json_key['project_id']
           rescue => e
-            raise ConfigError.new "json_keyfile is not a JSON file"
+            raise ConfigError.new "Parsing 'json_keyfile' failed with error: #{e.class} #{e.message}"
           end
         end
         if task['project'].nil?
@@ -166,7 +166,7 @@ module Embulk
           begin
             JSON.parse(File.read(task['schema_file']))
           rescue => e
-            raise ConfigError.new "schema_file #{task['schema_file']} is not a JSON file"
+            raise ConfigError.new "Parsing 'schema_file' #{task['schema_file']} failed with error: #{e.class} #{e.message}"
           end
         end
 
