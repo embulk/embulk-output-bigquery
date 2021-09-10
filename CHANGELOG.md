@@ -1,3 +1,6 @@
+## 0.6.7 - 2021-09-10
+* [enhancement] Add an expiration option of temporary table to clean up (thanks to @TKNGUE)
+
 ## 0.6.6 - 2021-06-10
 
 * [maintenance] Fix network retry function (thanks to @case-k-git)
