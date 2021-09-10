@@ -440,6 +440,11 @@ module Embulk
               }
             end
 
+            if options['expiration_time']
+              # expiration_time is expressed in milliseconds
+              body[:expiration_time] = (Time.now.to_i + options['expiration_time']) * 1000
+            end
+
             opts = {}
             Embulk.logger.debug { "embulk-output-bigquery: insert_table(#{@project}, #{dataset}, #{@location_for_log}, #{body}, #{opts})" }
             with_network_retry { client.insert_table(@project, dataset, body, opts) }

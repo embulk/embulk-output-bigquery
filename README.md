@@ -79,6 +79,13 @@ Options for intermediate local files
 |  delete_from_local_when_job_end      | boolean     | optional   | true                     | If set to true, delete generate local files when job is end |
 |  compression                         | string      | optional   | "NONE"                   | Compression of local files (`GZIP` or `NONE`) |
 
+
+Options for intermediate tables on BigQuery
+
+| name                                 | type        | required?  | default                  | description            |
+|:-------------------------------------|:------------|:-----------|:-------------------------|:-----------------------|
+|  temporary_table_expiration          | integer     | optional   |                          | Temporary table's expiration time in seconds |
+
 `source_format` is also used to determine formatter (csv or jsonl).
 
 #### Same options of bq command-line tools or BigQuery job's property
