@@ -68,7 +68,7 @@ module Embulk
           ])
           task = {
             'column_options' => [
-              {'name' => 'boolean',   'type' => 'STRING', 'mode' => 'REQUIRED'},
+              {'name' => 'boolean',   'type' => 'STRING', 'mode' => 'REQUIRED', 'description' => 'hoge'},
               {'name' => 'long',      'type' => 'STRING'},
               {'name' => 'double',    'type' => 'STRING'},
               {'name' => 'string',    'type' => 'INTEGER'},
@@ -81,7 +81,7 @@ module Embulk
             ],
           }
           expected = [
-            {name: 'boolean',   type: 'STRING', mode: 'REQUIRED'},
+            {name: 'boolean', type: 'STRING', mode: 'REQUIRED', description: 'hoge'},
             {name: 'long',      type: 'STRING'},
             {name: 'double',    type: 'STRING'},
             {name: 'string',    type: 'INTEGER'},
