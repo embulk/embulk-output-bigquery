@@ -46,10 +46,11 @@ module Embulk
             embulk_type   = column[:type]
             column_option = column_options_map[column_name] || {}
             {}.tap do |field|
-              field[:name]   = column_name
-              field[:type]   = (column_option['type'] || bq_type_from_embulk_type(embulk_type)).upcase
-              field[:mode]   = column_option['mode'] if column_option['mode']
-              field[:fields] = deep_symbolize_keys(column_option['fields']) if column_option['fields']
+              field[:name]        = column_name
+              field[:type]        = (column_option['type'] || bq_type_from_embulk_type(embulk_type)).upcase
+              field[:mode]        = column_option['mode'] if column_option['mode']
+              field[:fields]      = deep_symbolize_keys(column_option['fields']) if column_option['fields']
+              field[:description] = column_option['description'] if column_option['description']
             end
           end
         end
