@@ -33,6 +33,7 @@ OAuth flow for installed applications.
 |  auth_method                         | string      | optional   | "application\_default"   | See [Authentication](#authentication) |
 |  json_keyfile                        | string      | optional   |                          | keyfile path or `content` |
 |  project                             | string      | required unless service\_account's `json_keyfile` is given. | | project\_id |
+|  destination_project                 | string      | optional   | `project` value         |  A destination project to which the data will be loaded. Use this if you want to separate a billing project (the `project` value) and a destination project (the `destination_project` value). |
 |  dataset                             | string      | required   |                          | dataset |
 |  location                            | string      | optional   | nil                      | geographic location of dataset. See [Location](#location) |
 |  table                               | string      | required   |                          | table name, or table name with a partition decorator such as `table_name$20160929`|
@@ -77,6 +78,13 @@ Options for intermediate local files
 |  skip_file_generation                | boolean     | optional   |                          | Load already generated local files into BigQuery if available. Specify correct path_prefix and file_ext. |
 |  delete_from_local_when_job_end      | boolean     | optional   | true                     | If set to true, delete generate local files when job is end |
 |  compression                         | string      | optional   | "NONE"                   | Compression of local files (`GZIP` or `NONE`) |
+
+
+Options for intermediate tables on BigQuery
+
+| name                                 | type        | required?  | default                  | description            |
+|:-------------------------------------|:------------|:-----------|:-------------------------|:-----------------------|
+|  temporary_table_expiration          | integer     | optional   |                          | Temporary table's expiration time in seconds |
 
 `source_format` is also used to determine formatter (csv or jsonl).
 

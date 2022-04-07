@@ -68,8 +68,6 @@ module Embulk
                 Embulk.logger.error { "embulk-output-bigquery: retry exhausted \##{retries}, #{e.class} #{e.message}" }
                 raise e
               end
-            else
-              raise e
             end
           end
         end

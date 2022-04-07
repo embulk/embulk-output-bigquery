@@ -36,6 +36,7 @@ module Embulk
           'auth_method'                    => config.param('auth_method',                    :string,  :default => 'application_default'),
           'json_keyfile'                   => config.param('json_keyfile',                  LocalFile, :default => nil),
           'project'                        => config.param('project',                        :string,  :default => nil),
+          'destination_project'            => config.param('destination_project',            :string,  :default => nil),
           'dataset'                        => config.param('dataset',                        :string),
           'location'                       => config.param('location',                       :string,  :default => nil),
           'table'                          => config.param('table',                          :string),
@@ -89,6 +90,8 @@ module Embulk
           'clustering'                     => config.param('clustering',                     :hash,    :default => nil), # google-api-ruby-client >= v0.21.0
           'schema_update_options'          => config.param('schema_update_options',          :array,   :default => nil),
 
+          'temporary_table_expiration'     => config.param('temporary_table_expiration',     :integer, :default => nil),
+
           # for debug
           'skip_load'                      => config.param('skip_load',                      :bool,    :default => false),
           'temp_table'                     => config.param('temp_table',                     :string,  :default => nil),
@@ -135,12 +138,13 @@ module Embulk
             json_key = JSON.parse(task['json_keyfile'])
             task['project'] ||= json_key['project_id']
           rescue => e
-            raise ConfigError.new "json_keyfile is not a JSON file"
+            raise ConfigError.new "Parsing 'json_keyfile' failed with error: #{e.class} #{e.message}"
           end
         end
         if task['project'].nil?
           raise ConfigError.new "Required field \"project\" is not set"
         end
+        task['destination_project'] ||= task['project']
 
         if (task['payload_column'] or task['payload_column_index']) and task['auto_create_table']
           if task['schema_file'].nil? and task['template_table'].nil?
@@ -166,7 +170,7 @@ module Embulk
           begin
             JSON.parse(File.read(task['schema_file']))
           rescue => e
-            raise ConfigError.new "schema_file #{task['schema_file']} is not a JSON file"
+            raise ConfigError.new "Parsing 'schema_file' #{task['schema_file']} failed with error: #{e.class} #{e.message}"
           end
         end
 
@@ -298,19 +302,23 @@ module Embulk
           end
         end
 
+        temp_table_expiration = task['temporary_table_expiration']
+        temp_options = {'expiration_time' => temp_table_expiration}
+
         case task['mode']
         when 'delete_in_advance'
           bigquery.delete_table_or_partition(task['table'])
           bigquery.create_table_if_not_exists(task['table'])
         when 'replace'
-          bigquery.create_table_if_not_exists(task['temp_table'])
+          bigquery.create_table_if_not_exists(task['temp_table'], options: temp_options)
           bigquery.create_table_if_not_exists(task['table']) # needs for when task['table'] is a partition
         when 'append'
-          bigquery.create_table_if_not_exists(task['temp_table'])
+          bigquery.create_table_if_not_exists(task['temp_table'], options: temp_options)
           bigquery.create_table_if_not_exists(task['table']) # needs for when task['table'] is a partition
         when 'replace_backup'
-          bigquery.create_table_if_not_exists(task['temp_table'])
+          bigquery.create_table_if_not_exists(task['temp_table'], options: temp_options)
           bigquery.create_table_if_not_exists(task['table'])
+
           bigquery.create_table_if_not_exists(task['table_old'], dataset: task['dataset_old']) # needs for when a partition
         else # append_direct
           if task['auto_create_table']

@@ -1,3 +1,16 @@
+## 0.6.7 - 2021-09-10
+* [enhancement] Add an expiration option of temporary table to clean up (thanks to @TKNGUE)
+
+## 0.6.6 - 2021-06-10
+
+* [maintenance] Fix network retry function (thanks to @case-k-git)
+* [enhancement] Allow to specify the billing project and the project to which the data will be loaded separately (thanks to @ck-fm0211)
+* [enhancement] Include original error message on json parse error (thanks to @k-yomo)
+
+## 0.6.5 - 2021-06-10
+* [maintenance] Fix failed tests (thanks to @kyoshidajp)
+* [maintenance] Lock representable version for avoiding requiring Ruby 2.4 (thanks to @hiroyuki-sato)
+
 ## 0.6.4 - 2019-11-06
 
 * [enhancement] Add DATETIME type conveter (thanks to @kekekenta)

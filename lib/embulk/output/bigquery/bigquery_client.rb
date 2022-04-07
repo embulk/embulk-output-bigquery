@@ -18,6 +18,7 @@ module Embulk
           @schema = schema
           reset_fields(fields) if fields
           @project = @task['project']
+          @destination_project = @task['destination_project']
           @dataset = @task['dataset']
           @location = @task['location']
           @location_for_log = @location.nil? ? 'us/eu' : @location
@@ -80,7 +81,7 @@ module Embulk
               # As https://cloud.google.com/bigquery/docs/managing_jobs_datasets_projects#managingjobs says,
               # we should generate job_id in client code, otherwise, retrying would cause duplication
               job_id = "embulk_load_job_#{SecureRandom.uuid}"
-              Embulk.logger.info { "embulk-output-bigquery: Load job starting... job_id:[#{job_id}] #{object_uris} => #{@project}:#{@dataset}.#{table} in #{@location_for_log}" }
+              Embulk.logger.info { "embulk-output-bigquery: Load job starting... job_id:[#{job_id}] #{object_uris} => #{@destination_project}:#{@dataset}.#{table} in #{@location_for_log}" }
 
               body = {
                 job_reference: {
@@ -90,7 +91,7 @@ module Embulk
                 configuration: {
                   load: {
                     destination_table: {
-                      project_id: @project,
+                      project_id: @destination_project,
                       dataset_id: @dataset,
                       table_id: table,
                     },
@@ -130,7 +131,7 @@ module Embulk
               Embulk.logger.error {
                 "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts}), response:#{response}"
               }
-              raise Error, "failed to load #{object_uris} to #{@project}:#{@dataset}.#{table} in #{@location_for_log}, response:#{response}"
+              raise Error, "failed to load #{object_uris} to #{@destination_project}:#{@dataset}.#{table} in #{@location_for_log}, response:#{response}"
             end
           end
         end
@@ -171,7 +172,7 @@ module Embulk
                 # As https://cloud.google.com/bigquery/docs/managing_jobs_datasets_projects#managingjobs says,
                 # we should generate job_id in client code, otherwise, retrying would cause duplication
                 job_id = "embulk_load_job_#{SecureRandom.uuid}"
-                Embulk.logger.info { "embulk-output-bigquery: Load job starting... job_id:[#{job_id}] #{path} => #{@project}:#{@dataset}.#{table} in #{@location_for_log}" }
+                Embulk.logger.info { "embulk-output-bigquery: Load job starting... job_id:[#{job_id}] #{path} => #{@destination_project}:#{@dataset}.#{table} in #{@location_for_log}" }
               else
                 Embulk.logger.info { "embulk-output-bigquery: Load job starting... #{path} does not exist, skipped" }
                 return
@@ -185,7 +186,7 @@ module Embulk
                 configuration: {
                   load: {
                     destination_table: {
-                      project_id: @project,
+                      project_id: @destination_project,
                       dataset_id: @dataset,
                       table_id: table,
                     },
@@ -232,7 +233,7 @@ module Embulk
               Embulk.logger.error {
                 "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts}), response:#{response}"
               }
-              raise Error, "failed to load #{path} to #{@project}:#{@dataset}.#{table} in #{@location_for_log}, response:#{response}"
+              raise Error, "failed to load #{path} to #{@destination_project}:#{@dataset}.#{table} in #{@location_for_log}, response:#{response}"
             end
           end
         end
@@ -245,7 +246,7 @@ module Embulk
 
               Embulk.logger.info {
                 "embulk-output-bigquery: Copy job starting... job_id:[#{job_id}] " \
-                "#{@project}:#{@dataset}.#{source_table} => #{@project}:#{destination_dataset}.#{destination_table}"
+                "#{@destination_project}:#{@dataset}.#{source_table} => #{@destination_project}:#{destination_dataset}.#{destination_table}"
               }
 
               body = {
@@ -258,12 +259,12 @@ module Embulk
                     create_deposition: 'CREATE_IF_NEEDED',
                     write_disposition: write_disposition,
                     source_table: {
-                      project_id: @project,
+                      project_id: @destination_project,
                       dataset_id: @dataset,
                       table_id: source_table,
                     },
                     destination_table: {
-                      project_id: @project,
+                      project_id: @destination_project,
                       dataset_id: destination_dataset,
                       table_id: destination_table,
                     },
@@ -284,8 +285,8 @@ module Embulk
               Embulk.logger.error {
                 "embulk-output-bigquery: insert_job(#{@project}, #{body}, #{opts}), response:#{response}"
               }
-              raise Error, "failed to copy #{@project}:#{@dataset}.#{source_table} " \
-                "to #{@project}:#{destination_dataset}.#{destination_table}, response:#{response}"
+              raise Error, "failed to copy #{@destination_project}:#{@dataset}.#{source_table} " \
+                "to #{@destination_project}:#{destination_dataset}.#{destination_table}, response:#{response}"
             end
           end
         end
@@ -354,7 +355,7 @@ module Embulk
         def create_dataset(dataset = nil, reference: nil)
           dataset ||= @dataset
           begin
-            Embulk.logger.info { "embulk-output-bigquery: Create dataset... #{@project}:#{dataset} in #{@location_for_log}" }
+            Embulk.logger.info { "embulk-output-bigquery: Create dataset... #{@destination_project}:#{dataset} in #{@location_for_log}" }
             hint = {}
             if reference
               response = get_dataset(reference)
@@ -382,25 +383,25 @@ module Embulk
             Embulk.logger.error {
               "embulk-output-bigquery: insert_dataset(#{@project}, #{body}, #{opts}), response:#{response}"
             }
-            raise Error, "failed to create dataset #{@project}:#{dataset} in #{@location_for_log}, response:#{response}"
+            raise Error, "failed to create dataset #{@destination_project}:#{dataset} in #{@location_for_log}, response:#{response}"
           end
         end
 
         def get_dataset(dataset = nil)
           dataset ||= @dataset
           begin
-            Embulk.logger.info { "embulk-output-bigquery: Get dataset... #{@project}:#{dataset}" }
-            with_network_retry { client.get_dataset(@project, dataset) }
+            Embulk.logger.info { "embulk-output-bigquery: Get dataset... #{@destination_project}:#{dataset}" }
+            with_network_retry { client.get_dataset(@destination_project, dataset) }
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             if e.status_code == 404
-              raise NotFoundError, "Dataset #{@project}:#{dataset} is not found"
+              raise NotFoundError, "Dataset #{@destination_project}:#{dataset} is not found"
             end
 
             response = {status_code: e.status_code, message: e.message, error_class: e.class}
             Embulk.logger.error {
-              "embulk-output-bigquery: get_dataset(#{@project}, #{dataset}), response:#{response}"
+              "embulk-output-bigquery: get_dataset(#{@destination_project}, #{dataset}), response:#{response}"
             }
-            raise Error, "failed to get dataset #{@project}:#{dataset}, response:#{response}"
+            raise Error, "failed to get dataset #{@destination_project}:#{dataset}, response:#{response}"
           end
         end
 
@@ -414,7 +415,7 @@ module Embulk
               table = Helper.chomp_partition_decorator(table)
             end
 
-            Embulk.logger.info { "embulk-output-bigquery: Create table... #{@project}:#{dataset}.#{table}" }
+            Embulk.logger.info { "embulk-output-bigquery: Create table... #{@destination_project}:#{dataset}.#{table}" }
             body = {
               table_reference: {
                 table_id: table,
@@ -439,6 +440,11 @@ module Embulk
               }
             end
 
+            if options['expiration_time']
+              # expiration_time is expressed in milliseconds
+              body[:expiration_time] = (Time.now.to_i + options['expiration_time']) * 1000
+            end
+
             opts = {}
             Embulk.logger.debug { "embulk-output-bigquery: insert_table(#{@project}, #{dataset}, #{@location_for_log}, #{body}, #{opts})" }
             with_network_retry { client.insert_table(@project, dataset, body, opts) }
@@ -452,7 +458,7 @@ module Embulk
             Embulk.logger.error {
               "embulk-output-bigquery: insert_table(#{@project}, #{dataset}, #{@location_for_log}, #{body}, #{opts}), response:#{response}"
             }
-            raise Error, "failed to create table #{@project}:#{dataset}.#{table} in #{@location_for_log}, response:#{response}"
+            raise Error, "failed to create table #{@destination_project}:#{dataset}.#{table} in #{@location_for_log}, response:#{response}"
           end
         end
 
@@ -469,8 +475,8 @@ module Embulk
         def delete_table_or_partition(table, dataset: nil)
           begin
             dataset ||= @dataset
-            Embulk.logger.info { "embulk-output-bigquery: Delete table... #{@project}:#{dataset}.#{table}" }
-            with_network_retry { client.delete_table(@project, dataset, table) }
+            Embulk.logger.info { "embulk-output-bigquery: Delete table... #{@destination_project}:#{dataset}.#{table}" }
+            with_network_retry { client.delete_table(@destination_project, dataset, table) }
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             if e.status_code == 404 && /Not found:/ =~ e.message
               # ignore 'Not Found' error
@@ -479,9 +485,9 @@ module Embulk
 
             response = {status_code: e.status_code, message: e.message, error_class: e.class}
             Embulk.logger.error {
-              "embulk-output-bigquery: delete_table(#{@project}, #{dataset}, #{table}), response:#{response}"
+              "embulk-output-bigquery: delete_table(#{@destination_project}, #{dataset}, #{table}), response:#{response}"
             }
-            raise Error, "failed to delete table #{@project}:#{dataset}.#{table}, response:#{response}"
+            raise Error, "failed to delete table #{@destination_project}:#{dataset}.#{table}, response:#{response}"
           end
         end
 
@@ -497,18 +503,18 @@ module Embulk
         def get_table_or_partition(table, dataset: nil)
           begin
             dataset ||= @dataset
-            Embulk.logger.info { "embulk-output-bigquery: Get table... #{@project}:#{dataset}.#{table}" }
-            with_network_retry { client.get_table(@project, dataset, table) }
+            Embulk.logger.info { "embulk-output-bigquery: Get table... #{@destination_project}:#{dataset}.#{table}" }
+            with_network_retry { client.get_table(@destination_project, dataset, table) }
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             if e.status_code == 404
-              raise NotFoundError, "Table #{@project}:#{dataset}.#{table} is not found"
+              raise NotFoundError, "Table #{@destination_project}:#{dataset}.#{table} is not found"
             end
 
             response = {status_code: e.status_code, message: e.message, error_class: e.class}
             Embulk.logger.error {
-              "embulk-output-bigquery: get_table(#{@project}, #{dataset}, #{table}), response:#{response}"
+              "embulk-output-bigquery: get_table(#{@destination_project}, #{dataset}, #{table}), response:#{response}"
             }
-            raise Error, "failed to get table #{@project}:#{dataset}.#{table}, response:#{response}"
+            raise Error, "failed to get table #{@destination_project}:#{dataset}.#{table}, response:#{response}"
           end
         end
 
