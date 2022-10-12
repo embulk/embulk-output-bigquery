@@ -50,7 +50,13 @@ module Embulk
           begin
             yield
           rescue ::Java::Java.net.SocketException, ::Java::Java.net.ConnectException => e
-            if ['Broken pipe', 'Connection reset', 'Connection timed out'].select { |x| e.message.include?(x) }.empty?
+            retry_messages = [
+              'Broken pipe',
+              'Connection reset',
+              'Connection timed out',
+              'Connection or outbound has closed',
+            ]
+            if retry_messages.select { |x| e.message.include?(x) }.empty?
               raise e
             else
               if retries < @task['retries']
