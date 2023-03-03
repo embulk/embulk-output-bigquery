@@ -210,6 +210,7 @@ module Embulk
           converter = ValueConverterFactory.new(SCHEMA_TYPE, 'INTEGER').create_converter
           assert_equal nil, converter.call(nil)
           assert_equal 1, converter.call('1')
+          assert_equal 10, converter.call('010')
           assert_raise { converter.call('1.1') }
         end
 
