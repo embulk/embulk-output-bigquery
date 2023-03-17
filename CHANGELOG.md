@@ -1,3 +1,6 @@
+## 0.6.9 - 2023-03-16
+* [enhancement] Add SSLException to retry job (thanks to @mzumi)
+
 ## 0.6.8 - 2022-10-12
 * [enhancement] Support JSON type (thanks to @civitaspo )
 * [maintenance] Add an error message in order to retry (thanks to @mzumi)
