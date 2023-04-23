@@ -17,17 +17,13 @@ jobs:
         distribution: "temurin"
     - uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 'jruby-9.1.17.0' # 9.1.15.0 doesn't available in setup-ruby@v1
+        ruby-version: 'jruby-9.3.10.0'
         bundler-cache: true
     - name: show ruby version
       run: ruby -v
-    # Gem::LoadError: You have already activated rake 10.4.2,
-    # but your Gemfile requires rake 13.0.6.
-    - name: gem install rake -v 13.0.6
-      run: gem install rake -v 13.0.6
     - name: bundle install
       run: bundle install
-    - name: install embulk
-      run: "curl -L -o embulk.jar https://github.com/embulk/embulk/releases/download/v0.8.39/embulk-0.8.39.jar"
+    - name: install embulk.jar
+      run: "curl -L -o embulk.jar https://github.com/embulk/embulk/releases/download/v0.10.49/embulk-0.10.49.jar"
     - name: rake test
       run: bundle exec env RUBYOPT="-r ./embulk.jar" rake test
