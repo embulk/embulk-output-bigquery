@@ -1,0 +1,33 @@
+name: Check
+on: [ pull_request, push ]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    # push: always run.
+    # pull_request: run only when the PR is submitted from a forked repository, not within this repository.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up OpenJDK 8
+      uses: actions/setup-java@v3
+      with:
+        java-version: 8
+        distribution: "temurin"
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 'jruby-9.1.17.0' # 9.1.15.0 doesn't available in setup-ruby@v1
+        bundler-cache: true
+    - name: show ruby version
+      run: ruby -v
+    # Gem::LoadError: You have already activated rake 10.4.2,
+    # but your Gemfile requires rake 13.0.6.
+    - name: gem install rake -v 13.0.6
+      run: gem install rake -v 13.0.6
+    - name: bundle install
+      run: bundle install
+    - name: install embulk
+      run: "curl -L -o embulk.jar https://github.com/embulk/embulk/releases/download/v0.8.39/embulk-0.8.39.jar"
+    - name: rake test
+      run: bundle exec env RUBYOPT="-r ./embulk.jar" rake test
