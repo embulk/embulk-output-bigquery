@@ -7,6 +7,10 @@ jobs:
     # pull_request: run only when the PR is submitted from a forked repository, not within this repository.
     if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     strategy:
+      matrix:
+        jruby_version:
+        - 9.3.10.0
+        - 9.4.2.0
       fail-fast: false
     steps:
     - uses: actions/checkout@v3
@@ -17,7 +21,7 @@ jobs:
         distribution: "temurin"
     - uses: ruby/setup-ruby@v1
       with:
-        ruby-version: 'jruby-9.3.10.0'
+        ruby-version: 'jruby-${{ matrix.jruby_version }}'
         bundler-cache: true
     - name: show ruby version
       run: ruby -v
