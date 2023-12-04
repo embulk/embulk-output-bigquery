@@ -27,6 +27,15 @@ jobs:
       run: ruby -v
     - name: bundle install
       run: bundle install
+    #
+    # This step avoids the following error in the JRuby 9.4 test.
+    #
+    # Gem::LoadError: You have already activated rake 13.0.6,
+    # but your Gemfile requires rake 13.1.0. Prepending
+    # `bundle exec` to your command may solve this.
+    #
+    - name: install rake 13.1.0
+      run: gem install rake -v 13.1.0
     - name: install embulk.jar
       run: "curl -L -o embulk.jar https://github.com/embulk/embulk/releases/download/v0.10.49/embulk-0.10.49.jar"
     - name: rake test
