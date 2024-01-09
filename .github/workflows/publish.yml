@@ -37,4 +37,4 @@ jobs:
         gem push pkg/${EMBULK_PLUGIN_NAME}-${{ steps.vars.outputs.version }}.gem
       env:
         EMBULK_PLUGIN_NAME: embulk-output-bigquery
-        GEM_HOST_API_KEY: "${{secrets.GEM_HOST_API_KEY}}"
+        GEM_HOST_API_KEY: "${{secrets.RUBYGEMS_API_KEY}}"
