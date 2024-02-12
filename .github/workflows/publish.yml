@@ -6,6 +6,7 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: maven-central-and-ruby-gems
     strategy:
       fail-fast: true
     steps:
