@@ -1,3 +1,6 @@
+## 0.7.0 - 2024-02-1
+* [enhancement] Add support Embulk 0.11.x
+
 ## 0.6.9 - 2023-03-16
 * [enhancement] Add SSLException to retry job (thanks to @mzumi)
 
