@@ -15,7 +15,8 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   # the latest version
-  spec.add_dependency 'google-api-client','= 0.53.0'
+  spec.add_dependency 'google-apis-storage_v1'
+  spec.add_dependency 'google-apis-bigquery_v2'
   spec.add_dependency 'time_with_zone'
   spec.add_dependency 'thwait'
   # activesupport require Ruby >= 2.7.0
