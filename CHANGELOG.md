@@ -1,3 +1,13 @@
+## 0.7.0 - 2024-02-1
+* [enhancement] Add support Embulk 0.11.x
+
+## 0.6.9 - 2023-03-16
+* [enhancement] Add SSLException to retry job (thanks to @mzumi)
+
+## 0.6.8 - 2022-10-12
+* [enhancement] Support JSON type (thanks to @civitaspo )
+* [maintenance] Add an error message in order to retry (thanks to @mzumi)
+
 ## 0.6.7 - 2021-09-10
 * [enhancement] Add an expiration option of temporary table to clean up (thanks to @TKNGUE)
 

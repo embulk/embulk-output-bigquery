@@ -1,0 +1,41 @@
+name: Publish
+on:
+  push:
+    tags:
+      - "v0.*"
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: maven-central-and-ruby-gems
+    strategy:
+      fail-fast: true
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: 3.3.0
+    # get tag variable using {{ github.ref_name }}
+    #
+    # References:
+    # * https://docs.github.com/en/actions/learn-github-actions/contexts#github-context
+    # * https://docs.github.com/en/actions/learn-github-actions/variables#default-environment-variables
+    - name: extract gem version from tag
+      id: vars
+      run: echo version=${{ github.ref_name }} | sed -e 's/v0/0/' >> $GITHUB_OUTPUT
+    #
+    # From gem push documents.
+    #
+    # The push command will use ~/.gem/credentials to authenticate to a server,
+    # but you can use the RubyGems environment variable GEM_HOST_API_KEY
+    # to set the api key to authenticate.
+    #
+    # https://guides.rubygems.org/command-reference/#gem-push
+    #
+    - name: Publish
+      run: |
+        rake build
+        gem push pkg/${EMBULK_PLUGIN_NAME}-${{ steps.vars.outputs.version }}.gem
+      env:
+        EMBULK_PLUGIN_NAME: embulk-output-bigquery
+        GEM_HOST_API_KEY: "${{secrets.RUBYGEMS_API_KEY}}"

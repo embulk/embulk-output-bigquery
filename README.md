@@ -1,7 +1,5 @@
 # embulk-output-bigquery
 
-[![Build Status](https://secure.travis-ci.org/embulk/embulk-output-bigquery.png?branch=master)](http://travis-ci.org/embulk/embulk-output-bigquery)
-
 [Embulk](https://github.com/embulk/embulk/) output plugin to load/insert data into [Google BigQuery](https://cloud.google.com/bigquery/) using [direct insert](https://cloud.google.com/bigquery/loading-data-into-bigquery#loaddatapostrequest)
 
 ## Overview
@@ -13,6 +11,13 @@ https://developers.google.com/bigquery/loading-data-into-bigquery
 * **Resume supported**: no
 * **Cleanup supported**: no
 * **Dynamic table creating**: yes
+
+### Supported Embulk
+
+| gem version      | Embulk version     |
+|------------------|--------------------|
+| 0.7.0 and higher | v0.11.0 and higher |
+| 0.6.9 and lower  | v0.9.X and lower   |
 
 ### NOT IMPLEMENTED
 * insert data over streaming inserts

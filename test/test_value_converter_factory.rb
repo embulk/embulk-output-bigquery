@@ -389,6 +389,12 @@ module Embulk
           assert_equal nil, converter.call(nil)
           assert_equal({'foo'=>'foo'}, converter.call({'foo'=>'foo'}))
         end
+
+        def test_json
+          converter = ValueConverterFactory.new(SCHEMA_TYPE, 'JSON').create_converter
+          assert_equal nil, converter.call(nil)
+          assert_equal({'foo'=>'foo'}, converter.call({'foo'=>'foo'}))
+        end
       end
 
       def test_strict_false
