@@ -60,6 +60,7 @@ OAuth flow for installed applications.
 |  gcs_bucket                          | string      | optional   | nil                      | See [GCS Bucket](#gcs-bucket) |
 |  auto_create_gcs_bucket              | boolean     | optional   | false                    | See [GCS Bucket](#gcs-bucket) |
 |  progress_log_interval               | float       | optional   | nil (Disabled)           | Progress log interval. The progress log is disabled by nil (default). NOTE: This option may be removed in a future because a filter plugin can achieve the same goal |
+|  description                         | string      | optional   | nil                      | description of table |
 
 Client or request options
 
@@ -329,6 +330,7 @@ Column options are used to aid guessing BigQuery schema, or to define conversion
     - json:      `STRING`,  `RECORD` (default: `STRING`)
   - **mode**: BigQuery mode such as `NULLABLE`, `REQUIRED`, and `REPEATED` (string, default: `NULLABLE`)
   - **fields**: Describes the nested schema fields if the type property is set to RECORD. Please note that this is **required** for `RECORD` column.
+  - **description**: description (string, default is `None`).
   - **timestamp_format**: timestamp format to convert into/from `timestamp` (string, default is `default_timestamp_format`)
   - **timezone**: timezone to convert into/from `timestamp`, `date` (string, default is `default_timezone`).
 - **default_timestamp_format**: default timestamp format for column_options (string, default is "%Y-%m-%d %H:%M:%S.%6N")
