@@ -9,8 +9,8 @@ jobs:
     strategy:
       matrix:
         jruby_version:
-        - 9.3.10.0
-        - 9.4.2.0
+        - 9.3.15.0
+        - 9.4.8.0
       fail-fast: false
     steps:
     - uses: actions/checkout@v4
@@ -19,24 +19,15 @@ jobs:
       with:
         java-version: 8
         distribution: "temurin"
-    - uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: 'jruby-${{ matrix.jruby_version }}'
-        bundler-cache: true
-    - name: show ruby version
-      run: ruby -v
+    - name: download jruby
+      run: "curl -L -o jruby.jar https://repo1.maven.org/maven2/org/jruby/jruby-complete/${{ matrix.jruby_version }}/jruby-complete-${{ matrix.jruby_version }}.jar"
+    #
+    # For avoiding permission denied. install gems into `gems` directory
+    #
     - name: bundle install
-      run: bundle install
-    #
-    # This step avoids the following error in the JRuby 9.4 test.
-    #
-    # Gem::LoadError: You have already activated rake 13.0.6,
-    # but your Gemfile requires rake 13.1.0. Prepending
-    # `bundle exec` to your command may solve this.
-    #
-    - name: install rake 13.1.0
-      run: gem install rake -v 13.1.0
+      run: "env GEM_HOME=gems java -jar jruby.jar -S bundle install"
+
     - name: install embulk.jar
-      run: "curl -L -o embulk.jar https://github.com/embulk/embulk/releases/download/v0.10.49/embulk-0.10.49.jar"
+      run: "curl -L -o embulk.jar https://github.com/embulk/embulk/releases/download/v0.11.4/embulk-0.11.4.jar"
     - name: rake test
-      run: bundle exec env RUBYOPT="-r ./embulk.jar" rake test
+      run: 'env GEM_HOME=gems RUBYOPT="-r ./embulk.jar -r rubygems" java -jar jruby.jar -S bundle exec rake test'
