@@ -1,3 +1,8 @@
+## 0.7.2 - 2024-07-21
+* [maintenance] Fix GitHub Actions #166
+* [maintenance] Fix gcs_client in order to load data using gcs_bucket parameter (Thanks to kashira202111) #164
+* [maintenance] Prevent creating unnecessary tables. (Thanks to kashira202111) #148
+
 ## 0.7.1 - 2024-03-4
 * [enhancement] Support description of columns and tables (Thanks to @kyoshidajp and @fagai ) #142
 * [maintenance] Add missing GitHub Actions environment setting. #160
