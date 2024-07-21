@@ -447,8 +447,8 @@ module Embulk
             end
 
             opts = {}
-            Embulk.logger.debug { "embulk-output-bigquery: insert_table(#{@project}, #{dataset}, #{@location_for_log}, #{body}, #{opts})" }
-            with_network_retry { client.insert_table(@project, dataset, body, **opts) }
+            Embulk.logger.debug { "embulk-output-bigquery: insert_table(#{@destination_project}, #{dataset}, #{@location_for_log}, #{body}, #{opts})" }
+            with_network_retry { client.insert_table(@destination_project, dataset, body, **opts) }
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             if e.status_code == 409 && /Already Exists:/ =~ e.message
               # ignore 'Already Exists' error
@@ -457,7 +457,7 @@ module Embulk
 
             response = {status_code: e.status_code, message: e.message, error_class: e.class}
             Embulk.logger.error {
-              "embulk-output-bigquery: insert_table(#{@project}, #{dataset}, #{@location_for_log}, #{body}, #{opts}), response:#{response}"
+              "embulk-output-bigquery: insert_table(#{@destination_project}, #{dataset}, #{@location_for_log}, #{body}, #{opts}), response:#{response}"
             }
             raise Error, "failed to create table #{@destination_project}:#{dataset}.#{table} in #{@location_for_log}, response:#{response}"
           end
