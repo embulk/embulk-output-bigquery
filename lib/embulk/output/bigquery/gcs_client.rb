@@ -48,7 +48,7 @@ module Embulk
             opts = {}
 
             Embulk.logger.debug { "embulk-output-bigquery: insert_temporary_bucket(#{@project}, #{body}, #{opts})" }
-            with_network_retry { client.insert_bucket(@project, body, opts) }
+            with_network_retry { client.insert_bucket(@project, body, **opts) }
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             if e.status_code == 409 && /conflict:/ =~ e.message
               # ignore 'Already Exists' error
@@ -81,7 +81,7 @@ module Embulk
 
             Embulk.logger.debug { "embulk-output-bigquery: insert_object(#{bucket}, #{body}, #{opts})" }
             # memo: gcs is strongly consistent for insert (read-after-write). ref: https://cloud.google.com/storage/docs/consistency
-            with_network_retry { client.insert_object(bucket, body, opts) }
+            with_network_retry { client.insert_object(bucket, body, **opts) }
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             response = {status_code: e.status_code, message: e.message, error_class: e.class}
             Embulk.logger.error {
@@ -114,7 +114,7 @@ module Embulk
             opts = {}
 
             Embulk.logger.debug { "embulk-output-bigquery: delete_object(#{bucket}, #{object}, #{opts})" }
-            response = with_network_retry { client.delete_object(bucket, object, opts) }
+            response = with_network_retry { client.delete_object(bucket, object, **opts) }
           rescue Google::Apis::ServerError, Google::Apis::ClientError, Google::Apis::AuthorizationError => e
             if e.status_code == 404 # ignore 'notFound' error
               return nil
