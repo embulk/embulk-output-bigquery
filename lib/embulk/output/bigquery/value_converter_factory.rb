@@ -224,6 +224,13 @@ module Embulk
                 val # Users must care of BQ timestamp format
               }
             end
+          when 'TIME'
+            Proc.new {|val|
+              next nil if val.nil?
+              with_typecast_error(val) do |val|
+                Time.parse(val).strftime("%H:%M:%S.%6N")
+              end
+            }
           when 'RECORD'
             Proc.new {|val|
               next nil if val.nil?

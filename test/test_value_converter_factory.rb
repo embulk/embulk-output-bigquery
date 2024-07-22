@@ -262,6 +262,15 @@ module Embulk
           assert_equal "2016-02-26 00:00:00", converter.call("2016-02-26 00:00:00")
         end
 
+        def test_time
+          converter = ValueConverterFactory.new(
+            SCHEMA_TYPE, 'TIME',
+            timestamp_format: '%H:%M:%S'
+          ).create_converter
+          assert_equal nil, converter.call(nil)
+          assert_equal "00:03:22.000000", converter.call("00:03:22")
+        end
+
         def test_record
           converter = ValueConverterFactory.new(SCHEMA_TYPE, 'RECORD').create_converter
           assert_equal({'foo'=>'foo'}, converter.call(%Q[{"foo":"foo"}]))
