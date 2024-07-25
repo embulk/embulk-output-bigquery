@@ -225,12 +225,19 @@ module Embulk
               }
             end
           when 'TIME'
-            Proc.new {|val|
-              next nil if val.nil?
-              with_typecast_error(val) do |val|
+            if @timestamp_format
+              Proc.new {|val|
+                next nil if val.nil?
+                with_typecast_error(val) do |val|
+                  Time.strptime(val, @timestamp_format).strftime("%H:%M:%S.%6N")
+                end
+              }
+            else
+              Proc.new {|val|
+                next nil if val.nil?
                 Time.parse(val).strftime("%H:%M:%S.%6N")
-              end
-            }
+              }
+            end
           when 'RECORD'
             Proc.new {|val|
               next nil if val.nil?
