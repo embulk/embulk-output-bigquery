@@ -285,6 +285,11 @@ module Embulk
               next nil if val.nil?
               val.localtime(zone_offset).strftime("%Y-%m-%d %H:%M:%S.%6N")
             }
+          when 'TIME'
+            Proc.new {|val|
+              next nil if val.nil?
+              val.localtime(zone_offset).strftime("%H:%M:%S.%6N")
+            }
           else
             raise NotSupportedType, "cannot take column type #{type} for timestamp column"
           end
