@@ -225,19 +225,13 @@ module Embulk
               }
             end
           when 'TIME'
-            if @timestamp_format
-              Proc.new {|val|
-                next nil if val.nil?
-                with_typecast_error(val) do |val|
-                  Time.strptime(val, @timestamp_format).strftime("%H:%M:%S.%6N")
-                end
-              }
-            else
-              Proc.new {|val|
-                next nil if val.nil?
-                Time.parse(val).strftime("%H:%M:%S.%6N")
-              }
-            end
+            # TimeWithZone doesn't affect any change to the time value
+            Proc.new {|val|
+              next nil if val.nil?
+              with_typecast_error(val) do |val|
+                TimeWithZone.set_zone_offset(Time.parse(val), zone_offset).strftime("%H:%M:%S.%6N")
+              end
+            }
           when 'RECORD'
             Proc.new {|val|
               next nil if val.nil?
