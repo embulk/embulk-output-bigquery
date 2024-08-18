@@ -275,7 +275,7 @@ module Embulk
             SCHEMA_TYPE, 'TIME', timezone: 'Asia/Tokyo'
           ).create_converter
           assert_equal "15:00:01.000000", converter.call("15:00:01")
-          
+
           assert_raise { converter.call('foo') }
         end
 
