@@ -262,6 +262,23 @@ module Embulk
           assert_equal "2016-02-26 00:00:00", converter.call("2016-02-26 00:00:00")
         end
 
+        def test_time
+          converter = ValueConverterFactory.new(SCHEMA_TYPE, 'TIME').create_converter
+          assert_equal nil, converter.call(nil)
+          assert_equal "00:03:22.000000", converter.call("00:03:22")
+          assert_equal "15:22:00.000000", converter.call("3:22 PM")
+          assert_equal "03:22:00.000000", converter.call("3:22 AM")
+          assert_equal "00:00:00.000000", converter.call("2016-02-26 00:00:00")
+
+           # TimeWithZone doesn't affect any change to the time value
+          converter = ValueConverterFactory.new(
+            SCHEMA_TYPE, 'TIME', timezone: 'Asia/Tokyo'
+          ).create_converter
+          assert_equal "15:00:01.000000", converter.call("15:00:01")
+
+          assert_raise { converter.call('foo') }
+        end
+
         def test_record
           converter = ValueConverterFactory.new(SCHEMA_TYPE, 'RECORD').create_converter
           assert_equal({'foo'=>'foo'}, converter.call(%Q[{"foo":"foo"}]))
@@ -345,6 +362,24 @@ module Embulk
           assert_equal nil, converter.call(nil)
           timestamp = Time.parse("2016-02-25 15:00:00.500000 +00:00")
           expected = "2016-02-26 00:00:00.500000"
+          assert_equal expected, converter.call(timestamp)
+
+          assert_raise { converter.call('foo') }
+        end
+
+        def test_time
+          converter = ValueConverterFactory.new(SCHEMA_TYPE, 'TIME').create_converter
+          assert_equal nil, converter.call(nil)
+          timestamp = Time.parse("2016-02-26 00:00:00.500000 +00:00")
+          expected = "00:00:00.500000"
+          assert_equal expected, converter.call(timestamp)
+
+          converter = ValueConverterFactory.new(
+            SCHEMA_TYPE, 'TIME', timezone: 'Asia/Tokyo'
+          ).create_converter
+          assert_equal nil, converter.call(nil)
+          timestamp = Time.parse("2016-02-25 15:00:00.500000 +00:00")
+          expected = "00:00:00.500000"
           assert_equal expected, converter.call(timestamp)
 
           assert_raise { converter.call('foo') }

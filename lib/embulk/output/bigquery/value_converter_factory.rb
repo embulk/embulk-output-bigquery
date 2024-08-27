@@ -224,6 +224,14 @@ module Embulk
                 val # Users must care of BQ timestamp format
               }
             end
+          when 'TIME'
+            # TimeWithZone doesn't affect any change to the time value
+            Proc.new {|val|
+              next nil if val.nil?
+              with_typecast_error(val) do |val|
+                TimeWithZone.set_zone_offset(Time.parse(val), zone_offset).strftime("%H:%M:%S.%6N")
+              end
+            }
           when 'RECORD'
             Proc.new {|val|
               next nil if val.nil?
@@ -270,6 +278,11 @@ module Embulk
             Proc.new {|val|
               next nil if val.nil?
               val.localtime(zone_offset).strftime("%Y-%m-%d %H:%M:%S.%6N")
+            }
+          when 'TIME'
+            Proc.new {|val|
+              next nil if val.nil?
+              val.localtime(zone_offset).strftime("%H:%M:%S.%6N")
             }
           else
             raise NotSupportedType, "cannot take column type #{type} for timestamp column"
