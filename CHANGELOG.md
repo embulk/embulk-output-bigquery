@@ -1,3 +1,6 @@
+## 0.7.3 - 2024-08-28
+* [enhancement] Add TIME type conversion to string converter (Thanks to p-eye)
+
 ## 0.7.2 - 2024-07-21
 * [maintenance] Fix GitHub Actions #166
 * [maintenance] Fix gcs_client in order to load data using gcs_bucket parameter (Thanks to kashira202111) #164
