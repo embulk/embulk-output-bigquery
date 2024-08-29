@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name          = "embulk-output-bigquery"
-  spec.version       = "0.7.2"
+  spec.version       = "0.7.3"
   spec.authors       = ["Satoshi Akama", "Naotoshi Seo"]
   spec.summary       = "Google BigQuery output plugin for Embulk"
   spec.description   = "Embulk plugin that insert records to Google BigQuery."
