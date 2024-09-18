@@ -63,8 +63,6 @@ module Embulk
           'payload_column'                 => config.param('payload_column',                 :string,  :default => nil),
           'payload_column_index'           => config.param('payload_column_index',           :integer, :default => nil),
 
-          'description'                    => config.param('description',                    :string,  :default => nil),
-
           'open_timeout_sec'               => config.param('open_timeout_sec',               :integer, :default => nil),
           'timeout_sec'                    => config.param('timeout_sec',                    :integer, :default => nil), # google-api-ruby-client < v0.11.0
           'send_timeout_sec'               => config.param('send_timeout_sec',               :integer, :default => nil), # google-api-ruby-client >= v0.11.0
@@ -89,6 +87,7 @@ module Embulk
           'ignore_unknown_values'          => config.param('ignore_unknown_values',          :bool,    :default => false),
           'allow_quoted_newlines'          => config.param('allow_quoted_newlines',          :bool,    :default => false),
           'time_partitioning'              => config.param('time_partitioning',              :hash,    :default => nil),
+          'range_partitioning'              => config.param('range_partitioning',            :hash,    :default => nil),
           'clustering'                     => config.param('clustering',                     :hash,    :default => nil), # google-api-ruby-client >= v0.21.0
           'schema_update_options'          => config.param('schema_update_options',          :array,   :default => nil),
 
