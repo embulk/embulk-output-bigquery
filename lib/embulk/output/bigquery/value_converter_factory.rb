@@ -175,7 +175,7 @@ module Embulk
             Proc.new {|val|
               next nil if val.nil?
               with_typecast_error(val) do |val|
-                Integer(val)
+                val.to_i
               end
             }
           when 'FLOAT'
