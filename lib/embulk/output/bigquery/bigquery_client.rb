@@ -21,7 +21,7 @@ module Embulk
           @destination_project = @task['destination_project']
           @dataset = @task['dataset']
           @location = @task['location']
-          @location_for_log = @location.nil? ? 'us/eu' : @location
+          @location_for_log = @location.nil? ? 'Primary location' : @location
 
           @task['source_format'] ||= 'CSV'
           @task['max_bad_records'] ||= 0
@@ -300,6 +300,7 @@ module Embulk
 
           while true
             job_id = _response.job_reference.job_id
+            location = @location || _response.job_reference.location
             elapsed = Time.now - started
             status = _response.status.state
             if status == "DONE"
@@ -319,7 +320,7 @@ module Embulk
                 "job_id:[#{job_id}] elapsed_time:#{elapsed.to_f}sec status:[#{status}]"
               }
               sleep wait_interval
-              _response = with_network_retry { client.get_job(@project, job_id, location: @location) }
+              _response = with_network_retry { client.get_job(@project, job_id, location: location) }
             end
           end
 
