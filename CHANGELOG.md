@@ -1,3 +1,6 @@
+## 0.7.4 - 2024-12-19
+* [maintenance] Primary location unless location is set explicitly (Thanks to joker1007) #172
+
 ## 0.7.3 - 2024-08-28
 * [enhancement] Add TIME type conversion to string converter (Thanks to p-eye)
 
