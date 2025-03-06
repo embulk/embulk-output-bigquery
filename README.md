@@ -113,9 +113,9 @@ Following options are same as [bq command-line tools](https://cloud.google.com/b
 |  range_partitioning               | hash     | optional  | nil     | See [Range Partitioning](#range-partitioning) |
 |  range_partitioning.field         | string   | required  | nil     | `INT64` column used for partitioning |
 |  range-partitioning.range         | hash     | required  | nil     | Defines the ranges for range paritioning |
-|  range-partitioning.range.start   | string   | required  | nil     | The start of range partitioning, inclusive. This field is an INT64 value represented as a string. |
-|  range-partitioning.range.end     | string   | required  | nil     | The end of range partitioning, exclusive. This field is an INT64 value represented as a string. |
-|  range-partitioning.range.interval| string   | required  | nil     | The width of each interval. This field is an INT64 value represented as a string. |
+|  range-partitioning.range.start   | int      | required  | nil     | The start of range partitioning, inclusive. |
+|  range-partitioning.range.end     | int      | required  | nil     | The end of range partitioning, exclusive. |
+|  range-partitioning.range.interval| int      | required  | nil     | The width of each interval. |
 |  clustering                       | hash     | optional  | nil     | Currently, clustering is supported for partitioned tables, so must be used with `time_partitioning` option. See [clustered tables](https://cloud.google.com/bigquery/docs/clustered-tables) |
 |  clustering.fields                | array    | required  | nil     | One or more fields on which data should be clustered. The order of the specified columns determines the sort order of the data. |
 |  schema_update_options            | array    | optional  | nil     | (Experimental) List of `ALLOW_FIELD_ADDITION` or `ALLOW_FIELD_RELAXATION` or both. See [jobs#configuration.load.schemaUpdateOptions](https://cloud.google.com/bigquery/docs/reference/v2/jobs#configuration.load.schemaUpdateOptions). NOTE for the current status: `schema_update_options` does not work for `copy` job, that is, is not effective for most of modes such as `append`, `replace` and `replace_backup`. `delete_in_advance` deletes origin table so does not need to update schema. Only `append_direct` can utilize schema update. |
@@ -467,9 +467,9 @@ out:
   range_partitioning:
     field: customer_id
     range:
-      start: '1'
-      end: '99999'
-      range: '1'
+      start: 1
+      end: 99999
+      range: 1
 ```
 
 ## Development

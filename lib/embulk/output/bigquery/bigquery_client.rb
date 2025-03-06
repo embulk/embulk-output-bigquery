@@ -440,9 +440,9 @@ module Embulk
               body[:range_partitioning] = {
                 field: options['range_partitioning']['field'],
                 range: {
-                  start: options['range_partitioning']['range']['start'],
-                  end: options['range_partitioning']['range']['end'],
-                  interval: options['range_partitioning']['range']['interval'],
+                  start: options['range_partitioning']['range']['start'].to_s,
+                  end: options['range_partitioning']['range']['end'].to_s,
+                  interval: options['range_partitioning']['range']['interval'].to_s,
                 },
               }
             end

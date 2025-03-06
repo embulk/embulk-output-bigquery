@@ -245,14 +245,27 @@ module Embulk
             raise ConfigError.new "`range_partitioning` must have `range` key"
           end
 
-          unless task['range_partitioning']['range']['start']
+          range = task['range_partitioning']['range']
+          unless range['start']
             raise ConfigError.new "`range_partitioning` must have `range.start` key"
           end
-          unless task['range_partitioning']['range']['end']
+          unless range['start'].is_a?(Integer)
+            raise ConfigError.new "`range_partitioning.range.start` must be an integer"
+          end
+          unless range['end']
             raise ConfigError.new "`range_partitioning` must have `range.end` key"
           end
-          unless task['range_partitioning']['range']['interval']
+          unless range['end'].is_a?(Integer)
+            raise ConfigError.new "`range_partitioning.range.end` must be an integer"
+          end
+          unless range['interval']
             raise ConfigError.new "`range_partitioning` must have `range.interval` key"
+          end
+          unless range['interval'].is_a?(Integer)
+            raise ConfigError.new "`range_partitioning.range.interval` must be an integer"
+          end
+          if range['start'] + range['interval'] > range['end']
+            raise ConfigError.new "`range_partitioning.range.start` + `range_partitioning.range.interval` must be less than `range_partitioning.range.end`"
           end
         end
 
