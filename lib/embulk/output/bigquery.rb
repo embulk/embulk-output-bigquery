@@ -228,12 +228,20 @@ module Embulk
           task['abort_on_error'] = (task['max_bad_records'] == 0)
         end
 
+        if task['time_partitioning'] && task['range_partitioning']
+          raise ConfigError.new "`time_partitioning` and `range_partitioning` cannot be used at the same time"
+        end
+
         if task['time_partitioning']
           unless task['time_partitioning']['type']
             raise ConfigError.new "`time_partitioning` must have `type` key"
           end
-        # If user specify range_partitioning, it should be used as is
-        elsif Helper.has_partition_decorator?(task['table']) && task['range_partitioning'].nil?
+        end
+
+        if Helper.has_partition_decorator?(task['table'])
+          if task['range_partitioning']
+            raise ConfigError.new "partition decorator doesn't support with `range_partition`"
+          end
           task['time_partitioning'] = {'type' => 'DAY'}
         end
 

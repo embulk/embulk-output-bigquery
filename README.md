@@ -469,7 +469,7 @@ out:
     range:
       start: 1
       end: 99999
-      range: 1
+      interval: 1
 ```
 
 ## Development

@@ -300,6 +300,14 @@ module Embulk
         assert_raise { Bigquery.configure(config, schema, processor_count) }
       end
 
+      def test_time_and_range_partitioning_error
+        config = least_config.merge('time_partitioning' => {'type' => 'DAY'}, 'range_partitioning' => {'field' => 'foo', 'range' => { 'start' => 1, 'end' => 2, 'interval' => 1 }})
+        assert_raise { Bigquery.configure(config, schema, processor_count) }
+
+        config = least_config.merge('table' => 'table_name$20160912', 'range_partitioning' => {'field' => 'foo', 'range' => { 'start' => 1, 'end' => 2, 'interval' => 1 }})
+        assert_raise { Bigquery.configure(config, schema, processor_count) }
+      end
+
       def test_clustering
         config = least_config.merge('clustering' => {'fields' => ['field_a']})
         assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
