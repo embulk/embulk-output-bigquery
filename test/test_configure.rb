@@ -271,7 +271,7 @@ module Embulk
       end
 
       def test_range_partitioning
-        config = least_config.merge('range_partitioning' => {'field' => 'foo', 'range' => { 'start' => 1, 'end' => 2, 'interval' => 1 }})
+        config = least_config.merge('range_partitioning' => {'field' => 'foo', 'range' => { 'start' => 1, 'end' => 3, 'interval' => 1 }})
         assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
 
         # field is required

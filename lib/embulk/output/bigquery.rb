@@ -240,7 +240,7 @@ module Embulk
 
         if Helper.has_partition_decorator?(task['table'])
           if task['range_partitioning']
-            raise ConfigError.new "partition decorator doesn't support with `range_partition`"
+            raise ConfigError.new "Partition decorators(`#{task['table']}`) don't support `range_partition`"
           end
           task['time_partitioning'] = {'type' => 'DAY'}
         end
@@ -272,7 +272,7 @@ module Embulk
           unless range['interval'].is_a?(Integer)
             raise ConfigError.new "`range_partitioning.range.interval` must be an integer"
           end
-          if range['start'] + range['interval'] > range['end']
+          if range['start'] + range['interval'] >= range['end']
             raise ConfigError.new "`range_partitioning.range.start` + `range_partitioning.range.interval` must be less than `range_partitioning.range.end`"
           end
         end
