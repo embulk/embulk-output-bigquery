@@ -89,6 +89,7 @@ module Embulk
           'ignore_unknown_values'          => config.param('ignore_unknown_values',          :bool,    :default => false),
           'allow_quoted_newlines'          => config.param('allow_quoted_newlines',          :bool,    :default => false),
           'time_partitioning'              => config.param('time_partitioning',              :hash,    :default => nil),
+          'range_partitioning'             => config.param('range_partitioning',             :hash,    :default => nil),
           'clustering'                     => config.param('clustering',                     :hash,    :default => nil), # google-api-ruby-client >= v0.21.0
           'schema_update_options'          => config.param('schema_update_options',          :array,   :default => nil),
 
@@ -227,12 +228,53 @@ module Embulk
           task['abort_on_error'] = (task['max_bad_records'] == 0)
         end
 
+        if task['time_partitioning'] && task['range_partitioning']
+          raise ConfigError.new "`time_partitioning` and `range_partitioning` cannot be used at the same time"
+        end
+
         if task['time_partitioning']
           unless task['time_partitioning']['type']
             raise ConfigError.new "`time_partitioning` must have `type` key"
           end
-        elsif Helper.has_partition_decorator?(task['table'])
+        end
+
+        if Helper.has_partition_decorator?(task['table'])
+          if task['range_partitioning']
+            raise ConfigError.new "Partition decorators(`#{task['table']}`) don't support `range_partition`"
+          end
           task['time_partitioning'] = {'type' => 'DAY'}
+        end
+
+        if task['range_partitioning']
+          unless task['range_partitioning']['field']
+            raise ConfigError.new "`range_partitioning` must have `field` key"
+          end
+          unless task['range_partitioning']['range']
+            raise ConfigError.new "`range_partitioning` must have `range` key"
+          end
+
+          range = task['range_partitioning']['range']
+          unless range['start']
+            raise ConfigError.new "`range_partitioning` must have `range.start` key"
+          end
+          unless range['start'].is_a?(Integer)
+            raise ConfigError.new "`range_partitioning.range.start` must be an integer"
+          end
+          unless range['end']
+            raise ConfigError.new "`range_partitioning` must have `range.end` key"
+          end
+          unless range['end'].is_a?(Integer)
+            raise ConfigError.new "`range_partitioning.range.end` must be an integer"
+          end
+          unless range['interval']
+            raise ConfigError.new "`range_partitioning` must have `range.interval` key"
+          end
+          unless range['interval'].is_a?(Integer)
+            raise ConfigError.new "`range_partitioning.range.interval` must be an integer"
+          end
+          if range['start'] + range['interval'] >= range['end']
+            raise ConfigError.new "`range_partitioning.range.start` + `range_partitioning.range.interval` must be less than `range_partitioning.range.end`"
+          end
         end
 
         if task['clustering']

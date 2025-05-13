@@ -1,0 +1,36 @@
+in:
+  type: file
+  path_prefix: example/example.csv
+  parser:
+    type: csv
+    charset: UTF-8
+    newline: CRLF
+    null_string: 'NULL'
+    skip_header_lines: 1
+    comment_line_marker: '#'
+    columns:
+      - {name: date,        type: string}
+      - {name: timestamp,   type: timestamp, format: "%Y-%m-%d %H:%M:%S.%N", timezone: "+09:00"}
+      - {name: "null",      type: string}
+      - {name: long,        type: long}
+      - {name: string,      type: string}
+      - {name: double,      type: double}
+      - {name: boolean,     type: boolean}
+out:
+  type: bigquery
+  mode: replace
+  auth_method: service_account
+  json_keyfile: example/your-project-000.json
+  dataset: your_dataset_name
+  table: your_field_partitioned_table_name
+  source_format: NEWLINE_DELIMITED_JSON
+  compression: NONE
+  auto_create_dataset: true
+  auto_create_table: true
+  schema_file: example/schema.json
+  range_partitioning:
+    field: 'long'
+    range:
+      start: 90
+      end: 100
+      interval: 1

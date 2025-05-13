@@ -270,6 +270,44 @@ module Embulk
         assert_equal 'DAY', task['time_partitioning']['type']
       end
 
+      def test_range_partitioning
+        config = least_config.merge('range_partitioning' => {'field' => 'foo', 'range' => { 'start' => 1, 'end' => 3, 'interval' => 1 }})
+        assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }
+
+        # field is required
+        config = least_config.merge('range_partitioning' => {'range' => { 'start' => 1, 'end' => 2, 'interval' => 1 }})
+        assert_raise { Bigquery.configure(config, schema, processor_count) }
+
+
+        # range is required
+        config = least_config.merge('range_partitioning' => {'field' => 'foo'})
+        assert_raise { Bigquery.configure(config, schema, processor_count) }
+
+        # range.start is required
+        config = least_config.merge('range_partitioning' => {'field' => 'foo', 'range' => { 'end' => 2, 'interval' => 1 }})
+        assert_raise { Bigquery.configure(config, schema, processor_count) }
+
+        # range.end is required
+        config = least_config.merge('range_partitioning' => {'field' => 'foo', 'range' => { 'start' => 1, 'interval' => 1 }})
+        assert_raise { Bigquery.configure(config, schema, processor_count) }
+
+        # range.interval is required
+        config = least_config.merge('range_partitioning' => {'field' => 'foo', 'range' => { 'start' => 1, 'end' => 2 }})
+        assert_raise { Bigquery.configure(config, schema, processor_count) }
+
+        # range.start + range.interval should be less than range.end
+        config = least_config.merge('range_partitioning' => {'field' => 'foo', 'range' => { 'start' => 1, 'end' => 2, 'interval' => 2 }})
+        assert_raise { Bigquery.configure(config, schema, processor_count) }
+      end
+
+      def test_time_and_range_partitioning_error
+        config = least_config.merge('time_partitioning' => {'type' => 'DAY'}, 'range_partitioning' => {'field' => 'foo', 'range' => { 'start' => 1, 'end' => 2, 'interval' => 1 }})
+        assert_raise { Bigquery.configure(config, schema, processor_count) }
+
+        config = least_config.merge('table' => 'table_name$20160912', 'range_partitioning' => {'field' => 'foo', 'range' => { 'start' => 1, 'end' => 2, 'interval' => 1 }})
+        assert_raise { Bigquery.configure(config, schema, processor_count) }
+      end
+
       def test_clustering
         config = least_config.merge('clustering' => {'fields' => ['field_a']})
         assert_nothing_raised { Bigquery.configure(config, schema, processor_count) }

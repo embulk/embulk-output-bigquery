@@ -435,6 +435,18 @@ module Embulk
               }
             end
 
+            options['range_partitioning'] ||= @task['range_partitioning']
+            if options['range_partitioning']
+              body[:range_partitioning] = {
+                field: options['range_partitioning']['field'],
+                range: {
+                  start: options['range_partitioning']['range']['start'].to_s,
+                  end: options['range_partitioning']['range']['end'].to_s,
+                  interval: options['range_partitioning']['range']['interval'].to_s,
+                },
+              }
+            end
+
             options['clustering'] ||= @task['clustering']
             if options['clustering']
               body[:clustering] = {

@@ -110,6 +110,12 @@ Following options are same as [bq command-line tools](https://cloud.google.com/b
 |  time_partitioning.type           | string   | required  | nil     | The only type supported is DAY, which will generate one partition per day based on data loading time. |
 |  time_partitioning.expiration_ms  | int      | optional  | nil     | Number of milliseconds for which to keep the storage for a partition. |
 |  time_partitioning.field          | string   | optional  | nil     | `DATE` or `TIMESTAMP` column used for partitioning |
+|  range_partitioning               | hash     | optional  | nil     | See [Range Partitioning](#range-partitioning) |
+|  range_partitioning.field         | string   | required  | nil     | `INT64` column used for partitioning |
+|  range-partitioning.range         | hash     | required  | nil     | Defines the ranges for range paritioning |
+|  range-partitioning.range.start   | int      | required  | nil     | The start of range partitioning, inclusive. |
+|  range-partitioning.range.end     | int      | required  | nil     | The end of range partitioning, exclusive. |
+|  range-partitioning.range.interval| int      | required  | nil     | The width of each interval. |
 |  clustering                       | hash     | optional  | nil     | Currently, clustering is supported for partitioned tables, so must be used with `time_partitioning` option. See [clustered tables](https://cloud.google.com/bigquery/docs/clustered-tables) |
 |  clustering.fields                | array    | required  | nil     | One or more fields on which data should be clustered. The order of the specified columns determines the sort order of the data. |
 |  schema_update_options            | array    | optional  | nil     | (Experimental) List of `ALLOW_FIELD_ADDITION` or `ALLOW_FIELD_RELAXATION` or both. See [jobs#configuration.load.schemaUpdateOptions](https://cloud.google.com/bigquery/docs/reference/v2/jobs#configuration.load.schemaUpdateOptions). NOTE for the current status: `schema_update_options` does not work for `copy` job, that is, is not effective for most of modes such as `append`, `replace` and `replace_backup`. `delete_in_advance` deletes origin table so does not need to update schema. Only `append_direct` can utilize schema update. |
@@ -447,6 +453,24 @@ Note that only adding a new column, and relaxing non-necessary columns to be `NU
 MEMO: [jobs#configuration.load.schemaUpdateOptions](https://cloud.google.com/bigquery/docs/reference/v2/jobs#configuration.load.schemaUpdateOptions) is available
 to update the schema of the desitination table as a side effect of the load job, but it is not available for copy job.
 Thus, it was not suitable for embulk-output-bigquery idempotence modes, `append`, `replace`, and `replace_backup`, sigh.
+
+### Range Partitioning
+
+See also [Creating and Updating Range-Partitioned Tables](https://cloud.google.com/bigquery/docs/creating-partitioned-tables).
+
+To load into a partition, specify `range_partitioning` and `table` parameter with a partition decorator as:
+
+```yaml
+out:
+  type: bigquery
+  table: table_name$1
+  range_partitioning:
+    field: customer_id
+    range:
+      start: 1
+      end: 99999
+      interval: 1
+```
 
 ## Development
 
