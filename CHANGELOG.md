@@ -1,3 +1,6 @@
+## 0.7.5 - 2025-05-13
+* [enhancement] Add range partitioning support (Thanks to kitagry) #174
+
 ## 0.7.4 - 2024-12-19
 * [maintenance] Primary location unless location is set explicitly (Thanks to joker1007) #172
 
