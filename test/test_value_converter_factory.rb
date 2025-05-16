@@ -241,11 +241,17 @@ module Embulk
         end
 
         def test_date
+          converter = ValueConverterFactory.new(
+              SCHEMA_TYPE, 'DATE',
+              timestamp_format: '%Y/%m/%d'
+          ).create_converter
+          assert_equal nil, converter.call(nil)
+          assert_equal "2016-02-26", converter.call("2016/02/26")
+
+          # Users must care of BQ date format by themselves with no timestamp_format
           converter = ValueConverterFactory.new(SCHEMA_TYPE, 'DATE').create_converter
           assert_equal nil, converter.call(nil)
           assert_equal "2016-02-26", converter.call("2016-02-26")
-          assert_equal "2016-02-26", converter.call("2016-02-26 00:00:00")
-          assert_raise { converter.call('foo') }
         end
 
         def test_datetime
